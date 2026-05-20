@@ -6,6 +6,8 @@
   export let assets: Asset[] = [];
   export let value: number | '' = '';
   export let disabled = false;
+  /** Enquanto a página carrega GET /assets */
+  export let loading = false;
 
   let open = false;
   let searchQuery = '';
@@ -97,7 +99,7 @@
 
   {#if open}
     <div
-      class="asset-picker-panel dropdown-content z-50 mt-1 max-h-72 w-full flex-col overflow-hidden rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+      class="asset-picker-panel dropdown-content z-[100] mt-1 flex max-h-72 w-full min-w-[min(100%,20rem)] flex-col overflow-hidden rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
       role="listbox"
     >
       <input
@@ -110,7 +112,14 @@
         on:keydown|stopPropagation
       />
       <ul class="flex max-h-52 flex-col gap-0.5 overflow-y-auto overflow-x-hidden p-0">
-        {#if filteredAssets.length === 0}
+        {#if loading}
+          <li class="px-3 py-2 text-sm text-base-content/60">Carregando ativos…</li>
+        {:else if assets.length === 0}
+          <li class="px-3 py-2 text-sm text-base-content/60">
+            Nenhum ativo na base.
+            <a class="link link-primary" href="/assets">Cadastrar ativos</a>
+          </li>
+        {:else if filteredAssets.length === 0}
           <li class="px-3 py-2 text-sm text-base-content/60">Nenhum ativo corresponde à busca.</li>
         {:else}
           {#each filteredAssets as asset (asset.id)}

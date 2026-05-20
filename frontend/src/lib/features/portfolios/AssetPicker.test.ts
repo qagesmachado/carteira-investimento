@@ -47,6 +47,15 @@ describe('AssetPicker', () => {
     expect(screen.getByRole('button').textContent).toContain('ITSA4');
   });
 
+  it('mostra mensagem quando base está vazia', async () => {
+    render(AssetPickerHost, { props: { assets: [], value: '' } });
+
+    await fireEvent.click(screen.getByRole('button'));
+
+    expect(screen.getByText(/Nenhum ativo na base/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Cadastrar ativos/i })).toBeTruthy();
+  });
+
   it('mostra mensagem quando busca não encontra ativos', async () => {
     render(AssetPickerHost, { props: { assets: sampleAssets, value: '' } });
 

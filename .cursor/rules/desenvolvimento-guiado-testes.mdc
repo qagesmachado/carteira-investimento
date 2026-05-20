@@ -1,0 +1,76 @@
+---
+description: Fluxo docs → casos de uso E2E → TDD (unit + E2E) na mesma entrega
+alwaysApply: true
+---
+
+# Desenvolvimento guiado a testes
+
+O desenvolvimento é **completamente guiado a testes**, da documentação até E2E. Não entregar feature “só código” para testar depois.
+
+Complementa [testes.mdc](testes.mdc) (TDD, suítes e execução).
+
+## Ordem obrigatória (feature nova ou mudança relevante)
+
+| Etapa | Onde | Quando |
+| ----- | ---- | ------ |
+| 1. Doc de produto | `docs/` | **Antes** de codificar |
+| 2. Casos de uso E2E | `e2e/casos-de-uso/` | No **planejamento**, junto com a doc |
+| 3. Testes (vermelho) | `backend/tests/`, `frontend/**/*.test.ts`, `e2e/specs/` | **Antes** ou **junto** com o código |
+| 4. Implementação | backend, frontend | Mínimo para verde |
+| 5. Validação | raiz | `npm run test:all` + relatório em `test-reports/` |
+
+Correções pequenas podem pular doc/caso novo se o comportamento já estiver documentado — mas **sempre** atualizar o teste que cobre a mudança.
+
+## 1. Documentação (`docs/`)
+
+Ao **começar** uma funcionalidade:
+
+1. Criar ou atualizar doc em:
+   - `docs/produto/desenvolvido/` — comportamento **implementado** ou em entrega
+   - `docs/produto/candidato/` — ideia / tier futuro ainda não codificado
+2. Conteúdo mínimo: objetivo, escopo, regras de negócio, fluxos e **casos de uso funcionais**, rotas/endpoints, dependências entre módulos.
+3. Atualizar índices quando fizer sentido: [`docs/README.md`](../../docs/README.md), [`docs/produto/funcionalidades.md`](../../docs/produto/funcionalidades.md).
+4. A doc vira **Referência** nos `.md` de E2E e no PR.
+
+## 2. Casos de uso E2E (`e2e/casos-de-uso/`)
+
+No **planejamento** (antes de implementar UI/API exposta):
+
+1. Listar cenários BDD (happy path, validação, erros, filtros, etc.).
+2. Um cenário por arquivo — copiar [`e2e/casos-de-uso/_template.md`](../../e2e/casos-de-uso/_template.md) para `ui/<página>/` ou `api/`.
+3. Preencher metadados (ID, rota, dependências, **Arquivo de teste** em `e2e/specs/`).
+4. Prefixos: `UI-AST-`, `UI-PRT-`, `UI-CNS-`, `UI-DASH-`, `UI-PRV-`, `API-*`.
+5. Marcar **`aprovado`** após revisão do cenário; ver [`e2e/casos-de-uso/README.md`](../../e2e/casos-de-uso/README.md) e [`dependencias.md`](../../e2e/casos-de-uso/dependencias.md).
+
+## 3. Specs Playwright na mesma entrega (`e2e/specs/`)
+
+- **Não** adiar E2E para “fase 2”: spec Playwright na **mesma tarefa/PR** que a funcionalidade.
+- Um spec por caso (ou arquivo espelhando o `.md`), ID alinhado (`test.describe('UI-PRV-002', …)`).
+- `@see` apontando para o `.md` correspondente em `casos-de-uso/`.
+- Helpers compartilhados em `e2e/specs/helpers/` (seed, page objects).
+- Após spec verde: status do caso → **`implementado`** no README da pasta.
+
+## 4. TDD em todas as camadas
+
+Mesmo ciclo **vermelho → verde → refatorar** em cada camada afetada:
+
+| Camada | Onde escrever primeiro |
+| ------ | ---------------------- |
+| API / domínio | `backend/tests/` |
+| Lógica UI / utilitários | `frontend/src/**/*.test.ts` |
+| Fluxo ponta a ponta | `e2e/specs/` (após caso `.md` aprovado) |
+
+## Definition of Done (feature)
+
+- [ ] Doc em `docs/produto/` descreve o que foi entregue
+- [ ] Casos em `e2e/casos-de-uso/` criados/atualizados e **aprovados**
+- [ ] Specs em `e2e/specs/` passando (quando há UI/API E2E)
+- [ ] Testes unitários nas camadas alteradas
+- [ ] `npm run test:all` verde; relatório reportado
+
+## O que evitar
+
+- Codificar tela ou endpoint sem doc nem cenários E2E planejados
+- Merge com casos em `rascunho` e zero spec correspondente
+- “Depois escrevo o Playwright” em feature nova
+- Doc só no PR/commit final, sem guiar o desenho

@@ -58,6 +58,9 @@ flowchart LR
 | `UI-AST-` | `/assets` | `UI-AST-002` |
 | `UI-PRT-` | `/portfolios` | `UI-PRT-005` |
 | `UI-CNS-` | `/portfolios/consolidada` | `UI-CNS-007` |
+| `UI-PRV-` | `/proventos` | `UI-PRV-002` |
+| `UI-DASH-` | `/dashboard` | `UI-DASH-002` |
+| `UI-ANL-` | `/analise` | `UI-ANL-002` |
 
 ## Mapa rápido de dependências entre pastas
 
@@ -66,11 +69,17 @@ flowchart LR
 | [`ui/assets/`](ui/assets/README.md) | Base vazia ou estado de `UI-AST-*` anterior |
 | [`ui/portfolios/`](ui/portfolios/README.md) | Seed API no spec (`seedPortfolios*`) |
 | [`ui/consolidada/`](ui/consolidada/README.md) | Seed API no spec (`seedConsolidada*`) |
+| [`ui/proventos/`](ui/proventos/README.md) | Seed API no spec (`seedProventos*`) — ativos + proventos |
+| [`ui/dashboard/`](ui/dashboard/README.md) | Seed API no spec (`seedConsolidada*`) — carteira + posições |
+| [`ui/analise/`](ui/analise/README.md) | Seed API no spec (`seedAnalysis*`) — ativos stocks + config |
 
 ## Ordem sugerida de implementação (fase 2)
 
 1. `e2e/specs/assets/*.spec.ts` (18)
-2. `e2e/specs/portfolios/*.spec.ts` (20)
-3. `e2e/specs/consolidada/*.spec.ts` (15)
+2. `e2e/specs/portfolios/*.spec.ts` (23)
+3. `e2e/specs/consolidada/*.spec.ts` (16)
+4. `e2e/specs/dashboard/*.spec.ts` (7)
+5. `e2e/specs/proventos/*.spec.ts` (14)
+6. `e2e/specs/analise/*.spec.ts` (6)
 
 Cada spec deve espelhar o ID e o arquivo `.md` correspondente em `casos-de-uso/ui/`.

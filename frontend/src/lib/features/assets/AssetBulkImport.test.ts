@@ -60,6 +60,74 @@ describe('AssetBulkImport', () => {
     expect(screen.getByDisplayValue('FESA4, FLRY3, ITSA4, KLBN')).toBeTruthy();
   });
 
+  it('remove duplicatas antes de buscar no yfinance', async () => {
+    vi.mocked(assetsApi.previewBulkAssets).mockResolvedValue({ items: [], warnings: [] });
+
+    render(AssetBulkImport);
+
+    await fireEvent.input(screen.getByPlaceholderText('PETR4, BBSE3, VALE3'), {
+      target: { value: 'HSML11\nHGRU11\nHSML11\nHGRU11\nKNRI11' }
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Buscar no yfinance' }));
+
+    await waitFor(() => {
+      expect(assetsApi.previewBulkAssets).toHaveBeenCalledWith(['HSML11', 'HGRU11', 'KNRI11']);
+    });
+    const textarea = screen.getByRole('textbox');
+    expect(textarea.value).toBe('HSML11\nHGRU11\nKNRI11');
+    expect(screen.getByText(/2 duplicata\(s\) removida\(s\) antes da busca/i)).toBeTruthy();
+  });
+
+  it('exibe aviso quando a API retorna tickers não encontrados', async () => {
+    vi.mocked(assetsApi.previewBulkAssets).mockResolvedValue({
+      items: [
+        {
+          symbol: 'GUAR3',
+          lookup: null,
+          error: 'Ativo não encontrado no yfinance: GUAR3',
+          already_in_db: false
+        },
+        {
+          symbol: 'BBSE3',
+          lookup: {
+            symbol: 'BBSE3',
+            name: 'BB Seguridade',
+            asset_type: 'stock',
+            market: 'national',
+            country: 'BR',
+            currency: 'BRL',
+            sector: null,
+            subsector: null,
+            segment: null,
+            company_cnpj: null,
+            payer_cnpj: null,
+            payer_name: null,
+            quote_source: null,
+            current_quote: null
+          },
+          error: null,
+          already_in_db: false
+        }
+      ],
+      warnings: [
+        'Alguns tickers não foram encontrados no yfinance (podem ter sido descontinuados): GUAR3.'
+      ]
+    });
+
+    render(AssetBulkImport);
+
+    await fireEvent.input(screen.getByPlaceholderText('PETR4, BBSE3, VALE3'), {
+      target: { value: 'GUAR3, BBSE3' }
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Buscar no yfinance' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Alguns tickers não foram encontrados/i)).toBeTruthy();
+      expect(screen.getByText(/BB Seguridade/)).toBeTruthy();
+      expect(screen.getByText('Não encontrado')).toBeTruthy();
+    });
+  });
+
   it('salva via createBulkAssets usando rascunho do modal', async () => {
     const onSaved = vi.fn();
     vi.mocked(assetsApi.previewBulkAssets).mockResolvedValue({

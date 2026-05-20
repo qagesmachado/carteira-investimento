@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { page } from '$app/stores';
 
   import {
     listAssets,
@@ -8,6 +9,7 @@
     type DisplayClass
   } from '$lib/api/assets';
   import { getUsdBrl, refreshUsdBrl } from '$lib/api/fx';
+  import { listDividendPayments, type DividendPayment } from '$lib/api/dividendPayments';
   import {
     getActivePortfolioId,
     listPortfolios,
@@ -25,8 +27,12 @@
     formatMoneyAmount
   } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
-  import NativeCurrencyHint from '$lib/features/portfolios/NativeCurrencyHint.svelte';
+  import BrlEquivalentHint from '$lib/features/portfolios/BrlEquivalentHint.svelte';
   import PositionDetailPanel from '$lib/features/portfolios/PositionDetailPanel.svelte';
+  import {
+    buildDividendTotalsByAssetId,
+    formatDividendsReceivedSummary
+  } from '$lib/features/proventos/dividendSummary';
   import {
     computePositionProfit,
     formatPositionProfit,
@@ -79,6 +85,7 @@
   let portfolios: Portfolio[] = [];
   let assets: Asset[] = [];
   let positions: Position[] = [];
+  let dividendPayments: DividendPayment[] = [];
   let activeId: number | null = null;
   let usdBrlRate: number | null = null;
   let usdBrlRefreshedAt: string | null = null;
@@ -105,6 +112,11 @@
   let prevActiveIdForExpanded: number | null = null;
 
   $: assetById = Object.fromEntries(assets.map((a) => [a.id, a]));
+  $: dividendTotalsByAssetId = buildDividendTotalsByAssetId(dividendPayments);
+
+  function dividendsSummaryForAsset(asset: Asset): string {
+    return formatDividendsReceivedSummary(dividendTotalsByAssetId.get(asset.id), asset);
+  }
 
   $: if (activeId !== prevActiveIdForExpanded) {
     prevActiveIdForExpanded = activeId;
@@ -212,6 +224,9 @@
   }
 
   function formatConsolidatedProfit(row: Row): string {
+    if (isUsdAsset(row.asset)) {
+      return formatPositionProfit(row.position, row.asset);
+    }
     if (
       row.investedBrl != null &&
       row.currentBrl != null &&
@@ -225,10 +240,19 @@
         maximumFractionDigits: 2
       })}%)`;
     }
-    if (isUsdAsset(row.asset)) {
-      return '—';
-    }
     return formatPositionProfit(row.position, row.asset);
+  }
+
+  function consolidatedProfitBrl(row: Row): number | null {
+    if (
+      row.investedBrl != null &&
+      row.currentBrl != null &&
+      row.investedBrl > 0 &&
+      Number.isFinite(row.currentBrl - row.investedBrl)
+    ) {
+      return row.currentBrl - row.investedBrl;
+    }
+    return null;
   }
 
   function headerSortClass(key: SortKey): string {
@@ -498,6 +522,11 @@
         loadError = parseApiError(err, 'Não foi possível carregar as posições da carteira.');
       }
     }
+    try {
+      dividendPayments = await listDividendPayments();
+    } catch {
+      dividendPayments = [];
+    }
     await loadFx();
   }
 
@@ -556,6 +585,10 @@
   }
 
   onMount(() => {
+    const classParam = $page.url.searchParams.get('display_class');
+    if (classParam && DISPLAY_CLASSES.includes(classParam as DisplayClass)) {
+      filterDisplayClassStr = classParam;
+    }
     loading = true;
     refresh()
       .catch((err) => {
@@ -988,14 +1021,12 @@
                             <span
                               class="tabular-nums"
                               title={row.investedBrl == null
-                                ? 'Atualize o câmbio USD/BRL para converter para reais'
+                                ? 'Atualize o câmbio USD/BRL para ver o equivalente em reais no ícone $'
                                 : undefined}
                             >
-                              {row.investedBrl != null
-                                ? formatMoneyAmount(row.investedBrl, 'BRL')
-                                : '—'}
+                              {formatOptionalMoney(row.invested, row.asset.currency)}
                             </span>
-                            <NativeCurrencyHint asset={row.asset} nativeValue={row.invested} />
+                            <BrlEquivalentHint asset={row.asset} brlValue={row.investedBrl} />
                           </span>
                         {:else if row.investedBrl != null}
                           <span class="tabular-nums">{formatMoneyAmount(row.investedBrl, 'BRL')}</span>
@@ -1009,14 +1040,12 @@
                             <span
                               class="tabular-nums"
                               title={row.currentBrl == null
-                                ? 'Atualize o câmbio USD/BRL para converter para reais'
+                                ? 'Atualize o câmbio USD/BRL para ver o equivalente em reais no ícone $'
                                 : undefined}
                             >
-                              {row.currentBrl != null
-                                ? formatMoneyAmount(row.currentBrl, 'BRL')
-                                : '—'}
+                              {formatOptionalMoney(row.current, row.asset.currency)}
                             </span>
-                            <NativeCurrencyHint asset={row.asset} nativeValue={row.current} />
+                            <BrlEquivalentHint asset={row.asset} brlValue={row.currentBrl} />
                           </span>
                         {:else if row.currentBrl != null}
                           <span class="tabular-nums">{formatMoneyAmount(row.currentBrl, 'BRL')}</span>
@@ -1024,7 +1053,19 @@
                           <span class="tabular-nums">{formatOptionalMoney(row.current, row.asset.currency)}</span>
                         {/if}
                       </td>
-                      <td class="whitespace-nowrap pr-4 text-right text-sm tabular-nums sm:pr-6">{formatConsolidatedProfit(row)}</td>
+                      <td class="overflow-visible whitespace-nowrap pr-4 text-right text-sm tabular-nums sm:pr-6">
+                        {#if isUsdAsset(row.asset)}
+                          <span class="inline-flex items-center justify-end gap-1.5">
+                            <span class="tabular-nums">{formatConsolidatedProfit(row)}</span>
+                            <BrlEquivalentHint
+                              asset={row.asset}
+                              brlValue={consolidatedProfitBrl(row)}
+                            />
+                          </span>
+                        {:else}
+                          {formatConsolidatedProfit(row)}
+                        {/if}
+                      </td>
                       <td class="whitespace-nowrap px-1">
                         <button
                           class="btn btn-ghost btn-xs"
@@ -1043,6 +1084,7 @@
                             asset={row.asset}
                             variant="consolidated"
                             usdBrlRate={usdBrlRate}
+                            dividendsSummary={dividendsSummaryForAsset(row.asset)}
                             panelId={positionDetailPanelId(row.position.id)}
                           />
                         </td>
@@ -1057,8 +1099,8 @@
           <p class="text-xs text-base-content/60">
             Os três primeiros cartões mostram subtotais em R$ (moeda BRL) e em US$ (internacional). O consolidado em
             reais soma tudo o que puder ser convertido (BRL nativo + USD × taxa). Sem taxa USD/BRL, linhas em dólar não
-            entram no consolidado. Posições em USD: valor em R$ na tabela (com câmbio atualizado); passe o mouse no ícone $ para ver o valor em dólar.
-            Lucro na tabela: em R$ quando há conversão; senão, na moeda original.
+            entram no consolidado. Posições em USD: valor em US$ na tabela; passe o mouse no ícone $ para ver o equivalente em reais.
+            Lucro na tabela: em US$ para posições internacionais (com equivalente em R$ no ícone); em R$ para ativos em reais.
           </p>
         </div>
       </div>

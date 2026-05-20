@@ -33,4 +33,14 @@ describe('DismissibleAlert', () => {
     expect(alert.classList.contains('alert-error')).toBe(true);
     expect(alert.textContent).toContain('Este ativo já está nesta carteira.');
   });
+
+  it('exibe mensagem de aviso', () => {
+    render(DismissibleAlert, {
+      props: { text: 'Alguns tickers não foram encontrados.', variant: 'warning' }
+    });
+
+    const alert = screen.getByRole('alert');
+    expect(alert.classList.contains('alert-warning')).toBe(true);
+    expect(alert.textContent).toContain('Alguns tickers não foram encontrados.');
+  });
 });

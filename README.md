@@ -90,6 +90,7 @@ Aplicação local:
 - `http://127.0.0.1:5173`
 - `http://127.0.0.1:5173/assets`
 - `http://127.0.0.1:5173/proventos`
+- `http://127.0.0.1:5173/dashboard`
 - `http://127.0.0.1:5173/portfolios`
 
 Testes:
@@ -144,3 +145,4 @@ Eventos de importação, renomeação de carteira e respostas HTTP com erro (≥
 - Listagem com **filtro** por ticker ou nome; tickers B3 exibidos **sem** sufixo `.SA`.
 - **Importação em lote** (CSV, TXT ou lista separada por vírgula) com pré-visualização e save selecionado.
 - Visual inicial com Tailwind CSS e daisyUI.
+- **Dashboard** (`/dashboard`): patrimônio, P&L, alocação por classe, proventos mês/ano, gráfico de alocação e links para consolidada/proventos.

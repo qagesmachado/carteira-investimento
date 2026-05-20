@@ -44,6 +44,8 @@ Antes de cada `npm run test:ui`, o npm executa `pretest:ui` → [`scripts/reset-
 | `specs/assets/` | `/assets` | UI-AST 001–018 | `npm run test:ui -- specs/assets` |
 | `specs/portfolios/` | `/portfolios` | UI-PRT 001–023 | `npm run test:ui -- specs/portfolios` |
 | `specs/consolidada/` | `/portfolios/consolidada` | UI-CNS 001–016 | `npm run test:ui -- specs/consolidada` |
+| `specs/dashboard/` | `/dashboard` | UI-DASH 001–007 | `npm run test:ui -- specs/dashboard` |
+| `specs/proventos/` | `/proventos` | UI-PRV 001–014 | `npm run test:ui -- specs/proventos` |
 
 Helpers compartilhados: `specs/helpers/` (não são specs executáveis).
 
@@ -54,13 +56,15 @@ Use `--` para passar argumentos ao Playwright:
 ```powershell
 cd e2e
 
-# Suíte UI completa (57 specs: assets + portfolios + consolidada)
+# Suíte UI completa (79 specs: assets + portfolios + consolidada + dashboard + proventos)
 npm run test:ui
 
 # Por página
 npm run test:ui -- specs/assets
 npm run test:ui -- specs/portfolios
 npm run test:ui -- specs/consolidada
+npm run test:ui -- specs/dashboard
+npm run test:ui -- specs/proventos
 
 # Um arquivo
 npm run test:ui -- specs/assets/02-busca-lookup-individual.spec.ts
@@ -115,6 +119,8 @@ npx playwright show-report
 | Só `/assets` | `npm run test:ui -- specs/assets` |
 | Só `/portfolios` | `npm run test:ui -- specs/portfolios` |
 | Só consolidada | `npm run test:ui -- specs/consolidada` |
+| Só dashboard | `npm run test:ui -- specs/dashboard` |
+| Só proventos | `npm run test:ui -- specs/proventos` |
 | Ver o browser | `npm run test:ui -- --headed` |
 | Depurar passo a passo | `npm run test:ui -- --debug` |
 | Painel interativo | `npm run test:ui -- --ui` |
@@ -149,8 +155,11 @@ e2e/
   casos-de-uso/     # especificação Markdown
   specs/
     assets/         # UI-AST-001 … 018 (18 specs)
-    consolidada/    # UI-CNS-001 … 015 (15 specs)
-    helpers/        # seedAssets, consolidadaPage, lookupFlows, …
+    portfolios/     # UI-PRT-001 … 023 (23 specs)
+    consolidada/    # UI-CNS-001 … 016 (16 specs)
+    dashboard/      # UI-DASH-001 … 007 (7 specs)
+    proventos/      # UI-PRV-001 … 014 (14 specs)
+    helpers/        # seedAssets, proventosPage, dashboardPage, …
   scripts/
     reset-test-db.js
   playwright.config.js
@@ -158,4 +167,6 @@ e2e/
 ```
 
 - Ativos: [`casos-de-uso/ui/assets/README.md`](casos-de-uso/ui/assets/README.md)  
-- Consolidada: [`casos-de-uso/ui/consolidada/README.md`](casos-de-uso/ui/consolidada/README.md)
+- Consolidada: [`casos-de-uso/ui/consolidada/README.md`](casos-de-uso/ui/consolidada/README.md)  
+- Dashboard: [`casos-de-uso/ui/dashboard/README.md`](casos-de-uso/ui/dashboard/README.md)  
+- Proventos: [`casos-de-uso/ui/proventos/README.md`](casos-de-uso/ui/proventos/README.md)

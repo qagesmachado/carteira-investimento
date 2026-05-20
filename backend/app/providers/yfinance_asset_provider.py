@@ -1,8 +1,12 @@
+import logging
 import re
 from dataclasses import dataclass
 from typing import Protocol
 
 import yfinance as yf
+
+logger = logging.getLogger(__name__)
+logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 
 
 def resolve_yahoo_symbol(symbol: str) -> str:
@@ -51,8 +55,13 @@ class AssetLookupProvider(Protocol):
 class YFinanceAssetProvider:
     def lookup(self, symbol: str) -> AssetLookupResult:
         yahoo_symbol = resolve_yahoo_symbol(symbol)
-        ticker = yf.Ticker(yahoo_symbol)
-        info = ticker.info or {}
+        try:
+            ticker = yf.Ticker(yahoo_symbol)
+            info = ticker.info or {}
+        except Exception as exc:
+            logger.debug("yfinance lookup failed symbol=%s: %s", yahoo_symbol, exc)
+            raise ValueError(f"quote not found for {yahoo_symbol}") from exc
+
         self._ensure_quote_found(info, yahoo_symbol)
         quote_type = str(info.get("quoteType", "")).upper()
         is_b3 = yahoo_symbol.endswith(".SA") or self._looks_like_b3_listing(info)

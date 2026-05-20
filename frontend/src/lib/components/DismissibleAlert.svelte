@@ -2,7 +2,14 @@
   import { createEventDispatcher } from 'svelte';
 
   export let text = '';
-  export let variant: 'success' | 'error' = 'success';
+  export let variant: 'success' | 'error' | 'warning' = 'success';
+
+  $: alertClass =
+    variant === 'success'
+      ? 'alert-success'
+      : variant === 'warning'
+        ? 'alert-warning'
+        : 'alert-error';
 
   const dispatch = createEventDispatcher<{ dismiss: void }>();
 </script>
@@ -10,7 +17,7 @@
 {#if text}
   <div
     role="alert"
-    class="alert !flex w-full flex-row items-center justify-between gap-4 text-left {variant === 'success' ? 'alert-success' : 'alert-error'}"
+    class="alert !flex w-full flex-row items-center justify-between gap-4 text-left {alertClass}"
   >
     <span class="min-w-0 flex-1">{text}</span>
     <button

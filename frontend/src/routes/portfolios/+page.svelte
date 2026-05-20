@@ -3,6 +3,13 @@
 
   import { listAssets, type Asset } from '$lib/api/assets';
   import {
+    getStockBrConfig,
+    getAssetAnalysis,
+    saveAssetAnalysisScores,
+    type AnalysisConfig,
+    type AssetAnalysis
+  } from '$lib/api/analysis';
+  import {
     createPortfolio,
     createPosition,
     deletePortfolio,
@@ -42,6 +49,7 @@
     sortPositionRows,
     type SortKey
   } from '$lib/features/portfolios/positionTableView';
+  import AssetAnalysisPanel from '$lib/features/analise/AssetAnalysisPanel.svelte';
   import PortfolioImportWizard from '$lib/features/portfolios/PortfolioImportWizard.svelte';
   import PositionDetailPanel from '$lib/features/portfolios/PositionDetailPanel.svelte';
   import PositionEditModal from '$lib/features/portfolios/PositionEditModal.svelte';
@@ -78,6 +86,10 @@
   let prevActiveIdForFilter: number | null = null;
   let expandedPositionId: number | null = null;
   let prevActiveIdForExpanded: number | null = null;
+  let analysisConfig: AnalysisConfig | null = null;
+  let analysisPanelOpen = false;
+  let analysisSaving = false;
+  let analysisAsset: AssetAnalysis | null = null;
 
   $: activePortfolio = portfolios.find((p) => p.id === activeId) ?? null;
   $: if (activePortfolio && !editingPortfolioName) {
@@ -336,6 +348,44 @@
     editingPosition = null;
   }
 
+  async function ensureAnalysisConfig() {
+    if (analysisConfig) return;
+    analysisConfig = await getStockBrConfig();
+  }
+
+  async function handleClassifyAsset(asset: Asset) {
+    error = '';
+    message = '';
+    try {
+      await ensureAnalysisConfig();
+      analysisAsset = await getAssetAnalysis(asset.id);
+      analysisPanelOpen = true;
+    } catch (err) {
+      error = parseApiError(err, 'Não foi possível abrir a classificação.');
+    }
+  }
+
+  function handleCloseAnalysisPanel() {
+    analysisPanelOpen = false;
+    analysisAsset = null;
+  }
+
+  async function handleSaveAnalysisScores(scores: Record<string, number | null>) {
+    if (!analysisAsset) return;
+    analysisSaving = true;
+    error = '';
+    message = '';
+    try {
+      analysisAsset = await saveAssetAnalysisScores(analysisAsset.asset_id, scores);
+      analysisPanelOpen = false;
+      message = 'Classificação salva.';
+    } catch (err) {
+      error = parseApiError(err, 'Não foi possível salvar a classificação.');
+    } finally {
+      analysisSaving = false;
+    }
+  }
+
   async function handleRefreshQuotes() {
     if (!activeId) {
       return;
@@ -435,7 +485,7 @@
 
 <main class="min-h-screen w-full bg-base-200">
 
-  <div class="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 py-8">
+  <div class="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-8">
     <section
       class="w-full min-w-0 rounded-box bg-gradient-to-r from-secondary to-accent px-6 py-10 text-secondary-content"
     >
@@ -636,7 +686,7 @@
               <p class="mt-4 text-sm text-base-content/60">Nenhuma posição corresponde à busca.</p>
             {:else}
             <div class="mt-4 overflow-x-auto">
-              <table class="table table-zebra">
+              <table class="table table-zebra w-full min-w-[58rem]">
                 <thead>
                   <tr>
                     <th>
@@ -735,7 +785,7 @@
                         {/if}
                       </button>
                     </th>
-                    <th></th>
+                    <th class="min-w-[18rem] whitespace-nowrap">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -759,7 +809,7 @@
                       </td>
                       <td>{usesManualPositionValues(asset) ? position.contracted_yield || '—' : '—'}</td>
                       <td>{formatPositionProfit(position, asset)}</td>
-                      <td class="space-x-1 whitespace-nowrap">
+                      <td class="min-w-[18rem] space-x-1 whitespace-nowrap">
                         <button
                           class="btn btn-ghost btn-xs"
                           type="button"
@@ -772,6 +822,13 @@
                           type="button"
                           on:click={() => handleEditPosition(position)}>Editar</button
                         >
+                        {#if asset.display_class === 'stocks'}
+                          <button
+                            class="btn btn-ghost btn-xs"
+                            type="button"
+                            on:click={() => handleClassifyAsset(asset)}>Classificar</button
+                          >
+                        {/if}
                         <button
                           class="btn btn-ghost btn-xs text-error"
                           type="button"
@@ -833,5 +890,17 @@
         message = 'Posição atualizada.';
       }
     }}
+  />
+
+  <AssetAnalysisPanel
+    open={analysisPanelOpen}
+    symbol={analysisAsset?.symbol ?? ''}
+    name={analysisAsset?.name ?? ''}
+    assetType={analysisAsset?.asset_type ?? ''}
+  criteria={analysisConfig?.criteria ?? []}
+  scores={analysisAsset?.scores ?? {}}
+    loading={analysisSaving}
+    onSave={handleSaveAnalysisScores}
+    onClose={handleCloseAnalysisPanel}
   />
 </main>

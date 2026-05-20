@@ -58,7 +58,11 @@ function pushIf(items: PositionDetailItem[], label: string, value: string, hint?
 export function buildPositionDetailSections(
   position: Position,
   asset: Asset,
-  options?: { usdBrlRate?: number | null; showBrlEquivalentHints?: boolean }
+  options?: {
+    usdBrlRate?: number | null;
+    showBrlEquivalentHints?: boolean;
+    dividendsSummary?: string;
+  }
 ): PositionDetailSections {
   const usdBrlRate = options?.usdBrlRate;
   const brlHints = options?.showBrlEquivalentHints === true;
@@ -154,6 +158,6 @@ export function buildPositionDetailSections(
     totals,
     metadata,
     dividendsLabel: 'Dividendos recebidos',
-    dividendsValue: 'Em breve'
+    dividendsValue: options?.dividendsSummary ?? 'Em breve'
   };
 }

@@ -5,7 +5,14 @@ from sqlmodel import Session, SQLModel, create_engine
 
 import app.models  # noqa: F401
 from app.core.config import settings
+from app.models.analysis import (
+    AnalysisCriterionDefinition,
+    AnalysisProfileSettings,
+    AnalysisViabilityRule,
+    AssetAnalysisScore,
+)
 from app.models.asset import Asset
+from app.models.dividend_payment import DividendPayment
 from app.models.portfolio import AppPreference, Portfolio
 from app.models.position import Position
 
@@ -19,7 +26,14 @@ portfolios_engine = create_engine(
     connect_args={"check_same_thread": False},
 )
 
-ASSET_TABLES = [Asset.__table__]
+ASSET_TABLES = [
+    Asset.__table__,
+    DividendPayment.__table__,
+    AnalysisCriterionDefinition.__table__,
+    AnalysisProfileSettings.__table__,
+    AnalysisViabilityRule.__table__,
+    AssetAnalysisScore.__table__,
+]
 PORTFOLIO_TABLES = [
     Portfolio.__table__,
     Position.__table__,

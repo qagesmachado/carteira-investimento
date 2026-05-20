@@ -4,7 +4,9 @@ Este documento traduz a planilha em módulos e telas possíveis para uma aplica�
 
 ## 1. Dashboard inicial
 
-Detalhamento: [Dashboard inicial](dashboard-inicial.md).
+Detalhamento: [Dashboard inicial](dashboard-inicial.md) · **Implementado (Tier 1+2):** [desenvolvido/dashboard-inicial.md](desenvolvido/dashboard-inicial.md) · **Futuro:** [candidato/dashboard-tier-3.md](candidato/dashboard-tier-3.md)
+
+**Status:** parcial — rota `/dashboard` com patrimônio, alocação, proventos agregados e drill-down. Rebalanceamento, evolução patrimonial e multi-carteira permanecem candidatos (Tier 3).
 
 Origem na planilha:
 
@@ -215,36 +217,27 @@ Possíveis telas:
 
 ## 8. Análise de ativos
 
+**Status:** parcialmente implementado — [classificacao-ativos-acoes-br.md](desenvolvido/classificacao-ativos-acoes-br.md) (Ações/ETF BR + DIAGRAMA AÇÕES + configuração).
+
 Origem na planilha:
 
-- `Análise de açõesetf br`
-- `Análise etf`
-- `Análise de fundos`
-- `DIAGRAMA AÇÕES`
-- `DIAGRAMA FIIS`
-- `Perguntas`
+- `Análise de açõesetf br` — **MVP**
+- `DIAGRAMA AÇÕES` — **MVP**
+- `Análise etf`, `Análise de fundos`, `DIAGRAMA FIIS`, `Perguntas` — candidato
 
 Objetivo: apoiar decisão de investimento com critérios e pontuações.
 
-Funcionalidades:
+Funcionalidades (MVP entregue):
 
-- Cadastrar critérios de análise.
-- Cadastrar perguntas por tipo de ativo.
-- Responder checklist de ações.
-- Responder checklist de FIIs.
-- Calcular pontuação.
-- Definir viabilidade.
-- Definir percentual desejado.
-- Registrar preço teto ou valor máximo.
-- Comparar análise com posição atual.
+- Critérios fundamentais (lucros, dívida, tag along, segmento) com scores 1–5.
+- Questionário DIAGRAMA AÇÕES configurável.
+- Viabilidade calculada por motor editável (pesos e faixas na UI).
+- Telas `/analise/acoes-br`, `/analise/configuracao`.
+- Atalho Classificar em carteiras.
 
-Possíveis telas:
+Funcionalidades (fases posteriores):
 
-- Critérios e perguntas.
-- Análise de ações.
-- Análise de FIIs.
-- Análise de ETFs.
-- Ranking de ativos.
+- FIIs, ETF internacional, % desejado, preço teto, ranking global.
 
 ## 9. Renda fixa
 

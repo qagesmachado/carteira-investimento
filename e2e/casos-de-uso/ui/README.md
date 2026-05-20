@@ -7,6 +7,8 @@ Documentação organizada por página, na ordem **1 → 2 → 3**:
 | 1 | [`assets/`](assets/README.md) | `/assets` |
 | 2 | [`portfolios/`](portfolios/README.md) | `/portfolios` |
 | 3 | [`consolidada/`](consolidada/README.md) | `/portfolios/consolidada` |
+| 4 | [`proventos/`](proventos/README.md) | `/proventos` |
+| 5 | [`dashboard/`](dashboard/README.md) | `/dashboard` |
 
 Ver também [`../dependencias.md`](../dependencias.md) (bases `data/test/*.db`).
 

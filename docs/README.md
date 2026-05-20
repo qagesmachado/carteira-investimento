@@ -10,6 +10,11 @@ Neste momento não há decisão de stack, banco de dados, framework ou arquitetu
 - [Análise aba a aba](planilha/abas.md): objetivo, campos principais, dependências e possível representação de cada aba em uma aplicação.
 - [Arquitetura funcional](arquitetura/arquitetura-funcional.md): domínios, entidades conceituais e fluxos funcionais observados.
 - [Funcionalidades candidatas](produto/funcionalidades.md): módulos, telas e capacidades que a aplicação pode oferecer.
+- [Cadastro de proventos](produto/desenvolvido/cadastro-proventos.md): lançamentos de dividendos e proventos por ativo (implementado).
+- [Dashboard inicial (Tier 1+2)](produto/desenvolvido/dashboard-inicial.md): visão executiva em `/dashboard` (implementado).
+- [Classificação de ativos — Ações/ETF BR](produto/desenvolvido/classificacao-ativos-acoes-br.md): análise fundamentalista e diagrama (implementado).
+- [Dashboard Tier 3 (candidato)](produto/candidato/dashboard-tier-3.md): rebalanceamento, evolução patrimonial, multi-carteira (não implementado).
+- [Módulos Tier 4 (candidato)](produto/candidato/modulos-tier-4.md): rebalanceamento dedicado, análise, simulações, IR (não implementado).
 
 ## Princípios da documentação
 

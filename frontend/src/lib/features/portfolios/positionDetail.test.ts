@@ -97,4 +97,11 @@ describe('buildPositionDetailSections', () => {
     const avg = sections.pricing.find((i) => i.label === 'Preço médio de compra');
     expect(avg?.hint).toBeUndefined();
   });
+
+  it('usa resumo de proventos quando informado', () => {
+    const sections = buildPositionDetailSections(stockPosition, stockAsset, {
+      dividendsSummary: 'R$ 150,50 (2 lançamentos)'
+    });
+    expect(sections.dividendsValue).toBe('R$ 150,50 (2 lançamentos)');
+  });
 });

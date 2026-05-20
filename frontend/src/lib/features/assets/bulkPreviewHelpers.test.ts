@@ -77,4 +77,15 @@ describe('bulkPreviewHelpers', () => {
     expect(canSelectPreviewItem(etfRow, {})).toBe(false);
     expect(rowStatusForPreviewItem(etfRow, {})).toBe('ETF nacional: informe subtipo');
   });
+
+  it('marca ticker não encontrado no yfinance', () => {
+    const missingRow = item({
+      symbol: 'GUAR3',
+      lookup: null,
+      error: 'Ativo não encontrado no yfinance: GUAR3'
+    });
+
+    expect(canSelectPreviewItem(missingRow, {})).toBe(false);
+    expect(rowStatusForPreviewItem(missingRow, {})).toBe('Não encontrado');
+  });
 });

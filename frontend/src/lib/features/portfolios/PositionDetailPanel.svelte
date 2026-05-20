@@ -8,12 +8,15 @@
   export let asset: Asset;
   export let usdBrlRate: number | null | undefined = undefined;
   export let panelId = 'position-detail-panel';
+  /** Resumo de proventos do ativo (somente consolidada). */
+  export let dividendsSummary: string | undefined = undefined;
   /** `portfolio`: /portfolios — sem hints BRL; `consolidated`: /portfolios/consolidada */
   export let variant: 'portfolio' | 'consolidated' = 'portfolio';
 
   $: sections = buildPositionDetailSections(position, asset, {
     usdBrlRate: variant === 'consolidated' ? usdBrlRate : undefined,
-    showBrlEquivalentHints: variant === 'consolidated'
+    showBrlEquivalentHints: variant === 'consolidated',
+    dividendsSummary: variant === 'consolidated' ? dividendsSummary : undefined
   });
 
   $: isConsolidated = variant === 'consolidated';

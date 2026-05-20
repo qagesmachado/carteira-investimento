@@ -12,6 +12,8 @@ import {
   positionInvestedValue,
   usesManualPositionValues,
   shouldShowNativeCurrencyHint,
+  shouldShowBrlEquivalentHint,
+  brlEquivalentHintLabel,
   valueInBrl
 } from './positionMetrics';
 
@@ -123,5 +125,13 @@ describe('positionMetrics', () => {
     expect(shouldShowNativeCurrencyHint(stockAsset, 100)).toBe(true);
     expect(shouldShowNativeCurrencyHint(stockAsset, null)).toBe(false);
     expect(shouldShowNativeCurrencyHint(fixedIncomeAsset, 100)).toBe(false);
+  });
+
+  it('exibe dica de equivalente BRL para posições em USD', () => {
+    expect(shouldShowBrlEquivalentHint(stockAsset, 550)).toBe(true);
+    expect(shouldShowBrlEquivalentHint(stockAsset, null)).toBe(false);
+    expect(shouldShowBrlEquivalentHint(fixedIncomeAsset, 550)).toBe(false);
+    expect(brlEquivalentHintLabel(1234.56)).toContain('Equivalente em reais');
+    expect(brlEquivalentHintLabel(1234.56)).toContain('R$');
   });
 });

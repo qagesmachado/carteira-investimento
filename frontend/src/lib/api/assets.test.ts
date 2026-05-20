@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createAsset, deleteAsset, listAssets, lookupAsset, updateAsset } from './assets';
+import { API_BASE_URL } from './config';
 
 describe('assets api client', () => {
   it('busca ativo por símbolo', async () => {
@@ -12,7 +13,7 @@ describe('assets api client', () => {
     await expect(lookupAsset('petr4.sa', fetcher as unknown as typeof fetch)).resolves.toMatchObject({
       symbol: 'PETR4.SA'
     });
-    expect(fetcher).toHaveBeenCalledWith('http://127.0.0.1:8000/assets/lookup?symbol=petr4.sa');
+    expect(fetcher).toHaveBeenCalledWith(`${API_BASE_URL}/assets/lookup?symbol=petr4.sa`);
   });
 
   it('cria ativo na base', async () => {
@@ -58,7 +59,7 @@ describe('assets api client', () => {
     });
 
     expect(fetcher).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/assets/2',
+      `${API_BASE_URL}/assets/2`,
       expect.objectContaining({ method: 'PATCH' })
     );
   });
@@ -70,6 +71,6 @@ describe('assets api client', () => {
     });
 
     await expect(deleteAsset(5, fetcher as unknown as typeof fetch)).resolves.toBeUndefined();
-    expect(fetcher).toHaveBeenCalledWith('http://127.0.0.1:8000/assets/5', { method: 'DELETE' });
+    expect(fetcher).toHaveBeenCalledWith(`${API_BASE_URL}/assets/5`, { method: 'DELETE' });
   });
 });

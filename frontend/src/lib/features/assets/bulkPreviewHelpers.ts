@@ -7,6 +7,14 @@ import {
 import { formatAssetTypeForDisplay, formatCurrencyCodeForDisplay } from '$lib/assetLabels';
 import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
+export function isNotFoundPreviewError(error: string | null | undefined): boolean {
+  if (!error) {
+    return false;
+  }
+  const lower = error.toLowerCase();
+  return lower.includes('não encontrado') || lower.includes('not found') || lower.includes('quote not found');
+}
+
 export function getPayloadForPreviewItem(
   item: BulkPreviewItem,
   draftBySymbol: Record<string, AssetCreate>
@@ -110,7 +118,7 @@ export function rowStatusForPreviewItem(
     return 'Já cadastrado';
   }
   if (item.error) {
-    return 'Erro na busca';
+    return isNotFoundPreviewError(item.error) ? 'Não encontrado' : 'Erro na busca';
   }
   const payload = getPayloadForPreviewItem(item, draftBySymbol);
   if (!payload) {

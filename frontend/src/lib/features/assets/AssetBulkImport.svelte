@@ -13,7 +13,7 @@
   } from './bulkPreviewHelpers';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import BulkPreviewEditModal from './BulkPreviewEditModal.svelte';
-  import { parseSymbolListFromFileContent, parseSymbolListFromText } from './parseSymbolList';
+  import { parseSymbolListFromFileContent, parseSymbolListFromText, formatSymbolListForDisplay } from './parseSymbolList';
 
   export let onSaved: () => void | Promise<void> = () => undefined;
 
@@ -28,6 +28,7 @@
   let loadingSave = false;
   let message = '';
   let error = '';
+  let warning = '';
 
   let modalOpen = false;
   let editingSymbol = '';
@@ -35,29 +36,40 @@
 
   $: previewTableRows = buildPreviewTableRows(previewItems, draftBySymbol);
 
-  function parseInput() {
+  function duplicateMessage(duplicateCount: number): string {
+    return duplicateCount > 0 ? ` ${duplicateCount} duplicata(s) removida(s).` : '';
+  }
+
+  function parseInput(): number {
+    const originalText = pasteText;
     const fromText = parseSymbolListFromText(pasteText);
     parsedSymbols = fromText.symbols;
     previewItems = [];
     draftBySymbol = {};
     selected = new Set();
+    if (parsedSymbols.length > 0) {
+      pasteText = formatSymbolListForDisplay(parsedSymbols, originalText);
+    }
+    const dupNote = duplicateMessage(fromText.duplicateCount);
     message =
       parsedSymbols.length > 0
-        ? `${parsedSymbols.length} ticker(s) identificado(s). Busque no yfinance para pré-visualizar.`
+        ? `${parsedSymbols.length} ticker(s) identificado(s).${dupNote} Busque no yfinance para pré-visualizar.`
         : 'Nenhum ticker válido encontrado.';
     error = '';
+    return fromText.duplicateCount;
   }
 
   async function processSelectedFile(file: File) {
     const content = await file.text();
     const parsed = parseSymbolListFromFileContent(content, file.name);
     parsedSymbols = parsed.symbols;
-    pasteText = parsedSymbols.join(', ');
+    pasteText = formatSymbolListForDisplay(parsedSymbols, content);
     previewItems = [];
     draftBySymbol = {};
     selected = new Set();
     selectedFileName = file.name;
-    message = `${parsedSymbols.length} ticker(s) no arquivo «${file.name}». Busque no yfinance para pré-visualizar.`;
+    const dupNote = duplicateMessage(parsed.duplicateCount);
+    message = `${parsedSymbols.length} ticker(s) no arquivo «${file.name}».${dupNote} Busque no yfinance para pré-visualizar.`;
     error = '';
   }
 
@@ -95,17 +107,17 @@
   }
 
   async function fetchPreview() {
+    const duplicateCount = parseInput();
     if (parsedSymbols.length === 0) {
-      parseInput();
-    }
-    if (parsedSymbols.length === 0) {
-      error = 'Informe ao menos um ticker.';
+      error = 'Informe ao menos uma linha válida para pré-visualizar.';
+      message = '';
       return;
     }
 
     loadingPreview = true;
     error = '';
-    message = '';
+    warning = '';
+    message = duplicateCount > 0 ? `${duplicateCount} duplicata(s) removida(s) antes da busca.` : '';
 
     try {
       const response = await previewBulkAssets(parsedSymbols);
@@ -114,7 +126,11 @@
       selected = new Set(
         previewItems.filter((item) => canSelectPreviewItem(item, draftBySymbol)).map((item) => item.symbol)
       );
-      message = `Pré-visualização de ${previewItems.length} ticker(s).`;
+      const readyCount = previewItems.filter((item) => canSelectPreviewItem(item, draftBySymbol)).length;
+      message = `Pré-visualização de ${previewItems.length} ticker(s) (${readyCount} prontos para importar).${
+        duplicateCount > 0 ? ` (${duplicateCount} duplicata(s) removida(s) antes da busca.)` : ''
+      }`;
+      warning = (response.warnings ?? []).join(' ');
     } catch {
       error = 'Não foi possível buscar os ativos em lote.';
     } finally {
@@ -256,6 +272,7 @@
     </div>
 
     <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
+    <DismissibleAlert text={warning} variant="warning" on:dismiss={() => (warning = '')} />
     <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
 
     {#if previewItems.length > 0}

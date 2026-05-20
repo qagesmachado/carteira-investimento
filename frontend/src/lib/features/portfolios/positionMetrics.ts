@@ -128,6 +128,21 @@ export function nativeCurrencyHintLabel(
   return `Moeda original — ${formatMoneyAmount(nativeValue, currency)} (${formatCurrencyCodeForDisplay(currency)})`;
 }
 
+/** Posição em USD com equivalente BRL — exibir ícone com tooltip na tabela consolidada. */
+export function shouldShowBrlEquivalentHint(
+  asset: { currency?: string },
+  brlValue: number | null | undefined
+): boolean {
+  if (brlValue == null) {
+    return false;
+  }
+  return asset.currency?.trim().toUpperCase() === 'USD';
+}
+
+export function brlEquivalentHintLabel(brlValue: number): string {
+  return `Equivalente em reais — ${formatMoneyAmount(brlValue, 'BRL')}`;
+}
+
 export function computePortfolioSummary(
   positions: Position[],
   assetById: Record<number, Asset>

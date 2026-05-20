@@ -1,5 +1,6 @@
 from datetime import date
 
+from pydantic import Field
 from sqlmodel import SQLModel
 
 from app.models.asset import (
@@ -98,6 +99,7 @@ class BulkPreviewItem(SQLModel):
 
 class BulkPreviewResponse(SQLModel):
     items: list[BulkPreviewItem]
+    warnings: list[str] = Field(default_factory=list)
 
 
 class BulkCreateRequest(SQLModel):

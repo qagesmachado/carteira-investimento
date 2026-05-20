@@ -31,6 +31,10 @@ frontend/.vite/
 # Excel
 Investimento_controle.xlsx
 *.xlsx
+import-local-proventos
 
 # Catálogo pessoal (opcional; o repositório versiona backend/seed/assets.json)
 backend/seed/assets.local.json
+
+# testes
+test-reports

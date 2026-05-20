@@ -25,7 +25,8 @@ Seed via API no `beforeEach` de cada spec (não depende da suíte UI de portfoli
 | `UI-CNS-014` | [14-filtro-classe-nacional.md](14-filtro-classe-nacional.md) | implementado | `14-filtro-classe-nacional.spec.ts` |
 | `UI-CNS-015` | [15-limpar-filtro-restaura-linhas.md](15-limpar-filtro-restaura-linhas.md) | implementado | `15-limpar-filtro-restaura-linhas.spec.ts` |
 | `UI-CNS-016` | [16-detalhes-posicao-precos.md](16-detalhes-posicao-precos.md) | implementado | `16-detalhes-posicao-precos.spec.ts` |
+| `UI-CNS-017` | [17-proventos-no-detalhe.md](17-proventos-no-detalhe.md) | rascunho | — |
 
 Caminho completo: `e2e/specs/consolidada/`.
 
-**Total:** 16 casos · **16 specs** · ETF RF no caso 006: **`AUVP11`**
+**Total:** 17 casos · **16 specs** · ETF RF no caso 006: **`AUVP11`**

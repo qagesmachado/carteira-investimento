@@ -16,6 +16,13 @@ describe('parseSymbolList', () => {
   it('parseia texto separado por vírgula', () => {
     const result = parseSymbolListFromText('petr4, bbse3, PETR4');
     expect(result.symbols).toEqual(['PETR4', 'BBSE3']);
+    expect(result.duplicateCount).toBe(1);
+  });
+
+  it('conta duplicatas em lista multilinha', () => {
+    const result = parseSymbolListFromText('HSML11\nHGRU11\nHSML11\nHGRU11\nKNRI11');
+    expect(result.symbols).toEqual(['HSML11', 'HGRU11', 'KNRI11']);
+    expect(result.duplicateCount).toBe(2);
   });
 
   it('parseia CSV com cabeçalho symbol', () => {

@@ -153,6 +153,27 @@ def _lookup_result_to_read(result: object) -> AssetLookupRead:
     )
 
 
+def _is_lookup_not_found_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return any(token in message for token in ("not found", "quote not found", "404"))
+
+
+def _lookup_not_found_message(symbol: str) -> str:
+    return f"Ativo não encontrado no yfinance: {symbol}"
+
+
+def _build_not_found_warning(symbols: list[str]) -> str:
+    max_listed = 15
+    if len(symbols) <= max_listed:
+        listed = ", ".join(symbols)
+    else:
+        listed = ", ".join(symbols[:max_listed]) + f" e mais {len(symbols) - max_listed}"
+    return (
+        "Alguns tickers não foram encontrados no yfinance (podem ter sido descontinuados): "
+        f"{listed}."
+    )
+
+
 def preview_bulk_assets(
     session: Session,
     symbols: list[str],
@@ -160,6 +181,7 @@ def preview_bulk_assets(
 ) -> BulkPreviewResponse:
     seen: set[str] = set()
     items: list[BulkPreviewItem] = []
+    not_found_symbols: list[str] = []
 
     for raw in symbols:
         symbol = normalize_symbol(raw)
@@ -178,6 +200,17 @@ def preview_bulk_assets(
             lookup = _lookup_result_to_read(provider.lookup(symbol))
             items.append(BulkPreviewItem(symbol=symbol, lookup=lookup, already_in_db=False))
         except Exception as exc:
+            if _is_lookup_not_found_error(exc):
+                not_found_symbols.append(symbol)
+                items.append(
+                    BulkPreviewItem(
+                        symbol=symbol,
+                        error=_lookup_not_found_message(symbol),
+                        already_in_db=False,
+                    ),
+                )
+                continue
+
             items.append(
                 BulkPreviewItem(
                     symbol=symbol,
@@ -186,7 +219,11 @@ def preview_bulk_assets(
                 ),
             )
 
-    return BulkPreviewResponse(items=items)
+    warnings: list[str] = []
+    if not_found_symbols:
+        warnings.append(_build_not_found_warning(not_found_symbols))
+
+    return BulkPreviewResponse(items=items, warnings=warnings)
 
 
 def create_bulk_assets(session: Session, payloads: list[AssetCreate]) -> BulkCreateResponse:
@@ -235,6 +272,14 @@ def create_bulk_assets(session: Session, payloads: list[AssetCreate]) -> BulkCre
 
 def get_asset_by_id(session: Session, asset_id: int) -> Asset | None:
     return session.get(Asset, asset_id)
+
+
+def get_asset_by_symbol(session: Session, symbol: str) -> Asset | None:
+    keys = _symbol_keys(symbol)
+    for asset in session.exec(select(Asset)).all():
+        if _symbol_keys(asset.symbol) & keys:
+            return asset
+    return None
 
 
 def update_asset(session: Session, asset_id: int, payload: AssetUpdate) -> Asset:

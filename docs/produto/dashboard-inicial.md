@@ -1,5 +1,13 @@
 # Dashboard Inicial
 
+## Status de implementação
+
+| Escopo | Status | Documentação |
+| ------ | ------ | ------------ |
+| Tier 1 + 2 (`/dashboard`) | **Implementado** | [desenvolvido/dashboard-inicial.md](desenvolvido/dashboard-inicial.md) |
+| Tier 3 (extensões) | Candidato | [candidato/dashboard-tier-3.md](candidato/dashboard-tier-3.md) |
+| Tier 4 (módulos separados) | Candidato | [candidato/modulos-tier-4.md](candidato/modulos-tier-4.md) |
+
 ## Objetivo
 
 Oferecer uma visão executiva da carteira de investimentos selecionada, respondendo rapidamente: quanto tenho, como está distribuído, quanto recebi de proventos, como evoluiu meu patrimônio e onde devo aportar para manter a estratégia.
