@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "exported_at": "2026-05-19T12:00:00.000Z",
+  "portfolio": {
+    "name": "E2E Import Test",
+    "base_currency": "BRL",
+    "status": "active"
+  },
+  "assets": [
+    {
+      "symbol": "BBSE3",
+      "name": "BB Seguridade Participações S.A.",
+      "asset_type": "stock",
+      "market": "national",
+      "country": "BR",
+      "currency": "BRL",
+      "sector": "Finance"
+    },
+    {
+      "symbol": "VOO",
+      "name": "Vanguard S&P 500 ETF",
+      "asset_type": "etf",
+      "market": "international",
+      "country": "US",
+      "currency": "USD",
+      "sector": "Equity"
+    }
+  ],
+  "positions": [
+    {
+      "symbol": "BBSE3",
+      "quantity": 25,
+      "average_price": 31.5,
+      "status": "active"
+    },
+    {
+      "symbol": "VOO",
+      "quantity": 2,
+      "average_price": 410,
+      "status": "active"
+    }
+  ]
+}

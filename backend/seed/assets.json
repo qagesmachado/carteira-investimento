@@ -1,0 +1,102 @@
+[
+  {
+    "symbol": "BBSE3",
+    "name": "BB Seguridade Participações S.A.",
+    "asset_type": "stock",
+    "market": "national",
+    "country": "BR",
+    "currency": "BRL",
+    "sector": "Financial Services",
+    "quote_source": "yfinance"
+  },
+  {
+    "symbol": "ITSA4",
+    "name": "Itaúsa S.A.",
+    "asset_type": "stock",
+    "market": "national",
+    "country": "BR",
+    "currency": "BRL",
+    "sector": "Financial Services",
+    "quote_source": "yfinance"
+  },
+  {
+    "symbol": "FLRY3",
+    "name": "Fleury S.A.",
+    "asset_type": "stock",
+    "market": "national",
+    "country": "BR",
+    "currency": "BRL",
+    "sector": "Healthcare",
+    "quote_source": "yfinance"
+  },
+  {
+    "symbol": "KLBN11",
+    "name": "Klabin S.A.",
+    "asset_type": "stock",
+    "market": "national",
+    "country": "BR",
+    "currency": "BRL",
+    "sector": "Basic Materials",
+    "quote_source": "yfinance"
+  },
+  {
+    "symbol": "AUVP11",
+    "name": "BTG Pactual Teva Auvp Acoes Fundamentos Fundo De Indice",
+    "asset_type": "etf",
+    "market": "national",
+    "country": "BR",
+    "currency": "BRL",
+    "etf_subtype": "variable_income",
+    "quote_source": "yfinance"
+  },
+  {
+    "symbol": "AUPO11",
+    "name": "BTG Pactual Teva Auvp Itbr Liquidez Fundo De Indice",
+    "asset_type": "etf",
+    "market": "national",
+    "country": "BR",
+    "currency": "BRL",
+    "etf_subtype": "fixed_income",
+    "quote_source": "yfinance"
+  },
+  {
+    "symbol": "VOO",
+    "name": "Vanguard S&P 500 ETF",
+    "asset_type": "etf",
+    "market": "international",
+    "country": "US",
+    "currency": "USD",
+    "sector": "Equity",
+    "quote_source": "yfinance"
+  },
+  {
+    "symbol": "BTC-USD",
+    "name": "Bitcoin USD",
+    "asset_type": "crypto",
+    "market": "international",
+    "country": "US",
+    "currency": "USD",
+    "quote_source": "yfinance"
+  },
+  {
+    "symbol": "E2E-CDB-BTG-2028",
+    "name": "CDB Banco BTG — IPCA + 8,40% a.a. (exemplo)",
+    "asset_type": "fixed_income",
+    "market": "national",
+    "country": "BR",
+    "currency": "BRL",
+    "fixed_income_indexer": "ipca_plus",
+    "fixed_income_yield_description": "IPCA + 8,4% a.a.",
+    "fixed_income_title_type": "cdb",
+    "maturity_date": "2028-12-31",
+    "purchase_date": "2024-01-15"
+  },
+  {
+    "symbol": "E2E-PGBL-001",
+    "name": "Plano PGBL exemplo",
+    "asset_type": "pension",
+    "market": "national",
+    "country": "BR",
+    "currency": "BRL"
+  }
+]

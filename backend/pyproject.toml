@@ -1,0 +1,21 @@
+[project]
+name = "carteira-investimento-backend"
+version = "0.1.0"
+description = "Backend local para controle de carteira de investimentos."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "httpx",
+    "sqlmodel",
+    "uvicorn[standard]",
+    "yfinance",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

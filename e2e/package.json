@@ -1,0 +1,15 @@
+{
+  "name": "carteira-investimento-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "pretest:ui": "node ./scripts/reset-test-db.js",
+    "test:ui": "playwright test --project=ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.1",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.6.3"
+  }
+}

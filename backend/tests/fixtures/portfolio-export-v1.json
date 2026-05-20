@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "exported_at": "2026-05-15T12:00:00",
+  "portfolio": {
+    "name": "Carteira Teste Import",
+    "description": "Import fixture",
+    "base_currency": "BRL",
+    "status": "active"
+  },
+  "assets": [
+    {
+      "symbol": "IMPT1",
+      "name": "Import One",
+      "asset_type": "stock",
+      "market": "national",
+      "currency": "BRL"
+    }
+  ],
+  "positions": [
+    {
+      "symbol": "IMPT1",
+      "quantity": 50,
+      "average_price": 10.5,
+      "status": "active"
+    }
+  ]
+}

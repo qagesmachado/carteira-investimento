@@ -1,0 +1,64 @@
+---
+description: TDD, DRY/KISS e execução da suíte completa de testes (unitários + E2E)
+alwaysApply: true
+---
+
+# Testes — criação e execução
+
+## TDD (obrigatório)
+
+1. **Vermelho** — escrever ou atualizar o teste que descreve o comportamento desejado (falha esperada).
+2. **Verde** — implementar o mínimo de código de produção para o teste passar.
+3. **Refatorar** — melhorar sem mudar comportamento; testes continuam verdes.
+
+- Não entregar feature ou correção de bug **sem** teste que cubra o comportamento novo ou alterado.
+- Não “adiar” teste para depois do merge; o teste guia o desenho da API/UI.
+
+## DRY e KISS
+
+- **DRY:** extrair helpers compartilhados em vez de copiar passos Playwright ou asserts repetidos.
+  - E2E: `e2e/specs/helpers/` (seed, páginas, fluxos).
+  - Frontend: utilitários de teste já usados em `*.test.ts` vizinhos ao código.
+  - Backend: fixtures em `backend/tests/conftest.py` (ou equivalente), não duplicar setup HTTP.
+- **KISS:** um cenário por teste; nomes que descrevem comportamento; evitar abstrações genéricas só usadas uma vez.
+- Preferir dados mínimos no arrange; não montar cenários gigantes quando um helper + 2–3 campos bastam.
+
+## Suítes do projeto
+
+| Camada | Onde | Suíte completa |
+| ------ | ---- | -------------- |
+| API (unit/integration HTTP) | `backend/tests/` | `cd backend` → `python -m pytest` |
+| Frontend (unit) | `frontend/src/**/*.test.ts` | `cd frontend` → `npm test` |
+| Unitários (ambos) | raiz | `npm run test:unit` |
+| E2E UI (Playwright, cenário real) | `e2e/specs/` | `cd e2e` → `npm run test:ui` |
+| Tudo | raiz | `npm run test:all` |
+
+Documentação: `README.md`, `e2e/README.md`, `e2e/casos-de-uso/`.
+
+## Execução — sempre a suíte inteira
+
+Ao **validar** alterações (após implementar, refatorar ou corrigir testes):
+
+- **Nunca** usar um único arquivo ou pasta como prova final, exceto no ciclo TDD local (red/green) dentro da mesma tarefa.
+- Ao **concluir** a tarefa, rodar **todas** as suítes afetadas pela mudança:
+  - Mudou backend ou contrato HTTP → suíte completa `pytest` (via `npm run test:unit` ou `python -m pytest` em `backend/`).
+  - Mudou frontend → suíte completa Vitest (`npm test` em `frontend/` ou `npm run test:unit`).
+  - Mudou UI, fluxos E2E ou specs → **`cd e2e` → `npm run test:ui`** (53 specs: assets + portfolios + consolidada), não só uma pasta.
+  - Mudança transversal → `npm run test:all` na raiz.
+
+Preferir scripts npm (`npm run test:ui`) para disparar `pretest:ui` (reset do DB em `backend/data/test/`). Evitar `npx playwright test` direto sem o hook de pré-teste.
+
+Reportar no fim: quais comandos rodou e se passaram. Se E2E falhar por rede (yfinance), indicar skip de rede e sugerir nova execução quando estável.
+
+## E2E — especificação antes do código
+
+1. Caso de uso em `e2e/casos-de-uso/` (template `_template.md`, status `aprovado` antes de automatizar).
+2. Spec em `e2e/specs/{assets|portfolios|consolidada}/` alinhado ao ID (`UI-AST`, `UI-PRT`, `UI-CNS`).
+3. Cenário real: API 8001, frontend 5174, lookup yfinance — ver `e2e/casos-de-uso/estrategia-e2e-ui.md`.
+
+## O que evitar
+
+- Commitar código de produção sem teste correspondente.
+- Duplicar seletores/fluxos Playwright; usar helpers existentes.
+- Marcar tarefa como pronta após rodar só `specs/assets/02-….spec.ts` ou `pytest tests/test_foo.py` isolado.
+- Ignorar testes vermelhos ou deixar `test.only` / `describe.only` / `pytest -k` fixo no repositório.

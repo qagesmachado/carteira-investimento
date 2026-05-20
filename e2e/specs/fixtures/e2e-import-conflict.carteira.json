@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "exported_at": "2026-05-19T12:00:00.000Z",
+  "portfolio": {
+    "name": "E2E Import Conflito",
+    "base_currency": "BRL",
+    "status": "active"
+  },
+  "assets": [
+    {
+      "symbol": "BBSE3",
+      "name": "Nome Conflitante Import E2E",
+      "asset_type": "stock",
+      "market": "national",
+      "country": "BR",
+      "currency": "BRL",
+      "sector": "Outro setor"
+    }
+  ],
+  "positions": [
+    {
+      "symbol": "BBSE3",
+      "quantity": 5,
+      "average_price": 28,
+      "status": "active"
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+
+  import {
+    createAsset,
+    deleteAsset,
+    listAssets,
+    lookupAsset,
+    updateAsset,
+    type Asset,
+    type AssetCreate,
+    type AssetLookup,
+    type AssetUpdate
+  } from '$lib/api/assets';
+  import { parseApiError } from '$lib/api/parseApiError';
+  import AssetBulkImport from '$lib/features/assets/AssetBulkImport.svelte';
+  import AssetForm from '$lib/features/assets/AssetForm.svelte';
+  import AssetList from '$lib/features/assets/AssetList.svelte';
+  import AssetLookupForm from '$lib/features/assets/AssetLookupForm.svelte';
+  import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
+
+  let assets: Asset[] = [];
+  let lookupResult: AssetLookup | null = null;
+  let editingAsset: Asset | null = null;
+  let message = '';
+  let error = '';
+  let loadingLookup = false;
+  let loadingSave = false;
+  let manualFormKey = 0;
+
+  $: formAsset = editingAsset ?? lookupResult;
+  $: formMode = editingAsset ? 'edit' : 'create';
+
+  async function refreshAssets() {
+    assets = await listAssets();
+  }
+
+  async function handleLookup(symbol: string) {
+    loadingLookup = true;
+    error = '';
+    message = '';
+
+    try {
+      lookupResult = await lookupAsset(symbol);
+      editingAsset = null;
+      message = 'Ativo encontrado. Revise os dados antes de salvar.';
+    } catch {
+      error = 'Não foi possível buscar esse ativo. Você pode tentar outro ticker.';
+    } finally {
+      loadingLookup = false;
+    }
+  }
+
+  async function handleSave(payload: AssetCreate) {
+    loadingSave = true;
+    error = '';
+    message = '';
+
+    try {
+      await createAsset(payload);
+      await refreshAssets();
+      lookupResult = null;
+      message = 'Ativo salvo na base local.';
+    } catch (err) {
+      error = parseApiError(err, 'Não foi possível salvar o ativo. Revise os dados e tente novamente.');
+    } finally {
+      loadingSave = false;
+    }
+  }
+
+  async function handleUpdate(payload: AssetUpdate) {
+    if (!editingAsset) {
+      return;
+    }
+
+    loadingSave = true;
+    error = '';
+    message = '';
+
+    try {
+      await updateAsset(editingAsset.id, payload);
+      await refreshAssets();
+      editingAsset = null;
+      lookupResult = null;
+      message = 'Ativo atualizado na base local.';
+    } catch (err) {
+      error = parseApiError(err, 'Não foi possível atualizar o ativo. Revise os dados e tente novamente.');
+    } finally {
+      loadingSave = false;
+    }
+  }
+
+  function handleEdit(asset: Asset) {
+    editingAsset = asset;
+    lookupResult = null;
+    error = '';
+    message = '';
+  }
+
+  function cancelEdit() {
+    editingAsset = null;
+  }
+
+  function startManualAsset(assetType: 'fixed_income' | 'pension') {
+    editingAsset = null;
+    manualFormKey += 1;
+    lookupResult = {
+      symbol: '',
+      name: '',
+      asset_type: assetType,
+      market: 'national',
+      country: 'BR',
+      currency: 'BRL'
+    };
+    error = '';
+    message =
+      assetType === 'fixed_income'
+        ? 'Cadastro manual de renda fixa. Preencha identificador e descrição do produto.'
+        : 'Cadastro manual de previdência. Preencha identificador e descrição do plano.';
+  }
+
+  async function handleDelete(asset: Asset) {
+    const label = formatTickerForDisplay(asset.symbol);
+    if (!confirm(`Excluir ${label} da base local?`)) {
+      return;
+    }
+
+    error = '';
+    message = '';
+
+    try {
+      await deleteAsset(asset.id);
+      if (editingAsset?.id === asset.id) {
+        editingAsset = null;
+      }
+      await refreshAssets();
+      message = 'Ativo removido da base local.';
+    } catch {
+      error = 'Não foi possível excluir o ativo.';
+    }
+  }
+
+  onMount(() => {
+    refreshAssets().catch(() => {
+      error = 'Não foi possível carregar os ativos cadastrados.';
+    });
+  });
+</script>
+
+<svelte:head>
+  <title>Cadastro de ativos</title>
+</svelte:head>
+
+<main class="min-h-screen w-full bg-base-200">
+  <div class="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 py-8">
+    <section
+      class="w-full min-w-0 rounded-box bg-gradient-to-r from-primary to-secondary px-6 py-10 text-primary-content"
+    >
+      <h1 class="text-4xl font-bold">Cadastro de ativos no banco de dados</h1>
+    </section>
+
+    <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
+
+    <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
+
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <div class="flex flex-col gap-4">
+        <AssetLookupForm onLookup={handleLookup} loading={loadingLookup} />
+        <div class="card bg-base-100 shadow">
+          <div class="card-body gap-3">
+            <h2 class="card-title text-base">Cadastro manual</h2>
+            <p class="text-sm text-base-content/70">
+              Para CDB, LCI, LCA, Tesouro, previdência e similares — sem busca no yfinance.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                class="btn btn-outline btn-sm"
+                type="button"
+                disabled={loadingSave || loadingLookup}
+                on:click={() => startManualAsset('fixed_income')}
+              >
+                Nova renda fixa
+              </button>
+              <button
+                class="btn btn-outline btn-sm"
+                type="button"
+                disabled={loadingSave || loadingLookup}
+                on:click={() => startManualAsset('pension')}
+              >
+                Nova previdência
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {#key manualFormKey}
+        <AssetForm
+          asset={formAsset}
+          mode={formMode}
+          onSave={handleSave}
+          onUpdate={handleUpdate}
+          onCancel={formMode === 'edit' ? cancelEdit : undefined}
+          loading={loadingSave}
+        />
+      {/key}
+    </div>
+
+    <AssetBulkImport onSaved={refreshAssets} />
+
+    <AssetList {assets} onEdit={handleEdit} onDelete={handleDelete} />
+  </div>
+</main>
