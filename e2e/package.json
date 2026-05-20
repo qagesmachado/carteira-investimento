@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "scripts": {
     "pretest:ui": "node ./scripts/reset-test-db.js",
-    "test:ui": "playwright test --project=ui"
+    "test:ui": "playwright test --project=ui",
+    "test": "npm run test:ui"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1",

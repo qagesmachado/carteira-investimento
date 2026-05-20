@@ -31,24 +31,53 @@ alwaysApply: true
 | Frontend (unit) | `frontend/src/**/*.test.ts` | `cd frontend` → `npm test` |
 | Unitários (ambos) | raiz | `npm run test:unit` |
 | E2E UI (Playwright, cenário real) | `e2e/specs/` | `cd e2e` → `npm run test:ui` |
-| Tudo | raiz | `npm run test:all` |
+| Tudo (3 níveis + relatório) | raiz | `npm run test:all` ou `npm run test:report` |
+| Só unitários (sem E2E) | raiz | `npm run test:unit` |
 
-Documentação: `README.md`, `e2e/README.md`, `e2e/casos-de-uso/`.
+Documentação: `README.md`, `e2e/README.md`, `e2e/casos-de-uso/`, `test-reports/README.md`.
+
+## Obrigatoriedade — três níveis em toda alteração
+
+**Qualquer alteração** em código de produção **ou** de teste exige execução dos **3 níveis**:
+
+1. Backend — `pytest` (suíte completa em `backend/tests/`)
+2. Frontend — Vitest (`frontend/src/**/*.test.ts`)
+3. E2E UI — Playwright (`e2e/specs/` via `npm run test:ui`)
+
+Comando padrão na raiz: **`npm run test:all`** (equivale a `npm run test:report`).
+
+- Não concluir tarefa rodando só a camada “afetada”; mudança mínima pode quebrar outro nível.
+- Ciclo TDD local (red/green) pode usar arquivo isolado **durante** a tarefa; a prova final é sempre a suíte completa dos 3 níveis.
+
+## Relatórios datados (versionados)
+
+Cada execução completa via `npm run test:all` ou `npm run test:report` gera pasta em:
+
+`test-reports/YYYY-MM-DD_HHmmss/`
+
+Artefatos individuais por nível:
+
+| Arquivo | Suíte |
+| ------- | ----- |
+| `backend-unit.junit.xml` | pytest (1 resultado por teste) |
+| `frontend-unit.json` | Vitest |
+| `e2e-ui.json` | Playwright UI |
+| `summary.json` | agregado (contagens, falhas, duração) |
+| `summary.md` | resumo legível |
+
+- Relatórios são **versionados no repositório** (histórico de execuções).
+- Ao concluir tarefa, informar o caminho do relatório (`test-reports/<timestamp>/summary.md`) e o resultado de cada nível.
 
 ## Execução — sempre a suíte inteira
 
 Ao **validar** alterações (após implementar, refatorar ou corrigir testes):
 
 - **Nunca** usar um único arquivo ou pasta como prova final, exceto no ciclo TDD local (red/green) dentro da mesma tarefa.
-- Ao **concluir** a tarefa, rodar **todas** as suítes afetadas pela mudança:
-  - Mudou backend ou contrato HTTP → suíte completa `pytest` (via `npm run test:unit` ou `python -m pytest` em `backend/`).
-  - Mudou frontend → suíte completa Vitest (`npm test` em `frontend/` ou `npm run test:unit`).
-  - Mudou UI, fluxos E2E ou specs → **`cd e2e` → `npm run test:ui`** (53 specs: assets + portfolios + consolidada), não só uma pasta.
-  - Mudança transversal → `npm run test:all` na raiz.
+- Ao **concluir** a tarefa, rodar **`npm run test:all`** (backend + frontend + E2E UI + relatório datado).
 
-Preferir scripts npm (`npm run test:ui`) para disparar `pretest:ui` (reset do DB em `backend/data/test/`). Evitar `npx playwright test` direto sem o hook de pré-teste.
+Preferir scripts npm (`npm run test:ui`, `npm run test:all`) para disparar hooks (`pretest:ui` reseta DB em `backend/data/test/`). Evitar `npx playwright test` direto sem o hook de pré-teste.
 
-Reportar no fim: quais comandos rodou e se passaram. Se E2E falhar por rede (yfinance), indicar skip de rede e sugerir nova execução quando estável.
+Reportar no fim: caminho do relatório, quais suítes rodaram e se passaram. Se E2E falhar por rede (yfinance), indicar no `summary.md` e sugerir nova execução quando estável.
 
 ## E2E — especificação antes do código
 

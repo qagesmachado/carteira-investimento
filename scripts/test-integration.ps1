@@ -18,7 +18,7 @@ if (-not (Test-Path (Join-Path $E2eDir "node_modules"))) {
 
 Push-Location $E2eDir
 try {
-    npm test
+    npm run test:ui
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 } finally {
     Pop-Location

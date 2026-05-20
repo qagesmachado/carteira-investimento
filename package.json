@@ -9,6 +9,7 @@
     "db:export:public": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/db-export-public.ps1",
     "test:unit": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-unit.ps1",
     "test:integration": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-integration.ps1",
-    "test:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-all.ps1"
+    "test:report": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-report.ps1",
+    "test:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-report.ps1"
   }
 }

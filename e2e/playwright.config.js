@@ -15,7 +15,13 @@ module.exports = defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: [['list'], ['html', { open: 'never' }]],
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }],
+    ...(process.env.PLAYWRIGHT_JSON_OUTPUT
+      ? [['json', { outputFile: process.env.PLAYWRIGHT_JSON_OUTPUT }]]
+      : [])
+  ],
   use: {
     trace: 'on-first-retry'
   },

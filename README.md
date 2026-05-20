@@ -33,6 +33,7 @@ API local (ver esquemas e testes em `http://127.0.0.1:8000/docs`):
 - `DELETE http://127.0.0.1:8000/assets/{id}` — remover (`204`)
 - `POST http://127.0.0.1:8000/assets/bulk/preview` — prévia em lote (yfinance)
 - `POST http://127.0.0.1:8000/assets/bulk` — criar vários ativos
+- `http://127.0.0.1:8000/dividend-payments` — CRUD de proventos (vinculados a ativos)
 - `http://127.0.0.1:8000/portfolios` — CRUD de carteiras (SQLite local do usuário)
 - `GET/PUT http://127.0.0.1:8000/portfolios/active` — carteira ativa
 - `GET http://127.0.0.1:8000/portfolios/{id}/export` — exportar JSON
@@ -88,6 +89,7 @@ Aplicação local:
 
 - `http://127.0.0.1:5173`
 - `http://127.0.0.1:5173/assets`
+- `http://127.0.0.1:5173/proventos`
 - `http://127.0.0.1:5173/portfolios`
 
 Testes:
@@ -110,12 +112,15 @@ Casos de uso (especificação antes dos testes): [`e2e/casos-de-uso/`](e2e/casos
 
 ```powershell
 # Na raiz do repositório
-npm run test:unit          # pytest + vitest
-npm run test:integration   # Playwright (fase 1: esqueleto com testes skip)
-npm run test:all           # unitários + integração
+npm run test:unit          # pytest + vitest (rápido, sem relatório)
+npm run test:integration   # Playwright UI (59+ specs)
+npm run test:report        # 3 níveis + pasta datada em test-reports/
+npm run test:all           # igual a test:report
 ```
 
-Primeira vez em `e2e/`: `npm install` e `npx playwright install chromium` (o script `test-integration` instala se faltar). Requer Node.js 18+ e Python com dependências do backend instaladas (`pip install -e ".[dev]"` no `backend/`).
+Relatórios datados (backend, frontend e E2E individuais): [`test-reports/README.md`](test-reports/README.md).
+
+Primeira vez em `e2e/`: `npm install` e `npx playwright install chromium` (o script `test-report` instala se faltar). Requer Node.js 18+ e Python com dependências do backend instaladas (`pip install -e ".[dev]"` no `backend/`).
 
 Se a porta 8000 já estiver em uso (servidor de dev), o Playwright reutiliza o servidor existente (`reuseExistingServer` quando `CI` não está definido).
 
