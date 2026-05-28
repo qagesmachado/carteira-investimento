@@ -3,7 +3,7 @@ from pathlib import Path
 
 from sqlmodel import Session, select
 
-from app.db.session import assets_engine, init_db
+from app.db.session import engine, init_db
 from app.models.asset import Asset
 from app.schemas.asset import AssetCreate, AssetUpdate
 from app.seed.loader import load_seed_payloads, save_assets_json
@@ -63,7 +63,7 @@ def seed_assets(
     init_db()
     payloads, sources = load_seed_payloads(base_path=base_path, include_local=include_local)
 
-    with Session(assets_engine) as session:
+    with Session(engine) as session:
         if fresh:
             clear_all_assets(session)
             stats = SeedStats()
@@ -81,7 +81,7 @@ def seed_assets_file(path: Path, *, fresh: bool = False) -> SeedStats:
 
 def export_assets_file(path: Path) -> int:
     init_db()
-    with Session(assets_engine) as session:
+    with Session(engine) as session:
         assets = list_assets(session)
 
     payloads = [

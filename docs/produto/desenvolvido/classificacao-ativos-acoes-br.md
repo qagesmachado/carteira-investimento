@@ -7,7 +7,7 @@ Avaliar ações e ETFs brasileiros de renda variável com critérios fundamentai
 ## Escopo MVP
 
 - Perfil **`stock_br`**: ativos com `display_class = stocks` (ações + ETF RV nacional).
-- Páginas **`/analise/acoes-br`** (listagem + classificação) e **`/analise/configuracao`** (pesos, faixas, textos).
+- Páginas **`/analise/acoes-br`** (listagem + classificação) e **`/analise/configuracao`** (coluna Soma — sub-abas Ações/ETF BR e FIIs).
 - API **`/analysis/profiles/stock-br/config`**, **`/analysis/assets`**, scores por ativo.
 - Motor configurável: pesos e regras de viabilidade **editáveis na UI** (seed = planilha).
 - Atalho **Classificar** em `/portfolios` (somente `display_class = stocks`).
@@ -15,9 +15,9 @@ Avaliar ações e ETFs brasileiros de renda variável com critérios fundamentai
 ## Fora do escopo (fases posteriores)
 
 - FIIs + DIAGRAMA FIIS (`/analise/fiis`).
-- ETF internacional (% desejado, link).
-- Renda fixa, previdência, crypto.
-- % desejado, preço teto, rebalanceamento.
+- ETF internacional (% desejado dedicado, link).
+- Renda fixa, previdência, crypto (análise).
+- Preço teto.
 
 ## Critérios fundamentais (scores 1–5)
 

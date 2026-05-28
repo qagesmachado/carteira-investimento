@@ -103,4 +103,83 @@ describe('computeAnalysis', () => {
       })
     ).toBe(12);
   });
+
+  it('calcula soma FII com perfil fii_br', () => {
+    const criteria: CriterionDefinition[] = [
+      {
+        code: 'vacancia',
+        block: 'fundamental',
+        label: 'Vacância',
+        score_options: [{ value: 5, label: '5' }]
+      },
+      {
+        code: 'qtd_ativos',
+        block: 'fundamental',
+        label: 'Qtd',
+        score_options: [{ value: 3, label: '3' }]
+      },
+      {
+        code: 'alavancagem',
+        block: 'fundamental',
+        label: 'Alavancagem',
+        score_options: [{ value: 5, label: '5' }]
+      },
+      {
+        code: 'segmento_fii',
+        block: 'fundamental',
+        label: 'Segmento',
+        input_type: 'segment',
+        score_options: []
+      },
+      {
+        code: 'viabilidade',
+        block: 'fundamental',
+        label: 'Viabilidade',
+        score_options: [{ value: 2, label: '2 - VIÁVEL', seal: 'VIÁVEL', color: 'viavel' }]
+      },
+      { code: 'localizacao', block: 'diagrama', label: 'Loc', input_type: 'yes_no', score_options: [] }
+    ];
+    const scores = {
+      vacancia: 5,
+      qtd_ativos: 3,
+      alavancagem: 5,
+      segmento_fii: 5,
+      viabilidade: 2,
+      localizacao: 1
+    };
+    const summary = summarizeAnalysis(scores, criteria, []);
+    expect(
+      computeTableSumScore(
+        scores,
+        summary,
+        {
+          enabled: true,
+          label: 'Soma',
+          diagram_multiplier: 2,
+          viabilidade_weights: { azulim: 10, viavel: 3, atencao: -5, bomba: -10 }
+        },
+        'fii_br'
+      )
+    ).toBe(23);
+  });
+
+  it('pvp descarte anula soma FII', () => {
+    const summary = summarizeAnalysis({}, [], []);
+    expect(
+      computeTableSumScore(
+        { vacancia: 5, pvp_descarte: 1 },
+        summary,
+        { enabled: true, label: 'Soma', diagram_multiplier: 2, viabilidade_weights: { azulim: 10, viavel: 3, atencao: -5, bomba: -10 } },
+        'fii_br'
+      )
+    ).toBeNull();
+  });
+
+  it('diagrama ignora flag pvp_descarte', () => {
+    const criteria: CriterionDefinition[] = [
+      { code: 'localizacao', block: 'diagrama', label: 'Loc', input_type: 'yes_no', score_options: [] },
+      { code: 'pvp_descarte', block: 'diagrama', label: 'Flag', input_type: 'flag', score_options: [] }
+    ];
+    expect(computeDiagramSumScore({ localizacao: 1, pvp_descarte: 1 }, criteria)).toBe(1);
+  });
 });

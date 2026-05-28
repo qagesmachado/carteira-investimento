@@ -10,6 +10,7 @@ import {
   isApiPositionsResponse,
   isApiQuoteRefreshResponse
 } from './apiResponses';
+import { pickAssetViaTrigger } from './assetPicker';
 
 export async function gotoPortfoliosPage(page: Page): Promise<void> {
   const portfoliosResponse = page.waitForResponse(
@@ -100,9 +101,7 @@ export async function expectPositionRowHidden(page: Page, ticker: string): Promi
 export async function pickAssetInAddForm(page: Page, ticker: string): Promise<void> {
   const section = positionsSection(page);
   const picker = section.locator('.asset-picker');
-  await picker.locator('button.input').click();
-  await picker.getByPlaceholder('Ex.: ITSA4').fill(ticker);
-  await picker.getByRole('option').filter({ hasText: ticker }).first().click();
+  await pickAssetViaTrigger(page, picker.locator('button.input'), ticker);
 }
 
 export function editPositionModal(page: Page): Locator {

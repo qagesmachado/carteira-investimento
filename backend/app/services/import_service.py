@@ -5,13 +5,16 @@ from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
 from app.models.asset import Asset
+from app.models.dividend_payment import DividendPayment
 from app.models.portfolio import Portfolio
 from app.models.position import Position
 from app.providers.yfinance_asset_provider import AssetLookupProvider
 from app.schemas.asset import AssetCreate, AssetRead, AssetUpdate
 from app.schemas.portfolio import (
     COMPARE_ASSET_FIELDS,
+    DividendPaymentExportItem,
     EXPORT_VERSION,
+    EXPORT_VERSION_LEGACY,
     ImportAssetPreviewItem,
     ImportAssetResolution,
     ImportConfirmRequest,
@@ -33,6 +36,8 @@ from app.services.asset_service import (
     normalize_symbol,
     update_asset,
 )
+from app.schemas.dividend_payment import DividendPaymentCreate
+from app.services.dividend_payment_service import create_dividend_payment
 from app.services.portfolio_service import (
     create_portfolio,
     create_position,
@@ -103,7 +108,7 @@ def _lookup_to_create(lookup: object, symbol: str) -> AssetCreate:
 
 
 def validate_export_document(document: PortfolioExportDocument) -> None:
-    if document.version != EXPORT_VERSION:
+    if document.version not in (EXPORT_VERSION, EXPORT_VERSION_LEGACY):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"unsupported export version: {document.version}",
@@ -114,9 +119,11 @@ def build_export_document(
     portfolio: Portfolio,
     assets_by_id: dict[int, Asset],
     positions: list[Position],
+    dividends: list[DividendPayment] | None = None,
 ) -> PortfolioExportDocument:
     asset_creates: list[AssetCreate] = []
     position_items: list[PositionExportItem] = []
+    dividend_items: list[DividendPaymentExportItem] = []
     seen_symbols: set[str] = set()
 
     for position in positions:
@@ -143,6 +150,28 @@ def build_export_document(
             ),
         )
 
+    for payment in dividends or []:
+        asset = assets_by_id.get(payment.asset_id)
+        if asset is None:
+            continue
+        symbol = normalize_symbol(asset.symbol)
+        if symbol not in seen_symbols:
+            seen_symbols.add(symbol)
+            asset_creates.append(_asset_snapshot(asset))
+        dividend_items.append(
+            DividendPaymentExportItem(
+                symbol=symbol,
+                payment_type=payment.payment_type,
+                payment_date=payment.payment_date,
+                amount=payment.amount,
+                currency=payment.currency,
+                notes=payment.notes,
+                company_cnpj=payment.company_cnpj,
+                payer_cnpj=payment.payer_cnpj,
+                payer_name=payment.payer_name,
+            ),
+        )
+
     return PortfolioExportDocument(
         version=EXPORT_VERSION,
         exported_at=datetime.utcnow(),
@@ -158,11 +187,12 @@ def build_export_document(
         ),
         assets=asset_creates,
         positions=position_items,
+        dividend_payments=dividend_items,
     )
 
 
 def preview_import(
-    assets_session: Session,
+    session: Session,
     payload: ImportPreviewRequest,
     provider: AssetLookupProvider,
 ) -> ImportPreviewResponse:
@@ -183,7 +213,7 @@ def preview_import(
             continue
         seen.add(symbol)
 
-        existing = _find_asset_by_symbol(assets_session, symbol)
+        existing = _find_asset_by_symbol(session, symbol)
         if existing is None:
             lookup_create: AssetCreate | None = None
             try:
@@ -256,14 +286,14 @@ def _apply_field_resolutions(
 
 
 def _resolve_asset_id(
-    assets_session: Session,
+    session: Session,
     resolution: ImportAssetResolution,
     file_by_symbol: dict[str, AssetCreate],
     provider: AssetLookupProvider,
 ) -> tuple[int, bool, bool]:
     """Returns (asset_id, was_created, was_updated)."""
     symbol = normalize_symbol(resolution.symbol)
-    existing = _find_asset_by_symbol(assets_session, symbol)
+    existing = _find_asset_by_symbol(session, symbol)
     file_asset = resolution.asset_create or file_by_symbol.get(symbol)
 
     if resolution.action == "keep":
@@ -290,7 +320,7 @@ def _resolve_asset_id(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"asset {symbol} already exists",
             )
-        asset = create_asset(assets_session, payload)
+        asset = create_asset(session, payload)
         return asset.id, True, False  # type: ignore[return-value]
 
     if resolution.action == "update":
@@ -300,12 +330,12 @@ def _resolve_asset_id(
                     status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail=f"no data to update asset {symbol}",
                 )
-            asset = create_asset(assets_session, file_asset)
+            asset = create_asset(session, file_asset)
             return asset.id, True, False  # type: ignore[return-value]
         if file_asset and resolution.fields:
             patch = _apply_field_resolutions(file_asset, resolution.fields)
             if patch.model_dump(exclude_unset=True):
-                updated = update_asset(assets_session, existing.id, patch)  # type: ignore[arg-type]
+                updated = update_asset(session, existing.id, patch)  # type: ignore[arg-type]
                 return updated.id, False, True  # type: ignore[return-value]
         return existing.id, False, False  # type: ignore[return-value]
 
@@ -333,8 +363,7 @@ def default_resolution_for_preview(item: ImportAssetPreviewItem) -> ImportAssetR
 
 
 def confirm_import(
-    assets_session: Session,
-    portfolios_session: Session,
+    session: Session,
     payload: ImportConfirmRequest,
     provider: AssetLookupProvider,
 ) -> ImportConfirmResponse:
@@ -355,15 +384,15 @@ def confirm_import(
 
     try:
         if payload.target_portfolio_id is not None:
-            portfolio = get_portfolio(portfolios_session, payload.target_portfolio_id)
+            portfolio = get_portfolio(session, payload.target_portfolio_id)
         elif payload.create_new_portfolio:
             meta = doc.portfolio
             resolved_name, portfolio_name_adjusted = resolve_unique_portfolio_name(
-                portfolios_session,
+                session,
                 meta.name,
             )
             portfolio = create_portfolio(
-                portfolios_session,
+                session,
                 PortfolioCreate(
                     name=resolved_name,
                     description=meta.description,
@@ -389,7 +418,7 @@ def confirm_import(
         for resolution in payload.asset_resolutions:
             symbol = normalize_symbol(resolution.symbol)
             asset_id, was_created, was_updated = _resolve_asset_id(
-                assets_session,
+                session,
                 resolution,
                 file_by_symbol,
                 provider,
@@ -405,12 +434,12 @@ def confirm_import(
             symbol = normalize_symbol(pos_item.symbol)
             asset_id = symbol_to_asset_id.get(symbol)
             if asset_id is None:
-                existing = _find_asset_by_symbol(assets_session, symbol)
+                existing = _find_asset_by_symbol(session, symbol)
                 if existing is None:
                     continue
                 asset_id = existing.id  # type: ignore[assignment]
 
-            existing_pos = portfolios_session.exec(
+            existing_pos = session.exec(
                 select(Position).where(
                     Position.portfolio_id == portfolio.id,
                     Position.asset_id == asset_id,
@@ -418,7 +447,7 @@ def confirm_import(
             ).first()
             if existing_pos is None:
                 create_position(
-                    portfolios_session,
+                    session,
                     portfolio.id,  # type: ignore[arg-type]
                     PositionCreate(
                         asset_id=asset_id,
@@ -436,7 +465,7 @@ def confirm_import(
                 )
             else:
                 update_position(
-                    portfolios_session,
+                    session,
                     portfolio.id,  # type: ignore[arg-type]
                     existing_pos.id,  # type: ignore[arg-type]
                     PositionUpdate(
@@ -454,10 +483,37 @@ def confirm_import(
                 )
             positions_imported += 1
 
+        dividend_payments_imported = 0
+        for div_item in doc.dividend_payments:
+            symbol = normalize_symbol(div_item.symbol)
+            asset_id = symbol_to_asset_id.get(symbol)
+            if asset_id is None:
+                existing = _find_asset_by_symbol(session, symbol)
+                if existing is None:
+                    continue
+                asset_id = existing.id  # type: ignore[assignment]
+            create_dividend_payment(
+                session,
+                DividendPaymentCreate(
+                    asset_id=asset_id,
+                    portfolio_id=portfolio.id,  # type: ignore[arg-type]
+                    payment_type=div_item.payment_type,
+                    payment_date=div_item.payment_date,
+                    amount=div_item.amount,
+                    currency=div_item.currency,
+                    notes=div_item.notes,
+                    company_cnpj=div_item.company_cnpj,
+                    payer_cnpj=div_item.payer_cnpj,
+                    payer_name=div_item.payer_name,
+                ),
+            )
+            dividend_payments_imported += 1
+
         logger.info(
-            "import_confirm_done portfolio_id=%s positions=%s assets_created=%s",
+            "import_confirm_done portfolio_id=%s positions=%s dividends=%s assets_created=%s",
             portfolio.id,
             positions_imported,
+            dividend_payments_imported,
             created,
         )
         return ImportConfirmResponse(
@@ -467,11 +523,12 @@ def confirm_import(
             assets_created=created,
             assets_updated=updated,
             positions_imported=positions_imported,
+            dividend_payments_imported=dividend_payments_imported,
         )
     except HTTPException as exc:
         if portfolio_created and portfolio is not None and portfolio.id is not None:
             try:
-                delete_portfolio(portfolios_session, portfolio.id)
+                delete_portfolio(session, portfolio.id, cascade=True)
                 logger.warning(
                     "import_rollback deleted portfolio_id=%s after failure: %s",
                     portfolio.id,
@@ -488,7 +545,7 @@ def confirm_import(
     except Exception:
         if portfolio_created and portfolio is not None and portfolio.id is not None:
             try:
-                delete_portfolio(portfolios_session, portfolio.id)
+                delete_portfolio(session, portfolio.id, cascade=True)
                 logger.warning("import_rollback deleted portfolio_id=%s", portfolio.id)
             except Exception:
                 logger.exception(

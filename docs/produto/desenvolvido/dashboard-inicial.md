@@ -39,8 +39,9 @@ Equivalente parcial à aba `RESUMO` da planilha. Não substitui a tabela operaci
 
 ### Proventos no dashboard
 
-- Totais mês e ano nos cards
-- Painel: totais por `display_class`
+- Totais mês e ano nos cards (período corrente)
+- Painel: totais **por ano registrado** (visão anual) ou **por mês** (Jan–Dez do ano escolhido no seletor)
+- Alternância **Tabela / Barras** no painel
 - Ranking top ativos por valor recebido (ano corrente, ativos da carteira)
 
 ### Breakdown BRL vs USD

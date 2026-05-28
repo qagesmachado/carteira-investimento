@@ -1,12 +1,14 @@
 import pytest
 
-from app.services.analysis_defaults import default_stock_br_criteria
+from app.services.analysis_defaults import default_fii_br_criteria, default_stock_br_criteria
 from app.services.analysis_engine import (
     VIABILIDADE_CODE,
     AnalysisBlock,
+    AnalysisProfile,
     AnalysisSummary,
     BlockSummary,
     CriterionDefinition,
+    PVP_DESCARTE_CODE,
     ScoreOption,
     TableSumColumnSettings,
     ViabilidadeWeightSettings,
@@ -14,6 +16,7 @@ from app.services.analysis_engine import (
     compute_block_numeric_score,
     compute_diagram_sum_score,
     compute_table_sum_score,
+    is_pvp_discarded,
     resolve_manual_viability,
     summarize_analysis,
 )
@@ -108,3 +111,47 @@ def test_unknown_method_raises():
     ]
     with pytest.raises(ValueError, match="Unknown method"):
         compute_block_numeric_score({"a": 5}, criteria, "invalid")
+
+
+def test_fii_compute_table_sum():
+    summary = AnalysisSummary(
+        fundamental=BlockSummary(score=3, viability=None),
+        diagrama=BlockSummary(score=2, viability=None),
+        viabilidade=None,
+    )
+    scores = {
+        "vacancia": 5,
+        "qtd_ativos": 3,
+        "alavancagem": 5,
+        "segmento_fii": 5,
+        VIABILIDADE_CODE: 2,
+    }
+    settings = TableSumColumnSettings(diagram_multiplier=2.0)
+    assert compute_table_sum_score(scores, summary, settings, AnalysisProfile.FII_BR.value) == 25
+
+
+def test_pvp_descarte_nullifies_sum():
+    summary = AnalysisSummary(
+        fundamental=BlockSummary(score=5, viability=None),
+        diagrama=BlockSummary(score=4, viability=None),
+        viabilidade=None,
+    )
+    scores = {
+        "vacancia": 5,
+        PVP_DESCARTE_CODE: 1,
+    }
+    settings = TableSumColumnSettings()
+    assert is_pvp_discarded(scores) is True
+    assert compute_table_sum_score(scores, summary, settings, AnalysisProfile.FII_BR.value) is None
+
+
+def test_fii_diagram_excludes_flag():
+    criteria = default_fii_br_criteria()
+    diagrama = [c for c in criteria if c.block == AnalysisBlock.DIAGRAMA]
+    assert compute_diagram_sum_score({"localizacao": 1, PVP_DESCARTE_CODE: 1}, diagrama) == 1
+
+
+def test_fii_default_vacancia_options():
+    criteria = default_fii_br_criteria()
+    vacancia = next(c for c in criteria if c.code == "vacancia")
+    assert vacancia.score_options[0].characteristic == "Vacância até 5%."

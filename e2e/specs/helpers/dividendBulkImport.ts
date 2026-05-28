@@ -1,14 +1,15 @@
 import { expect, type Page } from '@playwright/test';
 
 import { isApiDividendBulkCreateResponse, isApiDividendBulkPreviewResponse } from './apiResponses';
+import { dividendBulkSection as dadosDividendBulkSection } from './dataPage';
 
 export function dividendBulkSection(page: Page) {
-  return page.locator('section').filter({ has: page.getByRole('heading', { name: 'Proventos em lote' }) });
+  return dadosDividendBulkSection(page);
 }
 
 export async function pasteDividendCsvAndAnalyze(page: Page, csvText: string): Promise<void> {
   const section = dividendBulkSection(page);
-  await section.getByRole('textbox').first().fill(csvText);
+  await section.getByRole('textbox', { name: 'Conteúdo CSV' }).fill(csvText);
   await section.getByRole('button', { name: 'Analisar conteúdo' }).click();
 }
 

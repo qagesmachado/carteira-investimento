@@ -14,21 +14,27 @@ from app.schemas.analysis import (
     BlockSummaryRead,
     CriterionDefinitionRead,
     ScoreOptionRead,
+    SegmentCatalogEntryRead,
+    SegmentCatalogUpdate,
+    TableDisplaySettingsRead,
+    TableSumColumnSettingsRead,
     ViabilityBandRead,
     ViabilityRuleRead,
     ViabilityResultRead,
-    TableDisplaySettingsRead,
-    TableSumColumnSettingsRead,
 )
-from app.services.analysis_defaults import PROFILE_STOCK_BR
+from app.services.analysis_defaults import PROFILE_FII_BR, PROFILE_STOCK_BR
 from app.services.analysis_service import (
     build_asset_analysis_read,
     get_profile_config,
+    get_profile_segments,
     get_profile_table_display,
     list_assets_with_analysis,
+    reset_fii_br_config,
+    reset_fii_br_segments,
     reset_stock_br_config,
     save_asset_scores,
     save_profile_config,
+    save_profile_segments,
 )
 from app.services.asset_service import infer_display_class
 
@@ -92,6 +98,21 @@ def _config_to_read(profile: str, criteria, rules, table_display) -> AnalysisCon
     )
 
 
+def _asset_analysis_to_read(asset: Asset, scores, score_refs, summary) -> AssetAnalysisRead:
+    return AssetAnalysisRead(
+        asset_id=asset.id,
+        symbol=asset.symbol,
+        name=asset.name,
+        asset_type=asset.asset_type.value,
+        display_class=infer_display_class(
+            asset.asset_type, asset.market, asset.etf_subtype
+        ).value,
+        scores=scores,
+        score_refs=score_refs,
+        summary=_summary_to_read(summary),
+    )
+
+
 @router.get("/profiles/stock-br/config", response_model=AnalysisConfigRead)
 def get_stock_br_config(session: Annotated[Session, Depends(get_session)]) -> AnalysisConfigRead:
     criteria, rules = get_profile_config(session, PROFILE_STOCK_BR)
@@ -126,25 +147,81 @@ def post_stock_br_config_reset(
     return _config_to_read(PROFILE_STOCK_BR, criteria, rules, table_display)
 
 
+@router.get("/profiles/fii-br/config", response_model=AnalysisConfigRead)
+def get_fii_br_config(session: Annotated[Session, Depends(get_session)]) -> AnalysisConfigRead:
+    criteria, rules = get_profile_config(session, PROFILE_FII_BR)
+    table_display = get_profile_table_display(session, PROFILE_FII_BR)
+    return _config_to_read(PROFILE_FII_BR, criteria, rules, table_display)
+
+
+@router.put("/profiles/fii-br/config", response_model=AnalysisConfigRead)
+def put_fii_br_config(
+    payload: AnalysisConfigUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> AnalysisConfigRead:
+    save_profile_config(
+        session,
+        PROFILE_FII_BR,
+        payload.criteria,
+        payload.rules,
+        payload.table_display,
+    )
+    criteria, rules = get_profile_config(session, PROFILE_FII_BR)
+    table_display = get_profile_table_display(session, PROFILE_FII_BR)
+    return _config_to_read(PROFILE_FII_BR, criteria, rules, table_display)
+
+
+@router.post("/profiles/fii-br/config/reset", response_model=AnalysisConfigRead)
+def post_fii_br_config_reset(
+    session: Annotated[Session, Depends(get_session)],
+) -> AnalysisConfigRead:
+    reset_fii_br_config(session)
+    criteria, rules = get_profile_config(session, PROFILE_FII_BR)
+    table_display = get_profile_table_display(session, PROFILE_FII_BR)
+    return _config_to_read(PROFILE_FII_BR, criteria, rules, table_display)
+
+
+@router.get("/profiles/fii-br/segments", response_model=list[SegmentCatalogEntryRead])
+def get_fii_br_segments(
+    session: Annotated[Session, Depends(get_session)],
+) -> list[SegmentCatalogEntryRead]:
+    segments = get_profile_segments(session, PROFILE_FII_BR)
+    return [SegmentCatalogEntryRead(**s.model_dump()) for s in segments]
+
+
+@router.put("/profiles/fii-br/segments", response_model=list[SegmentCatalogEntryRead])
+def put_fii_br_segments(
+    payload: SegmentCatalogUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[SegmentCatalogEntryRead]:
+    from app.services.analysis_defaults import SegmentCatalogEntry
+
+    segments = [SegmentCatalogEntry(**s.model_dump()) for s in payload.segments]
+    save_profile_segments(session, PROFILE_FII_BR, segments)
+    saved = get_profile_segments(session, PROFILE_FII_BR)
+    return [SegmentCatalogEntryRead(**s.model_dump()) for s in saved]
+
+
+@router.post("/profiles/fii-br/segments/reset", response_model=list[SegmentCatalogEntryRead])
+def post_fii_br_segments_reset(
+    session: Annotated[Session, Depends(get_session)],
+) -> list[SegmentCatalogEntryRead]:
+    reset_fii_br_segments(session)
+    segments = get_profile_segments(session, PROFILE_FII_BR)
+    return [SegmentCatalogEntryRead(**s.model_dump()) for s in segments]
+
+
 @router.get("/assets", response_model=list[AssetAnalysisRead])
 def get_analysis_assets(
     session: Annotated[Session, Depends(get_session)],
     profile: str = Query(default=PROFILE_STOCK_BR),
 ) -> list[AssetAnalysisRead]:
+    if profile not in (PROFILE_STOCK_BR, PROFILE_FII_BR):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile")
     rows = list_assets_with_analysis(session, profile)
     return [
-        AssetAnalysisRead(
-            asset_id=asset.id,
-            symbol=asset.symbol,
-            name=asset.name,
-            asset_type=asset.asset_type.value,
-            display_class=infer_display_class(
-                asset.asset_type, asset.market, asset.etf_subtype
-            ).value,
-            scores=scores,
-            summary=_summary_to_read(summary),
-        )
-        for asset, scores, summary in rows
+        _asset_analysis_to_read(asset, scores, score_refs, summary)
+        for asset, scores, score_refs, summary in rows
     ]
 
 
@@ -154,20 +231,14 @@ def get_analysis_asset(
     session: Annotated[Session, Depends(get_session)],
     profile: str = Query(default=PROFILE_STOCK_BR),
 ) -> AssetAnalysisRead:
+    if profile not in (PROFILE_STOCK_BR, PROFILE_FII_BR):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile")
     asset = session.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
 
-    scores, summary, _, _ = build_asset_analysis_read(session, asset, profile)
-    return AssetAnalysisRead(
-        asset_id=asset.id,
-        symbol=asset.symbol,
-        name=asset.name,
-        asset_type=asset.asset_type.value,
-        display_class=infer_display_class(asset.asset_type, asset.market, asset.etf_subtype).value,
-        scores=scores,
-        summary=_summary_to_read(summary),
-    )
+    scores, score_refs, summary, _, _ = build_asset_analysis_read(session, asset, profile)
+    return _asset_analysis_to_read(asset, scores, score_refs, summary)
 
 
 @router.put("/assets/{asset_id}/scores", response_model=AssetAnalysisRead)
@@ -177,18 +248,12 @@ def put_analysis_asset_scores(
     session: Annotated[Session, Depends(get_session)],
     profile: str = Query(default=PROFILE_STOCK_BR),
 ) -> AssetAnalysisRead:
+    if profile not in (PROFILE_STOCK_BR, PROFILE_FII_BR):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile")
     asset = session.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
 
-    save_asset_scores(session, asset_id, payload.scores)
-    scores, summary, _, _ = build_asset_analysis_read(session, asset, profile)
-    return AssetAnalysisRead(
-        asset_id=asset.id,
-        symbol=asset.symbol,
-        name=asset.name,
-        asset_type=asset.asset_type.value,
-        display_class=infer_display_class(asset.asset_type, asset.market, asset.etf_subtype).value,
-        scores=scores,
-        summary=_summary_to_read(summary),
-    )
+    save_asset_scores(session, asset_id, payload.scores, payload.score_refs)
+    scores, score_refs, summary, _, _ = build_asset_analysis_read(session, asset, profile)
+    return _asset_analysis_to_read(asset, scores, score_refs, summary)

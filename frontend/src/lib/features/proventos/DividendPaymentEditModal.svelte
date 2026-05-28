@@ -4,6 +4,7 @@
     DividendPayment,
     DividendPaymentCreate
   } from '$lib/api/dividendPayments';
+  import type { Portfolio } from '$lib/api/portfolios';
   import { formatIsoDateToBr } from '$lib/brDate';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
   import { formatPaymentTypeForDisplay } from '$lib/proventoLabels';
@@ -14,6 +15,8 @@
   export let payment: DividendPayment | null = null;
   export let assets: Asset[] = [];
   export let assetsLoading = false;
+  export let portfolios: Portfolio[] = [];
+  export let activePortfolioId: number | null = null;
   export let loading = false;
   export let onSubmit: (payload: DividendPaymentCreate) => void = () => undefined;
   export let onClose: () => void = () => undefined;
@@ -52,6 +55,8 @@
         <DividendPaymentForm
           {assets}
           {assetsLoading}
+          {portfolios}
+          {activePortfolioId}
           editing={payment}
           {loading}
           onSubmit={onSubmit}

@@ -50,4 +50,20 @@ class AssetAnalysisScore(SQLModel, table=True):
     asset_id: int = Field(index=True)
     criterion_code: str = Field(index=True)
     score: int | None = None
+    value_text: str | None = None
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AnalysisSegmentCatalog(SQLModel, table=True):
+    __tablename__ = "analysis_segment_catalog"
+    __table_args__ = (UniqueConstraint("profile", "slug"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    profile: str = Field(index=True)
+    slug: str
+    name: str
+    score: int
+    weight: float = 1.0
+    help_text: str = ""
+    color: str | None = None
+    sort_order: int = 0

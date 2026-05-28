@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.services.analysis_engine import (
     AnalysisSummary,
@@ -92,8 +92,32 @@ class AssetAnalysisRead(BaseModel):
     asset_type: str
     display_class: str
     scores: dict[str, int | None]
+    score_refs: dict[str, str | None] = Field(default_factory=dict)
     summary: AnalysisSummaryRead
 
 
 class AssetScoresUpdate(BaseModel):
     scores: dict[str, int | None]
+    score_refs: dict[str, str | None] = Field(default_factory=dict)
+
+
+class SegmentCatalogEntryRead(BaseModel):
+    slug: str
+    name: str
+    score: int
+    weight: float = 1.0
+    help_text: str = ""
+    color: str | None = None
+    sort_order: int = 0
+
+    @field_validator("name", "help_text")
+    @classmethod
+    def non_empty_text(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("Campo obrigatório.")
+        return stripped
+
+
+class SegmentCatalogUpdate(BaseModel):
+    segments: list[SegmentCatalogEntryRead]

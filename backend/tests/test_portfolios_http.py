@@ -157,7 +157,7 @@ def test_export_portfolio_json(client: TestClient) -> None:
     response = client.get(f"/portfolios/{portfolio_id}/export")
     assert response.status_code == 200
     body = response.json()
-    assert body["version"] == 1
+    assert body["version"] == 2
     assert body["portfolio"]["name"] == "Exportável"
     assert len(body["positions"]) == 1
     assert body["positions"][0]["symbol"] == "EXPT1"

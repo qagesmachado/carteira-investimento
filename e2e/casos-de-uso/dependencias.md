@@ -10,9 +10,8 @@ O Playwright sobe backend e frontend com bases **isoladas** do desenvolvimento l
 
 | Recurso | Valor na suíte E2E |
 | ------- | ------------------ |
-| Base de ativos | `backend/data/test/carteira.db` |
-| Base de carteiras | `backend/data/test/portfolios.db` |
-| Recriação dos bancos | `e2e/scripts/reset-test-db.js` (via `pretest:ui`, **antes** do servidor subir) |
+| Banco único | `backend/data/test/carteira.db` (ativos, carteiras, posições, proventos) |
+| Recriação do banco | `e2e/scripts/reset-test-db.js` (via `pretest:ui`, **antes** do servidor subir) |
 | Lookup de ativos | `yfinance` (`ASSET_LOOKUP_MODE=yfinance` no Playwright) |
 | API | `http://127.0.0.1:8001` (porta dedicada; ver `e2e/test-env.js`) |
 | Frontend | `http://127.0.0.1:5174` (`VITE_API_BASE_URL` aponta para a API de teste) |
@@ -41,12 +40,12 @@ flowchart LR
 | Etapa | Rota | O que fica pronto para a próxima | Dados mínimos sugeridos |
 | ----- | ---- | -------------------------------- | ------------------------ |
 | **1 — Assets** | `/assets` | Catálogo de ativos em `carteira.db` de teste | BRL: `BBSE3`, FII, ETF RF `AUVP11`, RF manual, previdência; USD: `VOO`, `BTC-USD` |
-| **2 — Portfolios** | `/portfolios` | Carteira ativa com posições em `portfolios.db` | Carteira «E2E Principal»; posições mercado e manuais ligadas aos ativos da etapa 1 |
+| **2 — Portfolios** | `/portfolios` | Carteira ativa com posições no banco único | Carteira «E2E Principal»; posições mercado e manuais ligadas aos ativos da etapa 1 |
 | **3 — Consolidada** | `/portfolios/consolidada` | Mesma carteira ativa, cotações e FX | Filtros, cartões BRL/USD, ícone `$` em USD, consolidado em reais |
 
 ## Estado compartilhado entre casos
 
-1. **`globalSetup`** deixa ambas as bases **vazias** antes da primeira spec.
+1. **`pretest:ui`** / reset deixa `carteira.db` **vazio** antes da primeira spec.
 2. Cada spec em `e2e/specs/assets/`, `e2e/specs/portfolios/` e `e2e/specs/consolidada/` faz **seed via API** no `beforeEach` (autocontido; não depende da ordem entre arquivos).
 3. Os `.md` em `ui/portfolios/` podem referenciar ativos típicos (`BBSE3`, RF manual, etc.) — o seed do spec cria o estado necessário.
 4. Playwright: `workers: 1`, `fullyParallel: false`.
@@ -61,6 +60,9 @@ flowchart LR
 | `UI-PRV-` | `/proventos` | `UI-PRV-002` |
 | `UI-DASH-` | `/dashboard` | `UI-DASH-002` |
 | `UI-ANL-` | `/analise` | `UI-ANL-002` |
+| `UI-REB-` | `/rebalanceamento` | `UI-REB-002` |
+| `UI-DAD-` | `/dados` | `UI-DAD-002` |
+| `UI-OBJ-` | `/objetivos` | `UI-OBJ-002` |
 
 ## Mapa rápido de dependências entre pastas
 
@@ -72,6 +74,9 @@ flowchart LR
 | [`ui/proventos/`](ui/proventos/README.md) | Seed API no spec (`seedProventos*`) — ativos + proventos |
 | [`ui/dashboard/`](ui/dashboard/README.md) | Seed API no spec (`seedConsolidada*`) — carteira + posições |
 | [`ui/analise/`](ui/analise/README.md) | Seed API no spec (`seedAnalysis*`) — ativos stocks + config |
+| [`ui/rebalanceamento/`](ui/rebalanceamento/README.md) | Seed API no spec (`seedRebalance*`) — carteira + posições + scores |
+| [`ui/dados/`](ui/dados/README.md) | Seed API no spec (`seedDados*`, `seedPortfolios*`, `seedProventos*`) — export/import centralizado |
+| [`ui/objetivos/`](ui/objetivos/README.md) | Seed API no spec (`seedObjetivos*`) — carteira + posições + objetivos |
 
 ## Ordem sugerida de implementação (fase 2)
 

@@ -126,7 +126,8 @@ export function isApiDividendBulkPreviewResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
     url.origin === API_BASE_URL &&
-    url.pathname === '/dividend-payments/bulk/preview' &&
+    (url.pathname === '/dividend-payments/bulk/preview' ||
+      url.pathname === '/data/import/dividends/preview') &&
     response.request().method() === 'POST'
   );
 }
@@ -135,8 +136,57 @@ export function isApiDividendBulkCreateResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
     url.origin === API_BASE_URL &&
-    url.pathname === '/dividend-payments/bulk' &&
+    (url.pathname === '/dividend-payments/bulk' ||
+      url.pathname === '/data/import/dividends/confirm') &&
     response.request().method() === 'POST'
+  );
+}
+
+export function isApiDataAssetsImportPreviewResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === API_BASE_URL &&
+    url.pathname === '/data/import/assets/preview' &&
+    response.request().method() === 'POST'
+  );
+}
+
+export function isApiDataAssetsImportConfirmResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === API_BASE_URL &&
+    url.pathname === '/data/import/assets/confirm' &&
+    response.request().method() === 'POST'
+  );
+}
+
+export function isApiDataExportAssetsResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === API_BASE_URL &&
+    url.pathname === '/data/export/assets' &&
+    response.request().method() === 'GET' &&
+    response.ok()
+  );
+}
+
+export function isApiDataExportDividendsResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === API_BASE_URL &&
+    url.pathname === '/data/export/dividends' &&
+    response.request().method() === 'GET' &&
+    response.ok()
+  );
+}
+
+export function isApiDataExportFullResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === API_BASE_URL &&
+    url.pathname === '/data/export/full' &&
+    response.request().method() === 'GET' &&
+    response.ok()
   );
 }
 
@@ -144,7 +194,8 @@ export function isApiAnalysisConfigGetResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
     url.origin === API_BASE_URL &&
-    url.pathname === '/analysis/profiles/stock-br/config' &&
+    (url.pathname === '/analysis/profiles/stock-br/config' ||
+      url.pathname === '/analysis/profiles/fii-br/config') &&
     response.request().method() === 'GET'
   );
 }
@@ -153,8 +204,18 @@ export function isApiAnalysisConfigPutResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
     url.origin === API_BASE_URL &&
-    url.pathname === '/analysis/profiles/stock-br/config' &&
+    (url.pathname === '/analysis/profiles/stock-br/config' ||
+      url.pathname === '/analysis/profiles/fii-br/config') &&
     response.request().method() === 'PUT'
+  );
+}
+
+export function isApiFiiSegmentsGetResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === API_BASE_URL &&
+    url.pathname === '/analysis/profiles/fii-br/segments' &&
+    response.request().method() === 'GET'
   );
 }
 

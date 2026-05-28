@@ -11,46 +11,44 @@
 | Ordem | Módulo | Prioridade doc |
 | ----- | ------ | -------------- |
 | 5 | Rebalanceamento | Item 5 |
-| 6 | Objetivos financeiros | Item 6 |
+| 6 | Objetivos financeiros | Item 6 — **implementado** |
 | 7 | Análise de ativos | Item 7 |
 | 8 | Simulações | Item 8 |
 | 9 | Relatórios / IR | Item 9 |
 
 ## 1. Rebalanceamento dedicado
 
+**Status:** implementado (MVP) — ver [rebalanceamento.md](../desenvolvido/rebalanceamento.md).
+
 **Origem planilha:** `BALANCEAMENTO`
 
-**Objetivo:** comparar alocação desejada vs. atual e sugerir aportes por classe.
+**Entregue:**
 
-**Funcionalidades candidatas:**
-
-- Metas % por classe (ações/ETF BR, FIIs, RF, internacional, crypto, previdência)
+- Metas % por classe (ações/ETF BR, FIIs, RF, internacional, crypto)
 - Valor alvo, valor atual, diferença em R$
-- Prioridade sugerida de aporte
 - Relação ETF vs. ação dentro da carteira BR
+- % desejada por ativo Ações/ETF BR (coluna Soma)
 
-**Dependências:** edição de `allocation_targets_json`, patrimônio por classe (já calculável no frontend).
+**Pendente:** card de aderência no dashboard Tier 3; sugestões por ativo em internacional.
 
-**Integração dashboard Tier 3:** card e bloco de aderência; link «Ver rebalanceamento».
+## 2. Objetivos financeiros
 
-## 2. Análise de ações, FIIs e ETFs
+**Status:** implementado (MVP) — ver [objetivos-financeiros.md](../desenvolvido/objetivos-financeiros.md).
 
-**Origem planilha:** `Análise de açõesetf br`, `Análise etf`, `Análise de fundos`
+**Entregue:**
 
-**Objetivo:** checklists, scores, % desejado na carteira, preço teto, recomendação compra/manter/vender.
+- Página `/objetivos` com objetivo «Livre» automático
+- Divisão por cotas (ações, ETF, FII) ou valor (RF, previdência)
+- Flag de divergência após mudança externa de posição
+- API `/portfolios/{id}/objectives`
 
-**Funcionalidades candidatas:**
+**Pendente:** meta de valor alvo por objetivo; patrimônio por objetivo no dashboard.
 
-- Ficha por ativo com critérios qualitativos
-- Score ou checklist preenchível
-- % desejado vs. % atual na carteira
-- Preço teto e distância da cotação
+## 3. Análise de ações, FIIs e ETFs
 
-**Dependências:** catálogo de ativos e posições; possivelmente dados externos (cotação, fundamentos).
+**Status:** parcial — Ações/ETF BR implementado ([classificacao-ativos-acoes-br.md](../desenvolvido/classificacao-ativos-acoes-br.md)).
 
-**Integração dashboard:** link por ativo a partir do ranking de proventos ou consolidada — não painel completo no dashboard.
-
-## 3. Simulações
+## 4. Simulações
 
 **Origem planilha:** abas de planejamento e projeção (previdência, independência financeira)
 
@@ -58,7 +56,7 @@
 
 **Fora de escopo do dashboard inicial** ([`dashboard-inicial.md`](../dashboard-inicial.md) §188).
 
-## 4. Relatórios e Imposto de Renda
+## 5. Relatórios e Imposto de Renda
 
 **Origem planilha:** abas fiscais e consolidações anuais
 

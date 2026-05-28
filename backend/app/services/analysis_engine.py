@@ -11,9 +11,13 @@ class AnalysisBlock(StrEnum):
 
 class AnalysisProfile(StrEnum):
     STOCK_BR = "stock_br"
+    FII_BR = "fii_br"
 
 
 VIABILIDADE_CODE = "viabilidade"
+PVP_DESCARTE_CODE = "pvp_descarte"
+SEGMENTO_FII_CODE = "segmento_fii"
+SEGMENTO_FII_REF_CODE = "segmento_fii_ref"
 
 
 class ScoreOption(BaseModel):
@@ -86,6 +90,19 @@ class TableDisplaySettings(BaseModel):
 
 
 FUNDAMENTAL_SUM_CODES = ("lucros", "divida", "tag_along", "segmento")
+
+FUNDAMENTAL_SUM_CODES_BY_PROFILE: dict[str, tuple[str, ...]] = {
+    AnalysisProfile.STOCK_BR.value: ("lucros", "divida", "tag_along", "segmento"),
+    AnalysisProfile.FII_BR.value: ("vacancia", "qtd_ativos", "alavancagem", SEGMENTO_FII_CODE),
+}
+
+
+def fundamental_sum_codes_for_profile(profile: str) -> tuple[str, ...]:
+    return FUNDAMENTAL_SUM_CODES_BY_PROFILE.get(profile, FUNDAMENTAL_SUM_CODES)
+
+
+def is_pvp_discarded(scores: dict[str, int | None]) -> bool:
+    return scores.get(PVP_DESCARTE_CODE) == 1
 
 
 def score_option_dropdown_label(option: ScoreOption) -> str:
@@ -165,6 +182,8 @@ def compute_diagram_sum_score(
     total = 0.0
     answered = 0
     for criterion in criteria:
+        if criterion.input_type in ("flag",):
+            continue
         value = scores.get(criterion.code)
         if value is None:
             continue
@@ -249,14 +268,18 @@ def compute_table_sum_score(
     scores: dict[str, int | None],
     summary: AnalysisSummary,
     settings: TableSumColumnSettings,
+    profile: str = AnalysisProfile.STOCK_BR.value,
 ) -> float | None:
     if not settings.enabled:
+        return None
+
+    if is_pvp_discarded(scores):
         return None
 
     total = 0.0
     has_any = False
 
-    for code in FUNDAMENTAL_SUM_CODES:
+    for code in fundamental_sum_codes_for_profile(profile):
         value = scores.get(code)
         if value is not None:
             total += float(value)
@@ -288,7 +311,9 @@ def summarize_analysis(
 
     fundamental_all = by_block.get(AnalysisBlock.FUNDAMENTAL.value, [])
     fundamental_criteria = [
-        c for c in fundamental_all if c.code != VIABILIDADE_CODE and c.input_type == "select"
+        c
+        for c in fundamental_all
+        if c.code != VIABILIDADE_CODE and c.input_type in ("select", "segment")
     ]
     viabilidade_criterion = next(
         (c for c in fundamental_all if c.code == VIABILIDADE_CODE),

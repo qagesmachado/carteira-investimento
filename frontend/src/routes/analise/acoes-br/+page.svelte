@@ -23,11 +23,26 @@
   import { computeTableSumScore } from '$lib/features/analise/computeAnalysis';
   import { filterAnalysisByPortfolio } from '$lib/features/analise/filterAnalysisByPortfolio';
   import FundamentalScoreCell from '$lib/features/analise/FundamentalScoreCell.svelte';
+  import {
+    sortAnalysisRows,
+    type AnalysisSortKey,
+    type SortDirection
+  } from '$lib/features/analise/sortAnalysisRows';
   import { formatDiagramScore, viabilityBadgeClass } from '$lib/features/analise/viabilityBadge';
+  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { formatAssetTypeForDisplay } from '$lib/assetLabels';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
   const FUNDAMENTAL_COLUMN_CODES = ['lucros', 'divida', 'tag_along', 'segmento'] as const;
+  const FUNDAMENTAL_COLUMN_LABELS: Record<(typeof FUNDAMENTAL_COLUMN_CODES)[number], string> = {
+    lucros: 'Lucros',
+    divida: 'Dívida',
+    tag_along: 'Tag along',
+    segmento: 'Segmento'
+  };
+
+  let sortKey: AnalysisSortKey = 'symbol';
+  let sortDir: SortDirection = 'asc';
 
   let rows: AssetAnalysis[] = [];
   let config: AnalysisConfig | null = null;
@@ -35,7 +50,6 @@
   let portfolios: Portfolio[] = [];
   let positions: Position[] = [];
   let activeId: number | null = null;
-  let portfolioSelectValue = '';
   let filterText = '';
   let loading = true;
   let saving = false;
@@ -46,6 +60,9 @@
 
   $: assetIdsInPortfolio = new Set(positions.map((p) => p.asset_id));
   $: portfolioRows = filterAnalysisByPortfolio(rows, assetIdsInPortfolio);
+  $: sumColumn = tableDisplay?.sum_column;
+  $: showSumColumn = sumColumn?.enabled ?? true;
+  $: sumColumnLabel = sumColumn?.label?.trim() || 'Soma';
   $: filteredRows = portfolioRows.filter((row) => {
     const q = filterText.trim().toLowerCase();
     if (!q) return true;
@@ -54,19 +71,7 @@
       row.name.toLowerCase().includes(q)
     );
   });
-  $: sumColumn = tableDisplay?.sum_column;
-  $: showSumColumn = sumColumn?.enabled ?? true;
-  $: sumColumnLabel = sumColumn?.label?.trim() || 'Soma';
-
-  $: {
-    if (portfolios.length === 0) {
-      portfolioSelectValue = '';
-    } else if (activeId != null && portfolios.some((p) => p.id === activeId)) {
-      portfolioSelectValue = String(activeId);
-    } else {
-      portfolioSelectValue = String(portfolios[0].id);
-    }
-  }
+  $: displayedRows = sortAnalysisRows(filteredRows, sortKey, sortDir, sumColumn);
 
   function scoreValue(row: AssetAnalysis, code: string): number | null {
     return row.scores[code] ?? null;
@@ -85,6 +90,19 @@
       label: viability?.label ?? '—',
       className: viabilityBadgeClass(viability?.color)
     };
+  }
+
+  function headerSortClass(key: AnalysisSortKey): string {
+    return sortKey === key ? 'font-bold' : 'font-normal';
+  }
+
+  function toggleSort(key: AnalysisSortKey) {
+    if (sortKey === key) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortKey = key;
+      sortDir = 'asc';
+    }
   }
 
   async function loadPositionsForActive() {
@@ -127,21 +145,17 @@
     }
   }
 
-  async function handlePortfolioChange() {
-    const id = Number(portfolioSelectValue);
-    if (!Number.isFinite(id) || id <= 0) {
+  async function handlePortfolioSelect(id: number) {
+    if (id === activeId) {
       return;
     }
-    loading = true;
+    activeId = id;
     error = '';
     try {
       await setActivePortfolioId(id);
-      activeId = id;
       await loadPositionsForActive();
     } catch (err) {
       error = parseApiError(err, 'Não foi possível trocar a carteira.');
-    } finally {
-      loading = false;
     }
   }
 
@@ -159,7 +173,10 @@
     selected = null;
   }
 
-  async function handleSaveScores(scores: Record<string, number | null>) {
+  async function handleSaveScores(
+    scores: Record<string, number | null>,
+    _scoreRefs: Record<string, string | null> = {}
+  ) {
     if (!selected) return;
     saving = true;
     error = '';
@@ -187,21 +204,12 @@
     <div class="card-body flex flex-col gap-4">
       <div class="form-control min-w-[12rem] max-w-xs">
         <span class="label-text text-xs font-semibold">Carteira</span>
-        <select
-          class="select select-bordered select-sm w-full"
-          disabled={loading || portfolios.length === 0}
-          bind:value={portfolioSelectValue}
-          on:change={handlePortfolioChange}
-          aria-label="Selecionar carteira"
-        >
-          {#if portfolios.length === 0}
-            <option value="">Nenhuma carteira</option>
-          {:else}
-            {#each portfolios as p}
-              <option value={String(p.id)}>{p.name}</option>
-            {/each}
-          {/if}
-        </select>
+        <PortfolioSelect
+          {portfolios}
+          {activeId}
+          disabled={portfolios.length === 0}
+          on:select={(event) => void handlePortfolioSelect(event.detail)}
+        />
       </div>
     </div>
   </div>
@@ -248,23 +256,113 @@
           <table class="table table-sm">
             <thead>
               <tr>
-                <th>Ticker</th>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th class="text-center">Lucros</th>
-                <th class="text-center">Dívida</th>
-                <th class="text-center">Tag along</th>
-                <th class="text-center">Segmento</th>
-                <th class="min-w-[8.5rem] px-3">Viabilidade</th>
-                <th class="text-center">Diagrama</th>
+                <th>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+                      'symbol'
+                    )}"
+                    on:click={() => toggleSort('symbol')}
+                  >
+                    Ticker
+                    {#if sortKey === 'symbol'}
+                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                    {/if}
+                  </button>
+                </th>
+                <th>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+                      'name'
+                    )}"
+                    on:click={() => toggleSort('name')}
+                  >
+                    Nome
+                    {#if sortKey === 'name'}
+                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                    {/if}
+                  </button>
+                </th>
+                <th>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+                      'asset_type'
+                    )}"
+                    on:click={() => toggleSort('asset_type')}
+                  >
+                    Tipo
+                    {#if sortKey === 'asset_type'}
+                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                    {/if}
+                  </button>
+                </th>
+                {#each FUNDAMENTAL_COLUMN_CODES as code}
+                  <th class="text-center">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+                        code
+                      )}"
+                      on:click={() => toggleSort(code)}
+                    >
+                      {FUNDAMENTAL_COLUMN_LABELS[code]}
+                      {#if sortKey === code}
+                        <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                      {/if}
+                    </button>
+                  </th>
+                {/each}
+                <th class="min-w-[8.5rem] px-3">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+                      'viabilidade'
+                    )}"
+                    on:click={() => toggleSort('viabilidade')}
+                  >
+                    Viabilidade
+                    {#if sortKey === 'viabilidade'}
+                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                    {/if}
+                  </button>
+                </th>
+                <th class="text-center">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+                      'diagrama'
+                    )}"
+                    on:click={() => toggleSort('diagrama')}
+                  >
+                    Diagrama
+                    {#if sortKey === 'diagrama'}
+                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                    {/if}
+                  </button>
+                </th>
                 {#if showSumColumn}
-                  <th class="text-center">{sumColumnLabel}</th>
+                  <th class="text-center">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+                        'soma'
+                      )}"
+                      on:click={() => toggleSort('soma')}
+                    >
+                      {sumColumnLabel}
+                      {#if sortKey === 'soma'}
+                        <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                      {/if}
+                    </button>
+                  </th>
                 {/if}
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {#each filteredRows as row (row.asset_id)}
+              {#each displayedRows as row (row.asset_id)}
                 {@const badge = viabilityBadge(row)}
                 <tr>
                   <td>{formatTickerForDisplay(row.symbol)}</td>
@@ -299,11 +397,13 @@
 
 <AssetAnalysisPanel
   open={panelOpen}
+  assetId={selected?.asset_id ?? null}
   symbol={selected?.symbol ?? ''}
   name={selected?.name ?? ''}
   assetType={selected?.asset_type ?? ''}
   criteria={config?.criteria ?? []}
   scores={selected?.scores ?? {}}
+  scoreRefs={selected?.score_refs ?? {}}
   loading={saving}
   onSave={handleSaveScores}
   onClose={closePanel}

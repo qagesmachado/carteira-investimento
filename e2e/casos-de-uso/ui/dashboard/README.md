@@ -11,5 +11,6 @@ Prefixo: **UI-DASH-**
 | UI-DASH-005 | [05-atualizar-cotacoes.md](05-atualizar-cotacoes.md) | aprovado | [05-atualizar-cotacoes.spec.ts](../../../specs/dashboard/05-atualizar-cotacoes.spec.ts) |
 | UI-DASH-006 | [06-atualizar-cambio-usd-brl.md](06-atualizar-cambio-usd-brl.md) | aprovado | [06-atualizar-cambio-usd-brl.spec.ts](../../../specs/dashboard/06-atualizar-cambio-usd-brl.spec.ts) |
 | UI-DASH-007 | [07-top-ativos-abas-tabela.md](07-top-ativos-abas-tabela.md) | aprovado | [07-top-ativos-abas-tabela.spec.ts](../../../specs/dashboard/07-top-ativos-abas-tabela.spec.ts) |
+| UI-DASH-008 | [08-proventos-painel-visao.md](08-proventos-painel-visao.md) | aprovado | [08-proventos-painel-visao.spec.ts](../../../specs/dashboard/08-proventos-painel-visao.spec.ts) |
 
-**Total:** 7 casos · **7 specs**
+**Total:** 8 casos · **8 specs**

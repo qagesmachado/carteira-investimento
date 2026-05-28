@@ -15,7 +15,8 @@ class DividendPaymentType(StrEnum):
 
 class DividendPayment(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    asset_id: int = Field(index=True)
+    asset_id: int = Field(foreign_key="asset.id", index=True)
+    portfolio_id: int | None = Field(default=None, foreign_key="portfolio.id", index=True)
     payment_type: DividendPaymentType
     payment_date: date = Field(index=True)
     amount: float

@@ -20,6 +20,7 @@
     type Position
   } from '$lib/api/portfolios';
   import { parseApiError } from '$lib/api/parseApiError';
+  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import {
     formatAssetTypeForDisplay,
     formatCurrencyCodeForDisplay,
@@ -93,9 +94,6 @@
   let filterText = '';
   let filterCurrency = '';
 
-  /** Sincroniza com `activeId`; `bind:value` no &lt;select&gt; para o rótulo aparecer após load assíncrono. */
-  let portfolioSelectValue = '';
-
   let sortKey: SortKey = 'ticker';
   let sortDir: 'asc' | 'desc' = 'asc';
 
@@ -129,16 +127,6 @@
 
   function positionDetailPanelId(positionId: number): string {
     return `position-detail-${positionId}`;
-  }
-
-  $: {
-    if (portfolios.length === 0) {
-      portfolioSelectValue = '';
-    } else if (activeId != null && portfolios.some((p) => p.id === activeId)) {
-      portfolioSelectValue = String(activeId);
-    } else {
-      portfolioSelectValue = String(portfolios[0].id);
-    }
   }
 
   function formatFxTimestamp(iso: string | null): string {
@@ -253,6 +241,26 @@
       return row.currentBrl - row.investedBrl;
     }
     return null;
+  }
+
+  function consolidatedProfitAmount(row: Row): number | null {
+    if (
+      !isUsdAsset(row.asset) &&
+      row.investedBrl != null &&
+      row.currentBrl != null &&
+      row.investedBrl > 0 &&
+      Number.isFinite(row.currentBrl - row.investedBrl)
+    ) {
+      return row.currentBrl - row.investedBrl;
+    }
+    return row.profit?.profit ?? null;
+  }
+
+  function profitColorClass(amount: number | null): string {
+    if (amount == null) {
+      return '';
+    }
+    return amount >= 0 ? 'text-success' : 'text-error';
   }
 
   function headerSortClass(key: SortKey): string {
@@ -523,7 +531,9 @@
       }
     }
     try {
-      dividendPayments = await listDividendPayments();
+      dividendPayments = activeId != null
+        ? await listDividendPayments({ portfolio_id: activeId })
+        : [];
     } catch {
       dividendPayments = [];
     }
@@ -531,17 +541,21 @@
   }
 
   async function handleSelectPortfolio(id: number) {
-    await setActivePortfolioId(id);
+    if (id === activeId) {
+      return;
+    }
     activeId = id;
+    await setActivePortfolioId(id);
     positions = await listPositions(id);
+    try {
+      dividendPayments = await listDividendPayments({ portfolio_id: id });
+    } catch {
+      dividendPayments = [];
+    }
   }
 
-  async function handlePortfolioChange(event: Event) {
-    const raw = (event.currentTarget as HTMLSelectElement).value;
-    const id = raw === '' ? NaN : Number(raw);
-    if (Number.isInteger(id) && id > 0) {
-      await handleSelectPortfolio(id);
-    }
+  async function handlePortfolioSelect(id: number) {
+    await handleSelectPortfolio(id);
   }
 
   async function handleRefreshQuotes() {
@@ -624,20 +638,13 @@
         <div class="flex flex-row flex-wrap items-center justify-between gap-4">
         <div class="form-control min-w-[12rem] flex-1">
           <span class="label-text text-xs font-semibold">Carteira ativa</span>
-          <select
-            class="select select-bordered select-sm w-full max-w-xs"
-            disabled={loading || portfolios.length === 0}
-            bind:value={portfolioSelectValue}
-            on:change={handlePortfolioChange}
-          >
-            {#if portfolios.length === 0}
-              <option value="">Nenhuma carteira</option>
-            {:else}
-              {#each portfolios as p}
-                <option value={String(p.id)}>{p.name}</option>
-              {/each}
-            {/if}
-          </select>
+          <PortfolioSelect
+            {portfolios}
+            {activeId}
+            disabled={portfolios.length === 0}
+            ariaLabel="Carteira ativa"
+            on:select={(event) => void handlePortfolioSelect(event.detail)}
+          />
         </div>
         <div class="flex flex-wrap gap-2">
           <button
@@ -1056,14 +1063,18 @@
                       <td class="overflow-visible whitespace-nowrap pr-4 text-right text-sm tabular-nums sm:pr-6">
                         {#if isUsdAsset(row.asset)}
                           <span class="inline-flex items-center justify-end gap-1.5">
-                            <span class="tabular-nums">{formatConsolidatedProfit(row)}</span>
+                            <span class="tabular-nums {profitColorClass(consolidatedProfitAmount(row))}">
+                              {formatConsolidatedProfit(row)}
+                            </span>
                             <BrlEquivalentHint
                               asset={row.asset}
                               brlValue={consolidatedProfitBrl(row)}
                             />
                           </span>
                         {:else}
-                          {formatConsolidatedProfit(row)}
+                          <span class={profitColorClass(consolidatedProfitAmount(row))}>
+                            {formatConsolidatedProfit(row)}
+                          </span>
                         {/if}
                       </td>
                       <td class="whitespace-nowrap px-1">

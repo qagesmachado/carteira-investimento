@@ -21,7 +21,6 @@
   import DividendSummaryPanel from '$lib/features/dashboard/DividendSummaryPanel.svelte';
   import TopAssetsPanel from '$lib/features/dashboard/TopAssetsPanel.svelte';
   import {
-    aggregateDividendsByDisplayClass,
     filterPaymentsInRange,
     getMonthBounds,
     getYearBounds,
@@ -36,6 +35,7 @@
     topAssetsByPositionValue,
     topAssetsByProfitPercent
   } from '$lib/features/dashboard/topAssetsDashboard';
+  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { summarizeDividendPayments } from '$lib/features/proventos/dividendSummary';
 
   let portfolios: Portfolio[] = [];
@@ -46,7 +46,6 @@
   let usdBrlRate: number | null = null;
   let usdBrlRefreshedAt: string | null = null;
 
-  let portfolioSelectValue = '';
   let loading = false;
   let refreshingQuotes = false;
   let refreshingFx = false;
@@ -73,15 +72,9 @@
   $: dividendsYear = summarizeDividendPayments(
     filterPaymentsInRange(dividendPayments, yearBounds.from, yearBounds.to)
   );
-  $: yearPaymentsForPortfolio = filterPaymentsInRange(
-    dividendPayments.filter((p) => assetIdsInPortfolio.has(p.asset_id)),
-    yearBounds.from,
-    yearBounds.to
-  );
   $: allPaymentsForPortfolio = dividendPayments.filter((p) =>
     assetIdsInPortfolio.has(p.asset_id)
   );
-  $: dividendByClass = aggregateDividendsByDisplayClass(yearPaymentsForPortfolio);
   $: topDividendAssets = topAssetsByDividendAmount(
     allPaymentsForPortfolio,
     assetIdsInPortfolio,
@@ -91,16 +84,6 @@
   $: topByProfitPercent = topAssetsByProfitPercent(positions, assetById, 5);
   $: topByPositionValue = topAssetsByPositionValue(positions, assetById, usdBrlRate, 5);
   $: topByGrossProfit = topAssetsByGrossProfit(positions, assetById, usdBrlRate, 5);
-
-  $: {
-    if (portfolios.length === 0) {
-      portfolioSelectValue = '';
-    } else if (activeId != null && portfolios.some((p) => p.id === activeId)) {
-      portfolioSelectValue = String(activeId);
-    } else {
-      portfolioSelectValue = String(portfolios[0].id);
-    }
-  }
 
   function formatFxTimestamp(iso: string | null): string {
     if (!iso) {
@@ -143,36 +126,40 @@
     positions = await listPositions(activeId);
   }
 
+  async function loadPaymentsForActive() {
+    if (activeId == null) {
+      dividendPayments = [];
+      return;
+    }
+    dividendPayments = await listDividendPayments({ portfolio_id: activeId });
+  }
+
   async function refresh() {
-    const [portfolioList, assetList, payments, active] = await Promise.all([
+    const [portfolioList, assetList, active] = await Promise.all([
       listPortfolios(),
       listAssets(),
-      listDividendPayments(),
       getActivePortfolioId()
     ]);
     portfolios = portfolioList;
     assets = assetList;
-    dividendPayments = payments;
     activeId = active ?? (portfolioList[0]?.id ?? null);
     await loadFx();
     await loadPositionsForActive();
+    await loadPaymentsForActive();
   }
 
-  async function handlePortfolioChange() {
-    const id = Number(portfolioSelectValue);
-    if (!Number.isFinite(id) || id <= 0) {
+  async function handlePortfolioSelect(id: number) {
+    if (id === activeId) {
       return;
     }
-    loading = true;
+    activeId = id;
     loadError = '';
     try {
       await setActivePortfolioId(id);
-      activeId = id;
       await loadPositionsForActive();
+      await loadPaymentsForActive();
     } catch (err) {
       loadError = parseApiError(err, 'Não foi possível trocar a carteira.');
-    } finally {
-      loading = false;
     }
   }
 
@@ -247,21 +234,12 @@
         <div class="flex flex-row flex-wrap items-end justify-between gap-4">
           <div class="form-control min-w-[12rem] flex-1">
             <span class="label-text text-xs font-semibold">Carteira</span>
-            <select
-              class="select select-bordered select-sm w-full max-w-xs"
-              disabled={loading || portfolios.length === 0}
-              bind:value={portfolioSelectValue}
-              on:change={handlePortfolioChange}
-              aria-label="Selecionar carteira"
-            >
-              {#if portfolios.length === 0}
-                <option value="">Nenhuma carteira</option>
-              {:else}
-                {#each portfolios as p}
-                  <option value={String(p.id)}>{p.name}</option>
-                {/each}
-              {/if}
-            </select>
+            <PortfolioSelect
+              {portfolios}
+              {activeId}
+              disabled={portfolios.length === 0}
+              on:select={(event) => void handlePortfolioSelect(event.detail)}
+            />
           </div>
           <div class="flex flex-wrap gap-2">
             <button
@@ -325,7 +303,7 @@
 
         <div class="grid gap-6 lg:grid-cols-2">
           <AllocationChart rows={allocationRows} />
-          <DividendSummaryPanel byClass={dividendByClass} />
+          <DividendSummaryPanel payments={allPaymentsForPortfolio} {usdBrlRate} />
         </div>
 
         <TopAssetsPanel

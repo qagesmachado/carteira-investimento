@@ -4,6 +4,7 @@
     DividendPayment,
     DividendPaymentCreate
   } from '$lib/api/dividendPayments';
+  import type { Portfolio } from '$lib/api/portfolios';
   import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
   import {
     formatIsoDateToBr,
@@ -19,12 +20,15 @@
 
   export let assets: Asset[] = [];
   export let assetsLoading = false;
+  export let portfolios: Portfolio[] = [];
+  export let activePortfolioId: number | null = null;
   export let editing: DividendPayment | null = null;
   export let loading = false;
   export let onSubmit: (payload: DividendPaymentCreate) => void = () => undefined;
   export let onCancel: () => void = () => undefined;
 
   let assetId: number | '' = '';
+  let portfolioId: number | '' = '';
   let paymentType: DividendPaymentType = 'dividend';
   let paymentDateBr = '';
   let amountValue = 0;
@@ -36,15 +40,21 @@
   let formError = '';
 
   let loadedEditingId: number | null = null;
+  let portfolioDefaultApplied = false;
   let amountInput: BrDecimalInput;
 
   $: if (assetId !== '' && formError === 'Selecione um ativo.') {
     formError = '';
   }
 
+  $: if (portfolioId !== '' && formError === 'Selecione uma carteira.') {
+    formError = '';
+  }
+
   $: if (editing && editing.id !== loadedEditingId) {
     loadedEditingId = editing.id;
     assetId = editing.asset_id;
+    portfolioId = editing.portfolio_id ?? '';
     paymentType = editing.payment_type;
     paymentDateBr = formatIsoDateToBr(editing.payment_date);
     amountValue = editing.amount;
@@ -54,10 +64,22 @@
     payerCnpj = editing.payer_cnpj ?? '';
     payerName = editing.payer_name ?? '';
     formError = '';
+    portfolioDefaultApplied = true;
   }
 
   $: if (!editing) {
     loadedEditingId = null;
+  }
+
+  $: if (
+    !editing &&
+    !portfolioDefaultApplied &&
+    portfolioId === '' &&
+    activePortfolioId != null &&
+    portfolios.some((p) => p.id === activePortfolioId)
+  ) {
+    portfolioId = activePortfolioId;
+    portfolioDefaultApplied = true;
   }
 
   $: selectedAsset =
@@ -90,6 +112,11 @@
       return;
     }
 
+    if (portfolioId === '') {
+      formError = 'Selecione uma carteira.';
+      return;
+    }
+
     const paymentDateIso = parseBrDateToIso(paymentDateBr);
     if (!paymentDateIso) {
       formError = 'Data de recebimento inválida. Use DD/MM/AAAA (ex.: 15/05/2026).';
@@ -108,6 +135,7 @@
 
     onSubmit({
       asset_id: Number(assetId),
+      portfolio_id: Number(portfolioId),
       payment_type: paymentType,
       payment_date: paymentDateIso,
       amount: amountValue,
@@ -121,6 +149,10 @@
 
   function resetForCreate() {
     assetId = '';
+    portfolioId = activePortfolioId != null && portfolios.some((p) => p.id === activePortfolioId)
+      ? activePortfolioId
+      : '';
+    portfolioDefaultApplied = portfolioId !== '';
     paymentType = 'dividend';
     paymentDateBr = '';
     amountValue = 0;
@@ -145,6 +177,26 @@
   {#if formError}
     <p class="text-sm text-error" role="alert">{formError}</p>
   {/if}
+
+  <label class="form-control">
+    <span class="label">
+      <span class="label-text">Carteira</span>
+      {#if portfolios.length === 0}
+        <span class="label-text-alt">Nenhuma carteira cadastrada</span>
+      {/if}
+    </span>
+    <select
+      class="select select-bordered"
+      bind:value={portfolioId}
+      disabled={loading || portfolios.length === 0}
+      aria-label="Carteira"
+    >
+      <option value="" disabled>Selecione uma carteira</option>
+      {#each portfolios as portfolio (portfolio.id)}
+        <option value={portfolio.id}>{portfolio.name}</option>
+      {/each}
+    </select>
+  </label>
 
   <label class="form-control">
     <span class="label">

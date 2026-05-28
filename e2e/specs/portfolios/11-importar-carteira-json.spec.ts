@@ -2,16 +2,16 @@ import { expect, test } from '@playwright/test';
 
 import { E2E_PORTFOLIO_IMPORT } from '../helpers/e2eFixtures';
 import {
-  clickAnalyzeImport,
-  clickConfirmImport,
-  gotoPortfoliosPage,
-  uploadImportFile
-} from '../helpers/portfoliosPage';
+  clickAnalyzePortfolioImport,
+  clickConfirmPortfolioImport,
+  gotoDadosPage,
+  uploadPortfolioImportFile
+} from '../helpers/dataPage';
 import { seedPortfoliosForImport } from '../helpers/seedPortfolios';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
 
 /**
- * UI-PRT-011 — Importar carteira JSON
+ * UI-PRT-011 — Importar carteira JSON (legado → /dados)
  * @see ../../../casos-de-uso/ui/portfolios/11-importar-carteira-json.md
  */
 test.describe('UI-PRT-011', () => {
@@ -21,11 +21,12 @@ test.describe('UI-PRT-011', () => {
     await seedPortfoliosForImport(request);
   });
 
-  test('importa carteira a partir do fixture JSON', async ({ page }) => {
-    await gotoPortfoliosPage(page);
-    await uploadImportFile(page, 'specs/fixtures/e2e-import.carteira.json');
-    await clickAnalyzeImport(page);
-    await clickConfirmImport(page);
-    await expect(page.getByRole('button', { name: E2E_PORTFOLIO_IMPORT })).toBeVisible();
+  test('importa carteira a partir do fixture JSON em /dados', async ({ page }) => {
+    await gotoDadosPage(page);
+    await uploadPortfolioImportFile(page, 'specs/fixtures/e2e-import.carteira.json');
+    await clickAnalyzePortfolioImport(page);
+    await clickConfirmPortfolioImport(page);
+    await expect(page.getByText('Carteira importada com sucesso.')).toBeVisible();
+    await expect(page.getByLabel('Selecionar carteira')).toContainText(E2E_PORTFOLIO_IMPORT);
   });
 });

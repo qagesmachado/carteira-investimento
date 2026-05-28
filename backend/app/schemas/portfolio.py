@@ -3,6 +3,7 @@ from datetime import date, datetime
 from pydantic import Field
 from sqlmodel import SQLModel
 
+from app.models.dividend_payment import DividendPaymentType
 from app.models.portfolio import PortfolioStatus
 from app.models.position import PositionStatus
 from app.schemas.asset import AssetCreate, AssetRead
@@ -107,7 +108,8 @@ class SetActivePortfolioRequest(SQLModel):
 
 # --- Export / import ---
 
-EXPORT_VERSION = 1
+EXPORT_VERSION = 2
+EXPORT_VERSION_LEGACY = 1
 
 COMPARE_ASSET_FIELDS = (
     "name",
@@ -158,12 +160,25 @@ class PositionExportItem(SQLModel):
     status: PositionStatus = PositionStatus.ACTIVE
 
 
+class DividendPaymentExportItem(SQLModel):
+    symbol: str
+    payment_type: DividendPaymentType
+    payment_date: date
+    amount: float = Field(gt=0)
+    currency: str
+    notes: str | None = None
+    company_cnpj: str | None = None
+    payer_cnpj: str | None = None
+    payer_name: str | None = None
+
+
 class PortfolioExportDocument(SQLModel):
     version: int = EXPORT_VERSION
     exported_at: datetime
     portfolio: PortfolioExportMeta
     assets: list[AssetCreate]
     positions: list[PositionExportItem]
+    dividend_payments: list[DividendPaymentExportItem] = []
 
 
 class ImportConflictField(SQLModel):
@@ -215,3 +230,4 @@ class ImportConfirmResponse(SQLModel):
     assets_created: int
     assets_updated: int
     positions_imported: int
+    dividend_payments_imported: int = 0

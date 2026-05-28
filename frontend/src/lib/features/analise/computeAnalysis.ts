@@ -1,6 +1,10 @@
 export type AnalysisBlock = 'fundamental' | 'diagrama';
 
 export const VIABILIDADE_CODE = 'viabilidade';
+export const PVP_DESCARTE_CODE = 'pvp_descarte';
+export const SEGMENTO_FII_CODE = 'segmento_fii';
+export const PROFILE_STOCK_BR = 'stock_br';
+export const PROFILE_FII_BR = 'fii_br';
 
 export type ScoreOption = {
   value: number;
@@ -71,7 +75,20 @@ export type TableDisplaySettings = {
   sum_column: TableSumColumnSettings;
 };
 
-export const FUNDAMENTAL_SUM_CODES = ['lucros', 'divida', 'tag_along', 'segmento'] as const;
+export const FUNDAMENTAL_SUM_CODES_BY_PROFILE: Record<string, readonly string[]> = {
+  stock_br: ['lucros', 'divida', 'tag_along', 'segmento'],
+  fii_br: ['vacancia', 'qtd_ativos', 'alavancagem', SEGMENTO_FII_CODE]
+};
+
+export const FUNDAMENTAL_SUM_CODES = FUNDAMENTAL_SUM_CODES_BY_PROFILE.stock_br;
+
+export function isPvpDiscarded(scores: Record<string, number | null | undefined>): boolean {
+  return scores[PVP_DESCARTE_CODE] === 1;
+}
+
+function fundamentalSumCodesForProfile(profile: string): readonly string[] {
+  return FUNDAMENTAL_SUM_CODES_BY_PROFILE[profile] ?? FUNDAMENTAL_SUM_CODES;
+}
 
 function collectWeightedScores(
   scores: Record<string, number | null | undefined>,
@@ -119,6 +136,7 @@ export function computeDiagramSumScore(
   let total = 0;
   let answered = 0;
   for (const criterion of criteria) {
+    if (criterion.input_type === 'flag') continue;
     const value = scores[criterion.code];
     if (value == null) continue;
     total += value;
@@ -149,14 +167,16 @@ export function resolveViabilidadeTableWeight(
 export function computeTableSumScore(
   scores: Record<string, number | null | undefined>,
   summary: AnalysisSummary,
-  settings: TableSumColumnSettings
+  settings: TableSumColumnSettings,
+  profile: string = PROFILE_STOCK_BR
 ): number | null {
   if (!settings.enabled) return null;
+  if (isPvpDiscarded(scores)) return null;
 
   let total = 0;
   let hasAny = false;
 
-  for (const code of FUNDAMENTAL_SUM_CODES) {
+  for (const code of fundamentalSumCodesForProfile(profile)) {
     const value = scores[code];
     if (value != null) {
       total += value;
@@ -211,7 +231,9 @@ export function summarizeAnalysis(
 
   const fundamentalAll = byBlock.fundamental ?? [];
   const fundamentalCriteria = fundamentalAll.filter(
-    (c) => c.code !== VIABILIDADE_CODE && (c.input_type ?? 'select') === 'select'
+    (c) =>
+      c.code !== VIABILIDADE_CODE &&
+      ((c.input_type ?? 'select') === 'select' || (c.input_type ?? 'select') === 'segment')
   );
   const viabilidadeCriterion = fundamentalAll.find((c) => c.code === VIABILIDADE_CODE);
   const diagramaCriteria = byBlock.diagrama ?? [];

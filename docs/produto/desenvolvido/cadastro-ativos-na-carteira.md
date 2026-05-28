@@ -118,7 +118,7 @@ Comportamentos esperados (evolução futura):
 
 ## Persistência
 
-Posições ficam no banco local de carteiras (`portfolios.db`), não no repositório Git. Cada posição referencia `asset_id` da base global de ativos.
+Posições ficam no banco unificado (`carteira.db`), não no repositório Git. Cada posição referencia `asset_id` da base global de ativos.
 
 ## Importação de carteira
 

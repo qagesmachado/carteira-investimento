@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
+from app.models.dividend_payment import DividendPayment
 from app.models.portfolio import AppPreference, Portfolio
 from app.models.position import Position
 from app.schemas.portfolio import (
@@ -15,6 +16,7 @@ from app.schemas.portfolio import (
     PositionRead,
     PositionUpdate,
 )
+from app.services.rebalance_engine import validate_allocation_targets_json
 
 ACTIVE_PORTFOLIO_KEY = "active_portfolio_id"
 logger = logging.getLogger(__name__)
@@ -83,13 +85,25 @@ def create_portfolio(session: Session, payload: PortfolioCreate) -> Portfolio:
             detail="portfolio name already exists",
         ) from exc
     session.refresh(portfolio)
+    from app.services.objective_service import ensure_default_objective
+
+    ensure_default_objective(session, portfolio.id)
     return portfolio
 
 
 def update_portfolio(session: Session, portfolio_id: int, payload: PortfolioUpdate) -> Portfolio:
     portfolio = get_portfolio(session, portfolio_id)
     previous_name = portfolio.name
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    data = payload.model_dump(exclude_unset=True)
+    if "allocation_targets_json" in data and data["allocation_targets_json"] is not None:
+        try:
+            validate_allocation_targets_json(data["allocation_targets_json"])
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=str(exc),
+            ) from exc
+    for key, value in data.items():
         setattr(portfolio, key, value)
     _touch_portfolio(portfolio)
     session.add(portfolio)
@@ -112,13 +126,36 @@ def update_portfolio(session: Session, portfolio_id: int, payload: PortfolioUpda
     return portfolio
 
 
-def delete_portfolio(session: Session, portfolio_id: int) -> None:
+def delete_portfolio(
+    session: Session,
+    portfolio_id: int,
+    *,
+    cascade: bool = False,
+) -> None:
     portfolio = get_portfolio(session, portfolio_id)
     positions = session.exec(
         select(Position).where(Position.portfolio_id == portfolio_id),
     ).all()
+    dividends = session.exec(
+        select(DividendPayment).where(DividendPayment.portfolio_id == portfolio_id),
+    ).all()
+
+    if not cascade and (positions or dividends):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "portfolio has positions or dividend payments; "
+                "export via /dados or use cascade=all to delete all data"
+            ),
+        )
+
+    for payment in dividends:
+        session.delete(payment)
     for position in positions:
         session.delete(position)
+    from app.services.objective_service import delete_objectives_for_portfolio
+
+    delete_objectives_for_portfolio(session, portfolio_id)
     session.delete(portfolio)
     pref = session.get(AppPreference, ACTIVE_PORTFOLIO_KEY)
     if pref and pref.value == str(portfolio_id):

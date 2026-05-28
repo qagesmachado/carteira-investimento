@@ -22,5 +22,5 @@ export function findScoreOption(
   value: number | null | undefined
 ): ScoreOption | undefined {
   if (value == null) return undefined;
-  return options.find((option) => option.value === value);
+  return options.find((option) => Number(option.value) === Number(value));
 }

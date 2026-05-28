@@ -13,7 +13,6 @@
     type AssetUpdate
   } from '$lib/api/assets';
   import { parseApiError } from '$lib/api/parseApiError';
-  import AssetBulkImport from '$lib/features/assets/AssetBulkImport.svelte';
   import AssetForm from '$lib/features/assets/AssetForm.svelte';
   import AssetList from '$lib/features/assets/AssetList.svelte';
   import AssetLookupForm from '$lib/features/assets/AssetLookupForm.svelte';
@@ -205,8 +204,6 @@
         />
       {/key}
     </div>
-
-    <AssetBulkImport onSaved={refreshAssets} />
 
     <AssetList {assets} onEdit={handleEdit} onDelete={handleDelete} />
   </div>

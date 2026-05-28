@@ -27,7 +27,8 @@
 | `UI-AST-016` | [16-excluir-cancelar.md](16-excluir-cancelar.md) | implementado | `16-excluir-cancelar.spec.ts` |
 | `UI-AST-017` | [17-importacao-lote-ja-cadastrado.md](17-importacao-lote-ja-cadastrado.md) | implementado | `17-importacao-lote-ja-cadastrado.spec.ts` |
 | `UI-AST-018` | [18-importacao-lote-etf-subtipo.md](18-importacao-lote-etf-subtipo.md) | implementado | `18-importacao-lote-etf-subtipo.spec.ts` |
+| `UI-AST-019` | [19-paginacao-listagem.md](19-paginacao-listagem.md) | implementado | `19-paginacao-listagem.spec.ts` |
 
 Caminho completo: `e2e/specs/assets/`.
 
-**Total:** 18 casos · **18 specs** · **Próxima página:** [`../portfolios/README.md`](../portfolios/README.md)
+**Total:** 19 casos · **19 specs** · **Próxima página:** [`../portfolios/README.md`](../portfolios/README.md)

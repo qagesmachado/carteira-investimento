@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { tick } from 'svelte';
+
   import type { Asset } from '$lib/api/assets';
+  import { portal } from '$lib/actions/portal';
   import { filterAssets } from '$lib/features/assets/filterAssets';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
@@ -13,6 +16,11 @@
   let searchQuery = '';
   let rootEl: HTMLDivElement;
   let triggerEl: HTMLButtonElement;
+  let panelEl: HTMLDivElement | undefined;
+  let panelTop = 0;
+  let panelLeft = 0;
+  let panelWidth = 0;
+  let portalTarget: HTMLElement | undefined;
 
   $: filteredAssets = filterAssets(assets, searchQuery);
   $: selectedAsset =
@@ -22,17 +30,50 @@
     return `${formatTickerForDisplay(asset.symbol)} — ${asset.name} (${asset.currency})`;
   }
 
-  function openDropdown() {
+  function updatePanelPosition() {
+    if (!triggerEl) {
+      return;
+    }
+    const rect = triggerEl.getBoundingClientRect();
+    panelTop = rect.bottom + 4;
+    panelLeft = rect.left;
+    panelWidth = rect.width;
+  }
+
+  function bindPositionListeners() {
+    window.addEventListener('resize', updatePanelPosition);
+    window.addEventListener('scroll', updatePanelPosition, true);
+  }
+
+  function unbindPositionListeners() {
+    window.removeEventListener('resize', updatePanelPosition);
+    window.removeEventListener('scroll', updatePanelPosition, true);
+  }
+
+  function resolvePortalTarget(): HTMLElement {
+    const dialog = rootEl?.closest('dialog');
+    return dialog ?? document.body;
+  }
+
+  async function openDropdown() {
     if (disabled) {
       return;
     }
+    portalTarget = resolvePortalTarget();
     open = true;
     searchQuery = '';
+    await tick();
+    updatePanelPosition();
+    bindPositionListeners();
   }
 
   function closeDropdown() {
+    if (!open) {
+      return;
+    }
     open = false;
     searchQuery = '';
+    unbindPositionListeners();
   }
 
   function toggleOpen() {
@@ -42,7 +83,7 @@
     if (open) {
       closeDropdown();
     } else {
-      openDropdown();
+      void openDropdown();
     }
   }
 
@@ -57,7 +98,7 @@
       return;
     }
     const target = event.target as Node;
-    if (rootEl?.contains(target)) {
+    if (rootEl?.contains(target) || panelEl?.contains(target)) {
       return;
     }
     closeDropdown();
@@ -66,11 +107,7 @@
 
 <svelte:window on:click={handleWindowClick} />
 
-<div
-  bind:this={rootEl}
-  class="asset-picker dropdown dropdown-bottom w-full"
-  class:dropdown-open={open}
->
+<div bind:this={rootEl} class="asset-picker w-full">
   <button
     bind:this={triggerEl}
     type="button"
@@ -96,48 +133,51 @@
       />
     </svg>
   </button>
-
-  {#if open}
-    <div
-      class="asset-picker-panel dropdown-content z-[100] mt-1 flex max-h-72 w-full min-w-[min(100%,20rem)] flex-col overflow-hidden rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-      role="listbox"
-    >
-      <input
-        type="search"
-        class="input input-bordered input-sm mb-2 w-full shrink-0"
-        placeholder="Ex.: ITSA4"
-        bind:value={searchQuery}
-        {disabled}
-        on:click|stopPropagation
-        on:keydown|stopPropagation
-      />
-      <ul class="flex max-h-52 flex-col gap-0.5 overflow-y-auto overflow-x-hidden p-0">
-        {#if loading}
-          <li class="px-3 py-2 text-sm text-base-content/60">Carregando ativos…</li>
-        {:else if assets.length === 0}
-          <li class="px-3 py-2 text-sm text-base-content/60">
-            Nenhum ativo na base.
-            <a class="link link-primary" href="/assets">Cadastrar ativos</a>
-          </li>
-        {:else if filteredAssets.length === 0}
-          <li class="px-3 py-2 text-sm text-base-content/60">Nenhum ativo corresponde à busca.</li>
-        {:else}
-          {#each filteredAssets as asset (asset.id)}
-            <li class="w-full shrink-0">
-              <button
-                type="button"
-                class="w-full rounded-lg px-3 py-2 text-left text-sm leading-snug hover:bg-base-200"
-                class:bg-base-200={value === asset.id}
-                role="option"
-                aria-selected={value === asset.id}
-                on:click|stopPropagation={() => selectAsset(asset)}
-              >
-                {formatAssetLabel(asset)}
-              </button>
-            </li>
-          {/each}
-        {/if}
-      </ul>
-    </div>
-  {/if}
 </div>
+
+{#if open && portalTarget}
+  <div
+    bind:this={panelEl}
+    use:portal={portalTarget}
+    class="asset-picker-panel pointer-events-auto fixed z-[9999] flex max-h-72 flex-col overflow-hidden rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+    style="top: {panelTop}px; left: {panelLeft}px; width: {panelWidth}px;"
+    role="listbox"
+  >
+    <input
+      type="search"
+      class="input input-bordered input-sm mb-2 w-full shrink-0"
+      placeholder="Ex.: ITSA4"
+      bind:value={searchQuery}
+      {disabled}
+      on:click|stopPropagation
+      on:keydown|stopPropagation
+    />
+    <ul class="flex max-h-52 flex-col gap-0.5 overflow-y-auto overflow-x-hidden p-0">
+      {#if loading}
+        <li class="px-3 py-2 text-sm text-base-content/60">Carregando ativos…</li>
+      {:else if assets.length === 0}
+        <li class="px-3 py-2 text-sm text-base-content/60">
+          Nenhum ativo na base.
+          <a class="link link-primary" href="/assets">Cadastrar ativos</a>
+        </li>
+      {:else if filteredAssets.length === 0}
+        <li class="px-3 py-2 text-sm text-base-content/60">Nenhum ativo corresponde à busca.</li>
+      {:else}
+        {#each filteredAssets as asset (asset.id)}
+          <li class="w-full shrink-0">
+            <button
+              type="button"
+              class="w-full rounded-lg px-3 py-2 text-left text-sm leading-snug hover:bg-base-200"
+              class:bg-base-200={value === asset.id}
+              role="option"
+              aria-selected={value === asset.id}
+              on:click|stopPropagation={() => selectAsset(asset)}
+            >
+              {formatAssetLabel(asset)}
+            </button>
+          </li>
+        {/each}
+      {/if}
+    </ul>
+  </div>
+{/if}

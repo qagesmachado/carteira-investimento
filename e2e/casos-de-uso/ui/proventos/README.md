@@ -21,7 +21,10 @@
 | `UI-PRV-012` | [12-listagem-vazia-apos-filtro.md](12-listagem-vazia-apos-filtro.md) | aprovado | [12-listagem-vazia-apos-filtro.spec.ts](../../../specs/proventos/12-listagem-vazia-apos-filtro.spec.ts) |
 | `UI-PRV-013` | [13-rotulos-tipo-portugues.md](13-rotulos-tipo-portugues.md) | aprovado | [13-rotulos-tipo-portugues.spec.ts](../../../specs/proventos/13-rotulos-tipo-portugues.spec.ts) |
 | `UI-PRV-014` | [14-importacao-lote.md](14-importacao-lote.md) | aprovado | [14-importacao-lote.spec.ts](../../../specs/proventos/14-importacao-lote.spec.ts) |
+| `UI-PRV-015` | [15-separacao-por-carteira.md](15-separacao-por-carteira.md) | aprovado | [15-separacao-por-carteira.spec.ts](../../../specs/proventos/15-separacao-por-carteira.spec.ts) |
+| `UI-PRV-016` | [16-filtro-carteira-listagem.md](16-filtro-carteira-listagem.md) | aprovado | [16-filtro-carteira-listagem.spec.ts](../../../specs/proventos/16-filtro-carteira-listagem.spec.ts) |
+| `UI-PRV-017` | [17-import-lote-seletor-carteira.md](17-import-lote-seletor-carteira.md) | aprovado | [17-import-lote-seletor-carteira.spec.ts](../../../specs/proventos/17-import-lote-seletor-carteira.spec.ts) |
 
-**Total:** 14 casos · **14 specs**
+**Total:** 17 casos · **17 specs**
 
 **Anterior:** [`../portfolios/README.md`](../portfolios/README.md) · **Doc produto:** [`../../../../docs/produto/desenvolvido/cadastro-proventos.md`](../../../../docs/produto/desenvolvido/cadastro-proventos.md)

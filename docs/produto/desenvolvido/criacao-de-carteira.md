@@ -96,7 +96,7 @@ Comportamento esperado:
 
 ## Persistência local
 
-Carteiras e posições **não** são versionadas no Git. Ficam em SQLite separado da base de ativos, por padrão em `%LOCALAPPDATA%/carteira-investimento/portfolios.db` (variável `PORTFOLIOS_DATABASE_URL`).
+Carteiras e posições **não** são versionadas no Git. Ficam no banco unificado `carteira.db` (ver [Persistência — banco único](persistencia-banco-unico.md)).
 
 A base de ativos (`carteira.db` / `DATABASE_URL`) é o catálogo compartilhado do aplicativo; ver [Cadastro de ativos no banco de dados](desenvolvido/cadastro-ativos-banco-de-dados.md).
 

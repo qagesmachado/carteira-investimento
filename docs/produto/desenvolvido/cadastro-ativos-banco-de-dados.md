@@ -137,6 +137,7 @@ Estratégias possíveis:
 
 - Formulário de revisão com **todos** os campos do cadastro (classificação, fiscais, cotação, observações), editáveis após lookup yfinance ou ao editar ativo salvo.
 - **Filtro** na tabela “Base local” por ticker ou nome (client-side).
+- **Paginação** client-side (20 itens por página, opções 10/20/50/100), igual à listagem de proventos.
 - **Importação em lote:** colar tickers (vírgula, ponto-e-vírgula ou linha), arquivo `.csv` (coluna `symbol`/`ticker`/`codigo`) ou `.txt` (um ticker por linha); pré-visualização via `/assets/bulk/preview`; salvar selecionados via `/assets/bulk`. ETFs nacionais sem subtipo devem ser ajustados antes do save (botão Editar na linha).
 
 ## Persistência e Git
@@ -147,7 +148,7 @@ Estratégias possíveis:
 | Catálogo público (`backend/seed/assets.json`) | **Sim** — exemplo para clone | — |
 | Catálogo pessoal (`backend/seed/assets.local.json`) | **Não** | Opcional; mesclado no seed local |
 | Arquivo `backend/carteira.db` (SQLite do catálogo) | **Não** | Gerado com `npm run db:seed` após clone |
-| Carteiras (`portfolios.db`) | **Não** | `%LOCALAPPDATA%/carteira-investimento/` ou `PORTFOLIOS_DATABASE_URL` |
+| Banco unificado (`carteira.db`) | **Não** | `%LOCALAPPDATA%/carteira-investimento/` ou `DATABASE_URL` |
 
 Comandos: `npm run db:seed` (mescla `assets.json` + `assets.local.json` se existir), `npm run db:export` (grava em `assets.local.json`), `npm run db:export:public` (atualiza `assets.json` do repo).
 

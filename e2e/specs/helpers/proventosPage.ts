@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
+import { pickAssetViaTrigger } from './assetPicker';
 import {
   isApiAssetsListResponse,
   isApiDividendPaymentDeleteResponse,
@@ -35,9 +36,7 @@ export function paymentsTable(page: Page): Locator {
 export async function pickAssetInProventoForm(page: Page, ticker: string): Promise<void> {
   const form = proventoFormSection(page);
   const picker = form.locator('.asset-picker');
-  await picker.locator('button.input').click();
-  await picker.getByPlaceholder('Ex.: ITSA4').fill(ticker);
-  await picker.getByRole('option').filter({ hasText: ticker }).first().click();
+  await pickAssetViaTrigger(page, picker.locator('button.input'), ticker);
 }
 
 export async function fillProventoForm(
@@ -47,11 +46,19 @@ export async function fillProventoForm(
     dateBr?: string;
     amount?: string;
     currency?: string;
+    portfolio?: string;
   } = {}
 ): Promise<void> {
   const form = proventoFormSection(page);
+  if (options.portfolio) {
+    await form.getByLabel('Carteira').selectOption({ label: options.portfolio });
+  }
   if (options.type) {
-    await form.locator('select').first().selectOption({ label: options.type });
+    await form
+      .locator('label')
+      .filter({ has: page.locator('span', { hasText: 'Tipo de provento' }) })
+      .locator('select')
+      .selectOption({ label: options.type });
   }
   if (options.dateBr) {
     await form.getByPlaceholder('DD/MM/AAAA').fill(options.dateBr);

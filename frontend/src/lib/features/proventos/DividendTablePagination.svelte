@@ -12,6 +12,8 @@
   export let rangeEnd = 0;
   /** `top` — abaixo dos filtros; `bottom` — após a tabela */
   export let position: 'top' | 'bottom' = 'bottom';
+  export let ariaLabel = 'Paginação da tabela de proventos';
+  export let emptyRangeLabel = 'Nenhum lançamento na página';
 
   function handlePageSizeChange(event: Event) {
     pageSize = Number((event.target as HTMLSelectElement).value) as PageSizeOption;
@@ -24,11 +26,11 @@
   class:border-t={position === 'bottom'}
   class:border-b={position === 'top'}
   role="navigation"
-  aria-label="Paginação da tabela de proventos"
+  aria-label={ariaLabel}
 >
   <p class="text-sm text-base-content/70">
     {#if totalItems === 0}
-      Nenhum lançamento na página
+      {emptyRangeLabel}
     {:else}
       Mostrando <span class="font-medium text-base-content">{rangeStart}–{rangeEnd}</span>
       de <span class="font-medium text-base-content">{totalItems}</span>

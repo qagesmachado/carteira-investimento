@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { gotoAnaliseConfigPage, saveAnalysisConfig, setSumColumnDiagramMultiplier } from '../helpers/analisePage';
+import { gotoAnaliseConfigPage, analysisConfigProfileTabs, saveAnalysisConfig, setSumColumnDiagramMultiplier } from '../helpers/analisePage';
 import { seedAnalysisWithBbse3 } from '../helpers/seedAnalysis';
 
 /**
@@ -14,6 +14,12 @@ test.describe('UI-ANL-004', () => {
 
   test('salva alteração do multiplicador do diagrama', async ({ page }) => {
     await gotoAnaliseConfigPage(page);
+    const profileTabs = analysisConfigProfileTabs(page);
+    await expect(profileTabs.getByRole('tab', { name: 'Ações/ETF BR', exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    await expect(profileTabs.getByRole('tab', { name: 'FIIs', exact: true })).toBeVisible();
     await setSumColumnDiagramMultiplier(page, '3');
     await saveAnalysisConfig(page);
     await expect(page.getByRole('alert').filter({ hasText: 'Configuração salva.' })).toBeVisible();

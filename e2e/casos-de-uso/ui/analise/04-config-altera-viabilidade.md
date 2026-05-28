@@ -4,7 +4,7 @@
 
 - **ID:** `UI-ANL-004`
 - **Status:** aprovado
-- **Página:** `/analise/configuracao`
+- **Página:** `/analise/configuracao` (aba Ações/ETF BR; mesma tela com sub-aba FIIs)
 - **Arquivo de teste:** `e2e/specs/analise/04-config-altera-viabilidade.spec.ts`
 
 ## Cenário

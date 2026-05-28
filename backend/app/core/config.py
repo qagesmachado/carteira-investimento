@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 AssetLookupMode = Literal["fake", "yfinance"]
 
+MIGRATION_UNIFIED_DB_KEY = "migration_unified_db"
+
 
 def _asset_lookup_mode_from_env() -> AssetLookupMode:
     raw = os.getenv("ASSET_LOOKUP_MODE", "yfinance").strip().lower()
@@ -28,18 +30,28 @@ def _sqlite_url_for_path(path: Path) -> str:
     return f"sqlite:///{path.as_posix()}"
 
 
+def _default_database_url() -> str:
+    explicit = os.getenv("DATABASE_URL", "").strip()
+    if explicit:
+        return explicit
+    data_dir = _default_local_data_dir()
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return _sqlite_url_for_path(data_dir / "carteira.db")
+
+
 class Settings(BaseModel):
     app_name: str = "Carteira Investimento API"
-    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./carteira.db")
+    database_url: str = _default_database_url()
     local_data_dir: Path = _default_local_data_dir()
-    portfolios_database_url: str = os.getenv("PORTFOLIOS_DATABASE_URL", "")
     asset_lookup_mode: AssetLookupMode = _asset_lookup_mode_from_env()
 
-    def resolved_portfolios_database_url(self) -> str:
-        if self.portfolios_database_url:
-            return self.portfolios_database_url
-        self.local_data_dir.mkdir(parents=True, exist_ok=True)
-        return _sqlite_url_for_path(self.local_data_dir / "portfolios.db")
+    def legacy_portfolios_db_path(self) -> Path:
+        """Caminho do portfolios.db legado (pré-unificação), usado só na migração."""
+        return self.local_data_dir / "portfolios.db"
+
+    def legacy_assets_db_path(self) -> Path:
+        """Possível carteira.db legado no cwd do backend (dev)."""
+        return Path("carteira.db")
 
 
 settings = Settings()

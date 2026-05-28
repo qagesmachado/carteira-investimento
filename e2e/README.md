@@ -24,8 +24,7 @@ npx playwright install chromium
 | --------- | --------------------------- | ------------------------------ |
 | API       | http://127.0.0.1:8001       | Não use a porta 8000 do dev    |
 | Frontend  | http://127.0.0.1:5174       | Não use a porta 5173 do dev    |
-| DB ativos | `backend/data/test/carteira.db` | Recriado no `pretest:ui`   |
-| DB carteiras | `backend/data/test/portfolios.db` | Idem                    |
+| DB unificado | `backend/data/test/carteira.db` | Recriado no `pretest:ui`   |
 
 Não é preciso rodar `npm run dev` nem uvicorn manualmente para os testes UI.
 

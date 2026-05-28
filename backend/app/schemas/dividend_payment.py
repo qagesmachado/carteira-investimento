@@ -8,6 +8,7 @@ from app.models.dividend_payment import DividendPaymentType
 
 class DividendPaymentBase(SQLModel):
     asset_id: int
+    portfolio_id: int | None = None
     payment_type: DividendPaymentType
     payment_date: date
     amount: float
@@ -24,6 +25,7 @@ class DividendPaymentCreate(DividendPaymentBase):
 
 class DividendPaymentUpdate(SQLModel):
     asset_id: int | None = None
+    portfolio_id: int | None = None
     payment_type: DividendPaymentType | None = None
     payment_date: date | None = None
     amount: float | None = None
@@ -36,6 +38,7 @@ class DividendPaymentUpdate(SQLModel):
 
 class DividendPaymentRead(DividendPaymentBase):
     id: int
+    portfolio_id: int | None = None
     symbol: str
     asset_name: str
     market: AssetMarket
@@ -57,6 +60,7 @@ class BulkDividendImportRow(SQLModel):
 
 class BulkDividendPreviewRequest(SQLModel):
     items: list[BulkDividendImportRow]
+    portfolio_id: int | None = None
 
 
 class BulkDividendPreviewItem(SQLModel):
@@ -73,6 +77,7 @@ class BulkDividendPreviewResponse(SQLModel):
 
 class BulkDividendCreateRequest(SQLModel):
     payments: list[DividendPaymentCreate]
+    portfolio_id: int | None = None
 
 
 class BulkDividendCreateItemResult(SQLModel):

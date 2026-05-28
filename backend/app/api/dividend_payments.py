@@ -33,6 +33,7 @@ router = APIRouter(prefix="/dividend-payments", tags=["dividend-payments"])
 def get_dividend_payments(
     session: Annotated[Session, Depends(get_session)],
     asset_id: int | None = None,
+    portfolio_id: int | None = None,
     payment_type: DividendPaymentType | None = None,
     market: AssetMarket | None = None,
     from_date: date | None = None,
@@ -42,6 +43,7 @@ def get_dividend_payments(
     return list_dividend_payments(
         session,
         asset_id=asset_id,
+        portfolio_id=portfolio_id,
         payment_type=payment_type,
         market=market,
         from_date=from_date,
@@ -63,7 +65,11 @@ def post_dividend_payments_bulk_preview(
     payload: BulkDividendPreviewRequest,
     session: Annotated[Session, Depends(get_session)],
 ) -> BulkDividendPreviewResponse:
-    return preview_bulk_dividend_payments(session, payload.items)
+    return preview_bulk_dividend_payments(
+        session,
+        payload.items,
+        portfolio_id=payload.portfolio_id,
+    )
 
 
 @router.post("/bulk", response_model=BulkDividendCreateResponse)
@@ -71,7 +77,11 @@ def post_dividend_payments_bulk(
     payload: BulkDividendCreateRequest,
     session: Annotated[Session, Depends(get_session)],
 ) -> BulkDividendCreateResponse:
-    return create_bulk_dividend_payments(session, payload.payments)
+    return create_bulk_dividend_payments(
+        session,
+        payload.payments,
+        portfolio_id=payload.portfolio_id,
+    )
 
 
 @router.get("/{payment_id}", response_model=DividendPaymentRead)

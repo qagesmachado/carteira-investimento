@@ -17,6 +17,15 @@ def _create_asset(client: TestClient, symbol: str = "BBSE3") -> dict:
     return response.json()
 
 
+def _create_portfolio(client: TestClient, name: str = "Carteira Teste") -> dict:
+    response = client.post(
+        "/portfolios",
+        json={"name": name, "base_currency": "BRL", "status": "active"},
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
 def test_bulk_preview_ready_and_errors(client: TestClient) -> None:
     _create_asset(client, "ITSA4")
 
@@ -59,10 +68,12 @@ def test_bulk_preview_ready_and_errors(client: TestClient) -> None:
 
 def test_bulk_preview_keeps_identical_rows_ready(client: TestClient) -> None:
     asset = _create_asset(client, "PETR4")
+    portfolio = _create_portfolio(client)
     client.post(
         "/dividend-payments",
         json={
             "asset_id": asset["id"],
+            "portfolio_id": portfolio["id"],
             "payment_type": "dividend",
             "payment_date": "2024-01-15",
             "amount": 50,
@@ -98,30 +109,15 @@ def test_bulk_preview_keeps_identical_rows_ready(client: TestClient) -> None:
     assert all(item["status"] == "ready" for item in items)
 
 
-def test_bulk_create_imports_all_payloads_including_identical(client: TestClient) -> None:
+def test_bulk_create_applies_portfolio_id_from_request_to_all(client: TestClient) -> None:
     asset = _create_asset(client, "VALE3")
-    client.post(
-        "/dividend-payments",
-        json={
-            "asset_id": asset["id"],
-            "payment_type": "dividend",
-            "payment_date": "2024-02-01",
-            "amount": 20,
-            "currency": "BRL",
-        },
-    )
+    portfolio = _create_portfolio(client, "Carteira Bulk")
 
     response = client.post(
         "/dividend-payments/bulk",
         json={
+            "portfolio_id": portfolio["id"],
             "payments": [
-                {
-                    "asset_id": asset["id"],
-                    "payment_type": "dividend",
-                    "payment_date": "2024-02-01",
-                    "amount": 20,
-                    "currency": "BRL",
-                },
                 {
                     "asset_id": asset["id"],
                     "payment_type": "dividend",
@@ -136,12 +132,34 @@ def test_bulk_create_imports_all_payloads_including_identical(client: TestClient
                     "amount": 15,
                     "currency": "BRL",
                 },
-            ]
+            ],
         },
     )
 
     assert response.status_code == 200
     results = response.json()["results"]
-    assert len(results) == 3
+    assert len(results) == 2
     assert all(r["status"] == "created" for r in results)
-    assert client.get("/dividend-payments").json().__len__() == 4
+
+    listed = client.get(f"/dividend-payments?portfolio_id={portfolio['id']}").json()
+    assert len(listed) == 2
+    assert all(item["portfolio_id"] == portfolio["id"] for item in listed)
+
+
+def test_bulk_create_rejects_when_no_portfolio_provided(client: TestClient) -> None:
+    asset = _create_asset(client, "VALE3")
+    response = client.post(
+        "/dividend-payments/bulk",
+        json={
+            "payments": [
+                {
+                    "asset_id": asset["id"],
+                    "payment_type": "dividend",
+                    "payment_date": "2024-02-01",
+                    "amount": 20,
+                    "currency": "BRL",
+                },
+            ],
+        },
+    )
+    assert response.status_code in (422, 400)

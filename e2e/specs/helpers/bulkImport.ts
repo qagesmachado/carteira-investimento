@@ -1,10 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 
 import { isApiAssetsListResponse } from './apiResponses';
+import { assetBulkSection } from './dataPage';
 import { registeredAssetsTable } from './assetsPage';
 
+/** @deprecated Use `assetBulkSection` from `dataPage.ts` (fluxo em `/dados`). */
 export function bulkSection(page: Page) {
-  return page.locator('section').filter({ has: page.getByRole('heading', { name: 'Cadastro em lote' }) });
+  return assetBulkSection(page);
 }
 
 export async function pasteTickersAndPreview(
@@ -19,7 +21,7 @@ export async function pasteTickersAndPreview(
   const previewResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
-      response.url().includes('/assets/bulk/preview') &&
+      response.url().includes('/data/import/assets/preview') &&
       response.ok(),
     { timeout: options.previewTimeout ?? 30_000 }
   );
@@ -39,8 +41,7 @@ export async function saveAllSelectedBulk(page: Page): Promise<void> {
   const bulkCreateResponse = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
-      response.url().includes('/assets/bulk') &&
-      !response.url().includes('/preview') &&
+      response.url().includes('/data/import/assets/confirm') &&
       response.ok()
   );
   await saveButton.click();
@@ -61,6 +62,7 @@ export async function expectPreviewRowStatus(
 ): Promise<void> {
   const section = bulkSection(page);
   const row = section.locator('table tbody tr').filter({ hasText: ticker });
+  await expect(row).toHaveCount(1);
   await expect(row).toContainText(status);
 }
 

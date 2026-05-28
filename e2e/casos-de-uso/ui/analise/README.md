@@ -11,6 +11,8 @@
 | UI-ANL-005 | [05-atalho-carteira-classificar.md](05-atalho-carteira-classificar.md) | aprovado | [05-atalho-carteira-classificar.spec.ts](../../../specs/analise/05-atalho-carteira-classificar.spec.ts) |
 | UI-ANL-006 | [06-sem-botao-rf-fii.md](06-sem-botao-rf-fii.md) | aprovado | [06-sem-botao-rf-fii.spec.ts](../../../specs/analise/06-sem-botao-rf-fii.spec.ts) |
 
-**Total:** 6 casos · **6 specs**
+**FIIs:** ver [fiis/README.md](fiis/README.md) (UI-ANL-007 a 013).
+
+**Total:** 6 casos ações · **13 specs** (com FIIs)
 
 **Doc produto:** [classificacao-ativos-acoes-br.md](../../../../docs/produto/desenvolvido/classificacao-ativos-acoes-br.md)

@@ -15,7 +15,7 @@ class Position(SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     portfolio_id: int = Field(foreign_key="portfolio.id", index=True)
-    asset_id: int = Field(index=True)
+    asset_id: int = Field(foreign_key="asset.id", index=True)
     quantity: float = 0
     average_price: float = 0
     invested_amount: float | None = None

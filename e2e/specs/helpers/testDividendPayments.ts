@@ -4,6 +4,7 @@ import { API_BASE_URL } from './apiResponses';
 
 export type DividendPaymentSeedPayload = {
   asset_id: number;
+  portfolio_id: number;
   payment_type: string;
   payment_date: string;
   amount: number;

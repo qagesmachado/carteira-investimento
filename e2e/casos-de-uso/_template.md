@@ -12,8 +12,7 @@
 
 ## Ambiente de teste
 
-- **Base de ativos:** `backend/data/test/carteira.db` (recriada no `pretest:ui`)
-- **Base de carteiras:** `backend/data/test/portfolios.db` (quando aplicável)
+- **Base de dados:** `backend/data/test/carteira.db` (recriada no `pretest:ui`; banco único)
 - **Lookup:** `yfinance` ou «não se aplica»
 - **URLs:** frontend `http://127.0.0.1:5174` · API `http://127.0.0.1:8001` (ver `e2e/test-env.js`)
 

@@ -68,3 +68,22 @@ export function topAssetsSection(page: Page): Locator {
 export async function switchAllocationView(page: Page, mode: 'Barras' | 'Pizza'): Promise<void> {
   await allocationSection(page).getByRole('button', { name: mode }).click();
 }
+
+export function dividendSummarySection(page: Page): Locator {
+  return page.locator('section[aria-label="Proventos no dashboard"]');
+}
+
+export async function switchDividendTimeline(
+  page: Page,
+  mode: 'Anual' | 'Mensal'
+): Promise<void> {
+  await dividendSummarySection(page).getByRole('button', { name: mode }).click();
+}
+
+export async function switchDividendView(page: Page, mode: 'Tabela' | 'Barras'): Promise<void> {
+  await dividendSummarySection(page).getByRole('button', { name: mode }).click();
+}
+
+export async function selectDividendYear(page: Page, year: number): Promise<void> {
+  await dividendSummarySection(page).getByLabel('Ano').selectOption(String(year));
+}

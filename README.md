@@ -46,11 +46,10 @@ API local (ver esquemas e testes em `http://127.0.0.1:8000/docs`):
 |------|-------------------|--------|
 | Catálogo público (fonte) | [`backend/seed/assets.json`](backend/seed/assets.json) | **Sim** — exemplo para clone |
 | Catálogo pessoal (opcional) | `backend/seed/assets.local.json` | **Não** — mesclado no seed local |
-| Base de ativos (runtime) | `DATABASE_URL` (padrão `backend/carteira.db`) | **Não** — gerado localmente |
-| Carteiras e posições | `PORTFOLIOS_DATABASE_URL` ou `%LOCALAPPDATA%/carteira-investimento/portfolios.db` | **Nunca** |
-| Troca entre máquinas | arquivo `.carteira.json` (export manual) | só se o usuário versionar o arquivo |
+| Banco unificado (runtime) | `DATABASE_URL` (padrão `%LOCALAPPDATA%/carteira-investimento/carteira.db`) | **Nunca** |
+| Troca entre máquinas | export em `/dados` (`.carteira.json`, backup full) | só se o usuário versionar o arquivo |
 
-Variáveis opcionais: `LOCAL_DATA_DIR`, `PORTFOLIOS_DATABASE_URL`, `DATABASE_URL`, `ASSET_LOOKUP_MODE`.
+Variáveis opcionais: `LOCAL_DATA_DIR`, `DATABASE_URL`, `ASSET_LOOKUP_MODE`.
 
 #### Catálogo após clone
 

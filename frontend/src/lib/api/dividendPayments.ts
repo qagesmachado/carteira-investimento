@@ -8,6 +8,7 @@ type ApiFetcher = typeof fetch;
 export type DividendPayment = {
   id: number;
   asset_id: number;
+  portfolio_id: number | null;
   payment_type: DividendPaymentType;
   payment_date: string;
   amount: number;
@@ -24,6 +25,7 @@ export type DividendPayment = {
 
 export type DividendPaymentCreate = {
   asset_id: number;
+  portfolio_id: number | null;
   payment_type: DividendPaymentType;
   payment_date: string;
   amount: number;
@@ -38,6 +40,7 @@ export type DividendPaymentUpdate = Partial<DividendPaymentCreate>;
 
 export type DividendPaymentListParams = {
   asset_id?: number;
+  portfolio_id?: number;
   payment_type?: DividendPaymentType;
   market?: AssetMarket;
   from_date?: string;
@@ -59,6 +62,9 @@ function buildQuery(params?: DividendPaymentListParams): string {
   const search = new URLSearchParams();
   if (params.asset_id != null) {
     search.set('asset_id', String(params.asset_id));
+  }
+  if (params.portfolio_id != null) {
+    search.set('portfolio_id', String(params.portfolio_id));
   }
   if (params.payment_type) {
     search.set('payment_type', params.payment_type);
@@ -163,24 +169,30 @@ export type BulkDividendCreateResponse = {
 
 export async function previewBulkDividendPayments(
   items: BulkDividendImportRow[],
+  options: { portfolio_id?: number | null } = {},
   fetcher: ApiFetcher = apiFetch
 ): Promise<BulkDividendPreviewResponse> {
+  const body: Record<string, unknown> = { items };
+  if (options.portfolio_id != null) {
+    body.portfolio_id = options.portfolio_id;
+  }
   const response = await fetcher(`${API_BASE_URL}/dividend-payments/bulk/preview`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ items })
+    body: JSON.stringify(body)
   });
   return parseResponse<BulkDividendPreviewResponse>(response);
 }
 
 export async function createBulkDividendPayments(
   payments: DividendPaymentCreate[],
+  options: { portfolio_id: number },
   fetcher: ApiFetcher = apiFetch
 ): Promise<BulkDividendCreateResponse> {
   const response = await fetcher(`${API_BASE_URL}/dividend-payments/bulk`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ payments })
+    body: JSON.stringify({ payments, portfolio_id: options.portfolio_id })
   });
   return parseResponse<BulkDividendCreateResponse>(response);
 }

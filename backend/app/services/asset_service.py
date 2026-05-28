@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
+from app.models.analysis import AssetAnalysisScore
 from app.models.asset import Asset, AssetMarket, AssetType, DisplayClass, EtfSubtype
 from app.providers.yfinance_asset_provider import AssetLookupProvider
 from app.schemas.asset import (
@@ -335,6 +336,12 @@ def delete_asset(session: Session, asset_id: int) -> None:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="asset not found",
         )
+
+    score_rows = session.exec(
+        select(AssetAnalysisScore).where(AssetAnalysisScore.asset_id == asset_id)
+    ).all()
+    for row in score_rows:
+        session.delete(row)
 
     session.delete(asset)
     session.commit()

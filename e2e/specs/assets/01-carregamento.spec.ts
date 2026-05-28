@@ -28,7 +28,6 @@ test.describe('UI-AST-001', () => {
     await expect(page.getByText('0 ativos', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Buscar ativo' })).toBeVisible();
     await expect(page.getByLabel('Ticker ou símbolo')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Cadastro em lote' })).toBeVisible();
     await expect(page.locator('table tbody tr')).toHaveCount(0);
     await expect(page.locator('[role="alert"].alert-error')).toHaveCount(0);
   });

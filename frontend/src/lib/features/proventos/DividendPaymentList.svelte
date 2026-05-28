@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { AssetMarket } from '$lib/api/assets';
   import type { DividendPayment } from '$lib/api/dividendPayments';
+  import type { Portfolio } from '$lib/api/portfolios';
   import {
     formatIsoDateToBr,
     parseBrDateToIso,
@@ -40,9 +41,12 @@
   } from './sortDividendPayments';
 
   export let payments: DividendPayment[] = [];
+  export let portfolios: Portfolio[] = [];
+  export let portfolioFilter: number | '' = '';
   export let onEdit: (payment: DividendPayment) => void = () => undefined;
   export let onDelete: (payment: DividendPayment) => void = () => undefined;
   export let onServerFiltersChange: (filters: {
+    portfolio_id?: number;
     payment_type?: DividendPaymentType;
     market?: AssetMarket;
     from_date?: string;
@@ -81,12 +85,24 @@
     const fromIso = parseBrDateToIso(filterFromDateBr);
     const toIso = parseBrDateToIso(filterToDateBr);
     onServerFiltersChange({
+      portfolio_id: portfolioFilter === '' ? undefined : Number(portfolioFilter),
       payment_type: filterType || undefined,
       market: filterMarket || undefined,
       from_date: fromIso || undefined,
       to_date: toIso || undefined
     });
     resetPagination();
+  }
+
+  function handlePortfolioFilterChange(event: Event) {
+    const value = (event.target as HTMLSelectElement).value;
+    portfolioFilter = value === '' ? '' : Number(value);
+    emitServerFilters();
+  }
+
+  function portfolioNameFor(id: number | null): string {
+    if (id == null) return 'Sem carteira';
+    return portfolios.find((p) => p.id === id)?.name ?? `#${id}`;
   }
 
   function handleTypeChange(event: Event) {
@@ -187,7 +203,7 @@
   $: availableYears = collectPaymentYears(payments);
   $: hasTextFilter = debouncedQuery.trim().length > 0;
   $: hasServerFilter = Boolean(
-    filterType || filterMarket || filterFromDateBr.trim() || filterToDateBr.trim()
+    filterType || filterMarket || filterFromDateBr.trim() || filterToDateBr.trim() || portfolioFilter !== ''
   );
   $: hasYearFilter = Boolean(filterYear);
   $: hasAnyFilter = hasTextFilter || hasServerFilter || hasYearFilter;
@@ -210,6 +226,21 @@
     </div>
 
     <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <label class="form-control">
+        <span class="label"><span class="label-text">Carteira</span></span>
+        <select
+          class="select select-bordered"
+          value={portfolioFilter === '' ? '' : String(portfolioFilter)}
+          on:change={handlePortfolioFilterChange}
+          aria-label="Filtrar por carteira"
+        >
+          <option value="">Todas as carteiras</option>
+          {#each portfolios as portfolio (portfolio.id)}
+            <option value={String(portfolio.id)}>{portfolio.name}</option>
+          {/each}
+        </select>
+      </label>
+
       <label class="form-control">
         <span class="label"><span class="label-text">Buscar ativo</span></span>
         <input
@@ -338,6 +369,7 @@
                 </button>
               </th>
               <th>Nome</th>
+              <th>Carteira</th>
               <th>
                 <button type="button" class="btn btn-ghost btn-xs" on:click={() => handleSort('payment_type')}>
                   Tipo{sortIndicator('payment_type')}
@@ -363,6 +395,7 @@
                 <td>{formatDate(payment.payment_date)}</td>
                 <td class="font-mono">{formatTickerForDisplay(payment.symbol)}</td>
                 <td>{payment.asset_name}</td>
+                <td class="text-sm">{portfolioNameFor(payment.portfolio_id)}</td>
                 <td>{formatPaymentTypeForDisplay(payment.payment_type)}</td>
                 <td class="text-end">{formatAmount(payment.amount, payment.currency)}</td>
                 <td>{payment.currency}</td>
@@ -384,7 +417,7 @@
           </tbody>
           <tfoot>
             <tr class="bg-base-200 font-semibold">
-              <td colspan="4">{formatDividendPaymentsTotalLabel(filteredTotals)}</td>
+              <td colspan="5">{formatDividendPaymentsTotalLabel(filteredTotals)}</td>
               <td class="text-end tabular-nums">
                 {formatDividendPaymentsTotalAmounts(filteredTotals)}
               </td>

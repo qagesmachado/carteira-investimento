@@ -84,8 +84,22 @@ export type AssetAnalysis = {
   asset_type: string;
   display_class: string;
   scores: Record<string, number | null>;
+  score_refs?: Record<string, string | null>;
   summary: AnalysisSummary;
 };
+
+export type SegmentCatalogEntry = {
+  slug: string;
+  name: string;
+  score: number;
+  weight: number;
+  help_text: string;
+  color?: string | null;
+  sort_order: number;
+};
+
+export const PROFILE_STOCK_BR = 'stock_br';
+export const PROFILE_FII_BR = 'fii_br';
 
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -124,19 +138,75 @@ export async function listStockBrAnalysis(): Promise<AssetAnalysis[]> {
   return parseResponse<AssetAnalysis[]>(response);
 }
 
-export async function getAssetAnalysis(assetId: number): Promise<AssetAnalysis> {
-  const response = await apiFetch(`${API_BASE_URL}/analysis/assets/${assetId}?profile=stock_br`);
+export async function getAssetAnalysis(
+  assetId: number,
+  profile: string = PROFILE_STOCK_BR
+): Promise<AssetAnalysis> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/assets/${assetId}?profile=${profile}`);
   return parseResponse<AssetAnalysis>(response);
 }
 
 export async function saveAssetAnalysisScores(
   assetId: number,
-  scores: Record<string, number | null>
+  scores: Record<string, number | null>,
+  profile: string = PROFILE_STOCK_BR,
+  scoreRefs: Record<string, string | null> = {}
 ): Promise<AssetAnalysis> {
-  const response = await apiFetch(`${API_BASE_URL}/analysis/assets/${assetId}/scores?profile=stock_br`, {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/assets/${assetId}/scores?profile=${profile}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ scores })
+    body: JSON.stringify({ scores, score_refs: scoreRefs })
   });
   return parseResponse<AssetAnalysis>(response);
+}
+
+export async function getFiiBrConfig(): Promise<AnalysisConfig> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/fii-br/config`);
+  return parseResponse<AnalysisConfig>(response);
+}
+
+export async function saveFiiBrConfig(payload: {
+  criteria: CriterionDefinition[];
+  rules: ViabilityRule[];
+  table_display?: TableDisplaySettings;
+}): Promise<AnalysisConfig> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/fii-br/config`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return parseResponse<AnalysisConfig>(response);
+}
+
+export async function resetFiiBrConfig(): Promise<AnalysisConfig> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/fii-br/config/reset`, {
+    method: 'POST'
+  });
+  return parseResponse<AnalysisConfig>(response);
+}
+
+export async function listFiiBrAnalysis(): Promise<AssetAnalysis[]> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/assets?profile=fii_br`);
+  return parseResponse<AssetAnalysis[]>(response);
+}
+
+export async function getFiiSegments(): Promise<SegmentCatalogEntry[]> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/fii-br/segments`);
+  return parseResponse<SegmentCatalogEntry[]>(response);
+}
+
+export async function saveFiiSegments(segments: SegmentCatalogEntry[]): Promise<SegmentCatalogEntry[]> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/fii-br/segments`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ segments })
+  });
+  return parseResponse<SegmentCatalogEntry[]>(response);
+}
+
+export async function resetFiiSegments(): Promise<SegmentCatalogEntry[]> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/fii-br/segments/reset`, {
+    method: 'POST'
+  });
+  return parseResponse<SegmentCatalogEntry[]>(response);
 }

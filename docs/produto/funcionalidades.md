@@ -126,6 +126,10 @@ Possíveis telas:
 
 ## 5. Rebalanceamento
 
+Detalhamento: **[desenvolvido/rebalanceamento.md](desenvolvido/rebalanceamento.md)** (implementado — MVP).
+
+**Status:** parcial — `/rebalanceamento` com metas por classe, sub-divisão ETF/Ação, % desejada por ativo em **Ações/ETF BR** e **FIIs** (via Soma). Internacional/crypto permanecem só nível de classe.
+
 Origem na planilha:
 
 - `BALANCEAMENTO`
@@ -156,7 +160,35 @@ Possíveis telas:
 - Comparativo atual x desejado.
 - Sugestão de aporte.
 
-## 6. Proventos e renda passiva
+## 6. Objetivos financeiros
+
+Detalhamento: **[desenvolvido/objetivos-financeiros.md](desenvolvido/objetivos-financeiros.md)** (implementado — MVP).
+
+**Status:** parcial — `/objetivos` com alocação parcial por objetivo dentro da carteira ativa. Meta de valor alvo e dashboard por objetivo permanecem candidatos.
+
+Origem na planilha:
+
+- `AUPO11AREA11`
+- `Renda Fixa` (caixinhas por finalidade)
+
+Objetivo: controlar **partes de uma mesma posição** para finalidades diferentes (reserva, viagem, aposentadoria), sem duplicar cadastro de ativo.
+
+Funcionalidades:
+
+- Criar objetivos por carteira (exceto «Livre», automático).
+- Alocar ativo já em carteira: **cotas** para ações/ETF/FII/crypto; **valor (R$)** para RF e previdência.
+- Objetivo «Livre» recebe o restante (sempre 100% da posição contabilizado).
+- Visualizar posições por objetivo e valor agregado.
+- Detectar divergência quando posição muda em outra tela (venda/aporte) e exigir reajuste manual.
+- Excluir objetivo devolve alocações ao Livre.
+
+Possíveis telas:
+
+- Lista de objetivos da carteira.
+- Detalhe por objetivo com alocações.
+- Modal de alocação por ativo (cotas ou valor).
+
+## 7. Proventos e renda passiva
 
 Origem na planilha:
 
@@ -188,7 +220,7 @@ Possíveis telas:
 - Relatório anual.
 - Comparativo por classe de ativo.
 
-## 7. Apoio à declaração de Imposto de Renda
+## 8. Apoio à declaração de Imposto de Renda
 
 Origem na planilha:
 
@@ -215,15 +247,16 @@ Possíveis telas:
 - Proventos para IR.
 - Relatório anual de rendimentos.
 
-## 8. Análise de ativos
+## 9. Análise de ativos
 
-**Status:** parcialmente implementado — [classificacao-ativos-acoes-br.md](desenvolvido/classificacao-ativos-acoes-br.md) (Ações/ETF BR + DIAGRAMA AÇÕES + configuração).
+**Status:** parcialmente implementado — [classificacao-ativos-acoes-br.md](desenvolvido/classificacao-ativos-acoes-br.md) (Ações/ETF BR) e [classificacao-ativos-fiis.md](desenvolvido/classificacao-ativos-fiis.md) (FIIs).
 
 Origem na planilha:
 
 - `Análise de açõesetf br` — **MVP**
 - `DIAGRAMA AÇÕES` — **MVP**
-- `Análise etf`, `Análise de fundos`, `DIAGRAMA FIIS`, `Perguntas` — candidato
+- `Análise de fundos`, `DIAGRAMA FIIS` — **MVP FIIs**
+- `Análise etf`, `Perguntas` — candidato
 
 Objetivo: apoiar decisão de investimento com critérios e pontuações.
 
@@ -235,11 +268,20 @@ Funcionalidades (MVP entregue):
 - Telas `/analise/acoes-br`, `/analise/configuracao`.
 - Atalho Classificar em carteiras.
 
+Funcionalidades FIIs (entregue):
+
+- Indicadores de viabilidade (vacância, qtd ativos, alavancagem, segmento) e viabilidade manual.
+- Questionário DIAGRAMA FIIS (6 perguntas + flag P/VP > 1,5).
+- Catálogo editável de segmentos.
+- Telas `/analise/fiis`, `/analise/configuracao?perfil=fiis`, `/analise/fiis/segmentos`.
+- Atalho Classificar para FIIs em carteiras.
+- **% desejado por FII** no rebalanceamento (aba FII, via Soma).
+
 Funcionalidades (fases posteriores):
 
-- FIIs, ETF internacional, % desejado, preço teto, ranking global.
+- ETF internacional, preço teto por FII, ranking global.
 
-## 9. Renda fixa
+## 10. Renda fixa
 
 Origem na planilha:
 
@@ -269,7 +311,7 @@ Possíveis telas:
 - Rentabilidade por indexador.
 - Objetivos vinculados a ETFs de renda fixa.
 
-## 10. Criptoativos e taxas
+## 11. Criptoativos e taxas
 
 Origem na planilha:
 
@@ -296,7 +338,7 @@ Possíveis telas:
 - Histórico de taxas.
 - Rentabilidade de cripto.
 
-## 11. Simulações e planejamento
+## 12. Simulações e planejamento
 
 Origem na planilha:
 
@@ -326,7 +368,7 @@ Possíveis telas:
 - Planejamento de previdência.
 - Cenários de independência financeira.
 
-## 12. Relatórios
+## 13. Relatórios
 
 Objetivo: consolidar informações para análise e acompanhamento.
 

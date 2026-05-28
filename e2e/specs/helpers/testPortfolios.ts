@@ -8,7 +8,9 @@ export async function clearAllPortfolios(request: APIRequestContext): Promise<vo
   const portfolios = (await listResponse.json()) as { id: number }[];
 
   for (const portfolio of portfolios) {
-    const deleteResponse = await request.delete(`${API_BASE_URL}/portfolios/${portfolio.id}`);
+    const deleteResponse = await request.delete(
+      `${API_BASE_URL}/portfolios/${portfolio.id}?cascade=all`
+    );
     expect(deleteResponse.ok()).toBeTruthy();
   }
 }

@@ -2,7 +2,11 @@ import { expect, test } from '@playwright/test';
 
 import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
 import {
+  analysisPreview,
   clickClassificarOnRow,
+  expectFundamentalSelectValue,
+  expectPreviewText,
+  expectUnsavedChangesWarning,
   expectViabilityBadge,
   gotoAcoesBrPage,
   saveAnalysisPanel,
@@ -24,7 +28,11 @@ test.describe('UI-ANL-002', () => {
     await gotoAcoesBrPage(page);
 
     await clickClassificarOnRow(page, TICKER_BBSE3);
+    await expect(analysisPreview(page)).toBeVisible();
+    await expectUnsavedChangesWarning(page, false);
     await selectFundamentalScore(page, 'Lucros', '5 - Em 100% dos anos nos últimos 10 anos');
+    await expectPreviewText(page, 'lucros', 'Em 100% dos anos nos últimos 10 anos');
+    await expectUnsavedChangesWarning(page);
     await selectFundamentalScore(
       page,
       'Dívida Líq/EBITDA',
@@ -37,5 +45,15 @@ test.describe('UI-ANL-002', () => {
 
     await expect(page.getByRole('alert').filter({ hasText: 'Classificação salva.' })).toBeVisible();
     await expectViabilityBadge(page, TICKER_BBSE3, /VIÁVEL/);
+
+    await clickClassificarOnRow(page, TICKER_BBSE3);
+    await expectUnsavedChangesWarning(page, false);
+    await expectPreviewText(page, 'lucros', 'Em 100% dos anos nos últimos 10 anos');
+    await expectFundamentalSelectValue(
+      page,
+      'Lucros',
+      '5 - Em 100% dos anos nos últimos 10 anos'
+    );
+    await expectFundamentalSelectValue(page, 'Viabilidade', '2 - VIÁVEL');
   });
 });

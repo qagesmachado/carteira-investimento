@@ -14,6 +14,8 @@ export const TICKER_ITSA4 = 'ITSA4';
 export const TICKER_FLRY3 = 'FLRY3';
 export const TICKER_FESA4 = 'FESA4';
 export const TICKER_PETR4 = 'PETR4';
+export const TICKER_HGLG11 = 'HGLG11';
+export const TICKER_BTLG11 = 'BTLG11';
 export const TICKER_KLBN = 'KLBN4';
 
 export const E2E_CDB_IDENTIFIER = 'E2E-CDB-BTG-2028';

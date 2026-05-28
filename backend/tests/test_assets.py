@@ -260,6 +260,49 @@ def test_delete_asset_returns_204(client: TestClient) -> None:
     assert all(a["symbol"] != "DEL1" for a in listed.json())
 
 
+def test_delete_asset_removes_orphaned_analysis_scores(client: TestClient) -> None:
+    """Evita que scores (ex.: pvp_descarte FII) sobrevivam ao reuso de asset_id."""
+    created = client.post(
+        "/assets",
+        json={
+            "symbol": "FII-DEL",
+            "name": "FII delete",
+            "asset_type": "fii",
+            "market": "national",
+            "currency": "BRL",
+        },
+    )
+    assert created.status_code == 201
+    fii_id = created.json()["id"]
+
+    saved = client.put(
+        f"/analysis/assets/{fii_id}/scores?profile=fii_br",
+        json={"scores": {"pvp_descarte": 1, "vacancia": 5}},
+    )
+    assert saved.status_code == 200
+
+    deleted = client.delete(f"/assets/{fii_id}")
+    assert deleted.status_code == 204
+
+    recreated = client.post(
+        "/assets",
+        json={
+            "symbol": "STK-NEW",
+            "name": "Stock after delete",
+            "asset_type": "stock",
+            "market": "national",
+            "currency": "BRL",
+        },
+    )
+    assert recreated.status_code == 201
+    stock_id = recreated.json()["id"]
+    assert stock_id == fii_id
+
+    read = client.get(f"/analysis/assets/{stock_id}?profile=stock_br")
+    assert read.status_code == 200
+    assert read.json()["scores"].get("pvp_descarte") is None
+
+
 def test_delete_asset_returns_404_when_missing(client: TestClient) -> None:
     response = client.delete("/assets/9999")
 

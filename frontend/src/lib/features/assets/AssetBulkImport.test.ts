@@ -4,16 +4,16 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as assetsApi from '$lib/api/assets';
+import * as dataApi from '$lib/api/data';
 
 import AssetBulkImport from './AssetBulkImport.svelte';
 
-vi.mock('$lib/api/assets', async (importOriginal) => {
-  const actual = await importOriginal<typeof assetsApi>();
+vi.mock('$lib/api/data', async (importOriginal) => {
+  const actual = await importOriginal<typeof dataApi>();
   return {
     ...actual,
-    previewBulkAssets: vi.fn(),
-    createBulkAssets: vi.fn()
+    previewImportAssets: vi.fn(),
+    confirmImportAssets: vi.fn()
   };
 });
 
@@ -26,8 +26,8 @@ function makeTxtFile(name: string) {
 
 describe('AssetBulkImport', () => {
   beforeEach(() => {
-    vi.mocked(assetsApi.previewBulkAssets).mockReset();
-    vi.mocked(assetsApi.createBulkAssets).mockReset();
+    vi.mocked(dataApi.previewImportAssets).mockReset();
+    vi.mocked(dataApi.confirmImportAssets).mockReset();
   });
 
   it('exibe nome do arquivo após upload', async () => {
@@ -61,7 +61,7 @@ describe('AssetBulkImport', () => {
   });
 
   it('remove duplicatas antes de buscar no yfinance', async () => {
-    vi.mocked(assetsApi.previewBulkAssets).mockResolvedValue({ items: [], warnings: [] });
+    vi.mocked(dataApi.previewImportAssets).mockResolvedValue({ items: [], warnings: [] });
 
     render(AssetBulkImport);
 
@@ -71,7 +71,7 @@ describe('AssetBulkImport', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Buscar no yfinance' }));
 
     await waitFor(() => {
-      expect(assetsApi.previewBulkAssets).toHaveBeenCalledWith(['HSML11', 'HGRU11', 'KNRI11']);
+      expect(dataApi.previewImportAssets).toHaveBeenCalledWith(['HSML11', 'HGRU11', 'KNRI11']);
     });
     const textarea = screen.getByRole('textbox');
     expect(textarea.value).toBe('HSML11\nHGRU11\nKNRI11');
@@ -79,7 +79,7 @@ describe('AssetBulkImport', () => {
   });
 
   it('exibe aviso quando a API retorna tickers não encontrados', async () => {
-    vi.mocked(assetsApi.previewBulkAssets).mockResolvedValue({
+    vi.mocked(dataApi.previewImportAssets).mockResolvedValue({
       items: [
         {
           symbol: 'GUAR3',
@@ -128,9 +128,9 @@ describe('AssetBulkImport', () => {
     });
   });
 
-  it('salva via createBulkAssets usando rascunho do modal', async () => {
+  it('salva via confirmImportAssets usando rascunho do modal', async () => {
     const onSaved = vi.fn();
-    vi.mocked(assetsApi.previewBulkAssets).mockResolvedValue({
+    vi.mocked(dataApi.previewImportAssets).mockResolvedValue({
       items: [
         {
           symbol: 'BBSE3',
@@ -155,7 +155,7 @@ describe('AssetBulkImport', () => {
         }
       ]
     });
-    vi.mocked(assetsApi.createBulkAssets).mockResolvedValue({
+    vi.mocked(dataApi.confirmImportAssets).mockResolvedValue({
       results: [{ symbol: 'BBSE3', status: 'created' }]
     });
 
@@ -188,7 +188,7 @@ describe('AssetBulkImport', () => {
     await fireEvent.click(screen.getByRole('button', { name: /Salvar selecionados/i }));
 
     await waitFor(() => {
-      expect(assetsApi.createBulkAssets).toHaveBeenCalledWith([
+      expect(dataApi.confirmImportAssets).toHaveBeenCalledWith([
         expect.objectContaining({ symbol: 'BBSE3', name: 'BB Seguridade Revisada' })
       ]);
     });
@@ -196,7 +196,7 @@ describe('AssetBulkImport', () => {
   });
 
   it('atualiza ticker, tipo e moeda na tabela após confirmar edição no modal', async () => {
-    vi.mocked(assetsApi.previewBulkAssets).mockResolvedValue({
+    vi.mocked(dataApi.previewImportAssets).mockResolvedValue({
       items: [
         {
           symbol: 'ODPV3',

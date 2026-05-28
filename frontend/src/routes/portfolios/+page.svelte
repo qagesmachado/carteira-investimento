@@ -3,19 +3,22 @@
 
   import { listAssets, type Asset } from '$lib/api/assets';
   import {
+    PROFILE_FII_BR,
+    PROFILE_STOCK_BR,
+    getFiiBrConfig,
+    getFiiSegments,
     getStockBrConfig,
     getAssetAnalysis,
     saveAssetAnalysisScores,
     type AnalysisConfig,
-    type AssetAnalysis
+    type AssetAnalysis,
+    type SegmentCatalogEntry
   } from '$lib/api/analysis';
   import {
     createPortfolio,
     createPosition,
     deletePortfolio,
     deletePosition,
-    downloadExportDocument,
-    exportPortfolio,
     getActivePortfolioId,
     listPortfolios,
     listPositions,
@@ -50,7 +53,6 @@
     type SortKey
   } from '$lib/features/portfolios/positionTableView';
   import AssetAnalysisPanel from '$lib/features/analise/AssetAnalysisPanel.svelte';
-  import PortfolioImportWizard from '$lib/features/portfolios/PortfolioImportWizard.svelte';
   import PositionDetailPanel from '$lib/features/portfolios/PositionDetailPanel.svelte';
   import PositionEditModal from '$lib/features/portfolios/PositionEditModal.svelte';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
@@ -87,6 +89,8 @@
   let expandedPositionId: number | null = null;
   let prevActiveIdForExpanded: number | null = null;
   let analysisConfig: AnalysisConfig | null = null;
+  let analysisProfile: string = PROFILE_STOCK_BR;
+  let analysisSegments: SegmentCatalogEntry[] = [];
   let analysisPanelOpen = false;
   let analysisSaving = false;
   let analysisAsset: AssetAnalysis | null = null;
@@ -348,17 +352,25 @@
     editingPosition = null;
   }
 
-  async function ensureAnalysisConfig() {
-    if (analysisConfig) return;
-    analysisConfig = await getStockBrConfig();
+  async function ensureAnalysisConfig(profile: string) {
+    if (analysisConfig && analysisProfile === profile) return;
+    if (profile === PROFILE_FII_BR) {
+      analysisConfig = await getFiiBrConfig();
+      analysisSegments = await getFiiSegments();
+    } else {
+      analysisConfig = await getStockBrConfig();
+      analysisSegments = [];
+    }
+    analysisProfile = profile;
   }
 
   async function handleClassifyAsset(asset: Asset) {
     error = '';
     message = '';
     try {
-      await ensureAnalysisConfig();
-      analysisAsset = await getAssetAnalysis(asset.id);
+      const profile = asset.display_class === 'funds' ? PROFILE_FII_BR : PROFILE_STOCK_BR;
+      await ensureAnalysisConfig(profile);
+      analysisAsset = await getAssetAnalysis(asset.id, profile);
       analysisPanelOpen = true;
     } catch (err) {
       error = parseApiError(err, 'Não foi possível abrir a classificação.');
@@ -370,13 +382,21 @@
     analysisAsset = null;
   }
 
-  async function handleSaveAnalysisScores(scores: Record<string, number | null>) {
+  async function handleSaveAnalysisScores(
+    scores: Record<string, number | null>,
+    scoreRefs: Record<string, string | null> = {}
+  ) {
     if (!analysisAsset) return;
     analysisSaving = true;
     error = '';
     message = '';
     try {
-      analysisAsset = await saveAssetAnalysisScores(analysisAsset.asset_id, scores);
+      analysisAsset = await saveAssetAnalysisScores(
+        analysisAsset.asset_id,
+        scores,
+        analysisProfile,
+        scoreRefs
+      );
       analysisPanelOpen = false;
       message = 'Classificação salva.';
     } catch (err) {
@@ -415,21 +435,6 @@
     message = 'Posição removida.';
   }
 
-  async function handleExport() {
-    if (!activeId) {
-      error = 'Selecione uma carteira para exportar.';
-      return;
-    }
-    try {
-      const doc = await exportPortfolio(activeId);
-      const safeName = (activePortfolio?.name ?? 'carteira').replace(/\s+/g, '-').toLowerCase();
-      downloadExportDocument(doc, `${safeName}.carteira.json`);
-      message = 'Exportação baixada.';
-    } catch {
-      error = 'Falha ao exportar.';
-    }
-  }
-
   async function handleDeletePortfolio(portfolio: Portfolio) {
     if (!confirm(`Excluir carteira «${portfolio.name}» e todas as posições?`)) {
       return;
@@ -437,11 +442,6 @@
     await deletePortfolio(portfolio.id);
     await refresh();
     message = 'Carteira excluída.';
-  }
-
-  async function handleImported(portfolioId: number) {
-    await setActivePortfolioId(portfolioId);
-    await refresh();
   }
 
   async function handleSavePortfolioName() {
@@ -576,9 +576,6 @@
                 {/if}
               </div>
             </label>
-            <button class="btn btn-outline btn-sm mt-2" type="button" on:click={handleExport}>
-              Exportar JSON
-            </button>
             <button
               class="btn btn-error btn-outline btn-sm mt-2"
               type="button"
@@ -822,7 +819,7 @@
                           type="button"
                           on:click={() => handleEditPosition(position)}>Editar</button
                         >
-                        {#if asset.display_class === 'stocks'}
+                        {#if asset.display_class === 'stocks' || asset.display_class === 'funds'}
                           <button
                             class="btn btn-ghost btn-xs"
                             type="button"
@@ -874,8 +871,6 @@
         </div>
       </div>
     {/if}
-
-    <PortfolioImportWizard onImported={handleImported} />
   </div>
 
   <PositionEditModal
@@ -894,11 +889,15 @@
 
   <AssetAnalysisPanel
     open={analysisPanelOpen}
+    assetId={analysisAsset?.asset_id ?? null}
     symbol={analysisAsset?.symbol ?? ''}
     name={analysisAsset?.name ?? ''}
     assetType={analysisAsset?.asset_type ?? ''}
-  criteria={analysisConfig?.criteria ?? []}
-  scores={analysisAsset?.scores ?? {}}
+    profile={analysisProfile}
+    criteria={analysisConfig?.criteria ?? []}
+    segments={analysisSegments}
+    scores={analysisAsset?.scores ?? {}}
+    scoreRefs={analysisAsset?.score_refs ?? {}}
     loading={analysisSaving}
     onSave={handleSaveAnalysisScores}
     onClose={handleCloseAnalysisPanel}

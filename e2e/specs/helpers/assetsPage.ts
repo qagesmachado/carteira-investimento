@@ -33,6 +33,10 @@ export function registeredAssetsTable(page: Page) {
     .locator('table');
 }
 
+export function registeredAssetsPagination(page: Page) {
+  return page.getByRole('navigation', { name: 'Paginação da tabela de ativos' }).first();
+}
+
 export function lookupForm(page: Page) {
   return page.locator('form').filter({
     has: page.getByRole('heading', { name: 'Pré-cadastro via yfinance' })

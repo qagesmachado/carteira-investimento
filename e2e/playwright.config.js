@@ -54,7 +54,6 @@ module.exports = defineConfig({
       reuseExistingServer,
       env: {
         DATABASE_URL: 'sqlite:///./data/test/carteira.db',
-        PORTFOLIOS_DATABASE_URL: 'sqlite:///./data/test/portfolios.db',
         ASSET_LOOKUP_MODE: 'yfinance'
       }
     },

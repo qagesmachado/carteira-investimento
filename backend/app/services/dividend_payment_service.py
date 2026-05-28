@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 
 from app.models.asset import Asset, AssetMarket
 from app.models.dividend_payment import DividendPayment, DividendPaymentType
+from app.models.portfolio import Portfolio
 from app.schemas.dividend_payment import (
     BulkDividendCreateItemResult,
     BulkDividendCreateResponse,
@@ -18,18 +19,36 @@ from app.schemas.dividend_payment import (
 from app.services.asset_service import get_asset_by_id, get_asset_by_symbol, normalize_symbol
 
 
-def validate_dividend_payment(payload: DividendPaymentCreate) -> None:
+def _ensure_portfolio_exists(session: Session, portfolio_id: int | None) -> None:
+    if portfolio_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="portfolio_id is required",
+        )
+    if session.get(Portfolio, portfolio_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="portfolio not found",
+        )
+
+
+def validate_dividend_payment(
+    session: Session,
+    payload: DividendPaymentCreate,
+) -> None:
     if payload.amount <= 0:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="amount must be greater than zero",
         )
+    _ensure_portfolio_exists(session, payload.portfolio_id)
 
 
 def to_dividend_payment_read(payment: DividendPayment, asset: Asset) -> DividendPaymentRead:
     return DividendPaymentRead(
         id=payment.id,  # type: ignore[arg-type]
         asset_id=payment.asset_id,
+        portfolio_id=payment.portfolio_id,
         payment_type=payment.payment_type,
         payment_date=payment.payment_date,
         amount=payment.amount,
@@ -54,6 +73,7 @@ def list_dividend_payments(
     session: Session,
     *,
     asset_id: int | None = None,
+    portfolio_id: int | None = None,
     payment_type: DividendPaymentType | None = None,
     market: AssetMarket | None = None,
     from_date: date | None = None,
@@ -66,6 +86,8 @@ def list_dividend_payments(
     )
     if asset_id is not None:
         statement = statement.where(DividendPayment.asset_id == asset_id)
+    if portfolio_id is not None:
+        statement = statement.where(DividendPayment.portfolio_id == portfolio_id)
     if payment_type is not None:
         statement = statement.where(DividendPayment.payment_type == payment_type)
     if from_date is not None:
@@ -118,8 +140,13 @@ def get_dividend_payment_read(session: Session, payment_id: int) -> DividendPaym
     return to_dividend_payment_read(payment, asset)
 
 
-def create_dividend_payment(session: Session, payload: DividendPaymentCreate) -> DividendPaymentRead:
-    validate_dividend_payment(payload)
+def create_dividend_payment(
+    session: Session,
+    payload: DividendPaymentCreate,
+    *,
+    commit: bool = True,
+) -> DividendPaymentRead:
+    validate_dividend_payment(session, payload)
     asset = get_asset_by_id(session, payload.asset_id)
     if asset is None:
         raise HTTPException(
@@ -133,8 +160,11 @@ def create_dividend_payment(session: Session, payload: DividendPaymentCreate) ->
 
     payment = DividendPayment(**data)
     session.add(payment)
-    session.commit()
-    session.refresh(payment)
+    if commit:
+        session.commit()
+        session.refresh(payment)
+    else:
+        session.flush()
     return to_dividend_payment_read(payment, asset)
 
 
@@ -156,6 +186,9 @@ def update_dividend_payment(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="amount must be greater than zero",
         )
+
+    if "portfolio_id" in updates:
+        _ensure_portfolio_exists(session, updates["portfolio_id"])
 
     asset_id = updates.get("asset_id", payment.asset_id)
     asset = get_asset_by_id(session, asset_id)
@@ -188,10 +221,24 @@ def delete_dividend_payment(session: Session, payment_id: int) -> None:
     session.commit()
 
 
-def _build_create_payload(row: BulkDividendImportRow, asset: Asset) -> DividendPaymentCreate:
+def delete_dividend_payments_for_portfolio(session: Session, portfolio_id: int) -> int:
+    payments = session.exec(
+        select(DividendPayment).where(DividendPayment.portfolio_id == portfolio_id),
+    ).all()
+    for payment in payments:
+        session.delete(payment)
+    return len(payments)
+
+
+def _build_create_payload(
+    row: BulkDividendImportRow,
+    asset: Asset,
+    portfolio_id: int | None,
+) -> DividendPaymentCreate:
     currency = (row.currency or "").strip() or asset.currency
     return DividendPaymentCreate(
         asset_id=asset.id,  # type: ignore[arg-type]
+        portfolio_id=portfolio_id,  # type: ignore[arg-type]
         payment_type=row.payment_type,
         payment_date=row.payment_date,
         amount=row.amount,
@@ -206,7 +253,11 @@ def _build_create_payload(row: BulkDividendImportRow, asset: Asset) -> DividendP
 def preview_bulk_dividend_payments(
     session: Session,
     items: list[BulkDividendImportRow],
+    portfolio_id: int | None = None,
 ) -> BulkDividendPreviewResponse:
+    if portfolio_id is not None:
+        _ensure_portfolio_exists(session, portfolio_id)
+
     results: list[BulkDividendPreviewItem] = []
 
     for row in items:
@@ -245,7 +296,7 @@ def preview_bulk_dividend_payments(
             )
             continue
 
-        payload = _build_create_payload(row, asset)
+        payload = _build_create_payload(row, asset, portfolio_id)
         results.append(
             BulkDividendPreviewItem(
                 row_index=row.row_index,
@@ -261,14 +312,26 @@ def preview_bulk_dividend_payments(
 def create_bulk_dividend_payments(
     session: Session,
     payloads: list[DividendPaymentCreate],
+    portfolio_id: int | None = None,
 ) -> BulkDividendCreateResponse:
+    if portfolio_id is None and any(p.portfolio_id is None for p in payloads):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="portfolio_id is required for bulk import",
+        )
+
     results: list[BulkDividendCreateItemResult] = []
 
     for payload in payloads:
         symbol = "?"
         try:
-            validate_dividend_payment(payload)
-            asset = get_asset_by_id(session, payload.asset_id)
+            effective_payload = (
+                payload.model_copy(update={"portfolio_id": portfolio_id})
+                if portfolio_id is not None
+                else payload
+            )
+            validate_dividend_payment(session, effective_payload)
+            asset = get_asset_by_id(session, effective_payload.asset_id)
             if asset is None:
                 results.append(
                     BulkDividendCreateItemResult(
@@ -280,7 +343,7 @@ def create_bulk_dividend_payments(
                 continue
 
             symbol = asset.symbol
-            payment = create_dividend_payment(session, payload)
+            payment = create_dividend_payment(session, effective_payload)
             results.append(
                 BulkDividendCreateItemResult(
                     symbol=symbol,

@@ -1,11 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-import { clickExportJson, gotoPortfoliosPage } from '../helpers/portfoliosPage';
+import {
+  clickExportPortfolioJson,
+  gotoDadosPage,
+  readDownloadJson
+} from '../helpers/dataPage';
 import { seedPortfoliosFullMix } from '../helpers/seedPortfolios';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
 
 /**
- * UI-PRT-010 — Exportar carteira JSON
+ * UI-PRT-010 — Exportar carteira JSON (legado → /dados)
  * @see ../../../casos-de-uso/ui/portfolios/10-exportar-carteira-json.md
  */
 test.describe('UI-PRT-010', () => {
@@ -15,19 +19,16 @@ test.describe('UI-PRT-010', () => {
     await seedPortfoliosFullMix(request);
   });
 
-  test('baixa arquivo .carteira.json válido', async ({ page }) => {
-    await gotoPortfoliosPage(page);
-    const download = await clickExportJson(page);
+  test('baixa arquivo .carteira.json válido em /dados', async ({ page }) => {
+    await gotoDadosPage(page);
+    const download = await clickExportPortfolioJson(page);
     expect(download.suggestedFilename()).toMatch(/\.carteira\.json$/);
 
-    const path = await download.path();
-    expect(path).toBeTruthy();
-    const body = await download.createReadStream();
-    const chunks: Buffer[] = [];
-    for await (const chunk of body!) {
-      chunks.push(Buffer.from(chunk));
-    }
-    const json = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    const json = (await readDownloadJson(download)) as {
+      version: unknown;
+      portfolio: unknown;
+      positions: unknown[];
+    };
     expect(json.version).toBeDefined();
     expect(json.portfolio).toBeDefined();
     expect(Array.isArray(json.positions)).toBe(true);

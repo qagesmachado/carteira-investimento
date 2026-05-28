@@ -2,7 +2,9 @@
 
 ## Objetivo
 
-Gerenciar carteiras e posições em banco **local** (fora do Git), com exportação/importação via JSON canônico e reconciliação da base global de ativos.
+Gerenciar carteiras e posições no banco **local unificado** (`carteira.db`), com exportação/importação via JSON e reconciliação da base global de ativos.
+
+Export/import na UI: página [`/dados`](pagina-dados.md).
 
 ## API HTTP
 
@@ -16,34 +18,35 @@ Prefixo `/portfolios`:
 | `PUT` | `/portfolios/active` | Define carteira ativa (`{ "portfolio_id": n \| null }`) |
 | `GET` | `/portfolios/{id}` | Detalhe |
 | `PATCH` | `/portfolios/{id}` | Atualiza |
-| `DELETE` | `/portfolios/{id}` | Remove carteira e posições |
+| `DELETE` | `/portfolios/{id}` | Remove carteira (409 se houver dados; `?cascade=all` via `/dados`) |
 | `GET` | `/portfolios/{id}/positions` | Lista posições |
 | `POST` | `/portfolios/{id}/positions` | Cria posição (`asset_id` deve existir em `/assets`) |
 | `PATCH` | `/portfolios/{id}/positions/{pid}` | Atualiza posição |
-| `DELETE` | `/portfolios/{id}/positions/{pid}` | Remove posição |
-| `GET` | `/portfolios/{id}/export` | Documento JSON v1 |
+| `DELETE` | `/portfolios/{id}/positions/{pid}` | Remove posição (**proventos permanecem**) |
+| `GET` | `/portfolios/{id}/export` | Documento JSON v1 ou v2 |
 | `POST` | `/portfolios/import/preview` | Pré-visualiza importação |
 | `POST` | `/portfolios/import` | Confirma importação com resoluções |
 
-## Formato `.carteira.json` (v1)
+## Formato `.carteira.json` (v2)
+
+Inclui proventos da carteira:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "exported_at": "2026-05-15T12:00:00",
   "portfolio": { "name": "...", "base_currency": "BRL" },
   "assets": [{ "symbol": "PETR4", "name": "...", "asset_type": "stock", "market": "national", "currency": "BRL" }],
   "positions": [
-    { "symbol": "PETR4", "quantity": 100, "average_price": 32.5 },
-    {
-      "symbol": "CDBBTG2028",
-      "invested_amount": 1000,
-      "current_value": 1069.02,
-      "contracted_yield": "IPCA + 8,40% a.a."
-    }
+    { "symbol": "PETR4", "quantity": 100, "average_price": 32.5 }
+  ],
+  "dividend_payments": [
+    { "symbol": "PETR4", "payment_type": "dividend", "payment_date": "2025-03-10", "amount": 120.5, "currency": "BRL" }
   ]
 }
 ```
+
+v1 (sem `dividend_payments`) continua suportado na importação.
 
 ## Importação — status por ativo
 
@@ -51,16 +54,14 @@ Prefixo `/portfolios`:
 - `missing` — criar na base (`action: create`) após revisão/lookup.
 - `conflict` — campos divergentes; `fields[]` com `resolution`: `keep_base` | `use_file` | `custom`.
 
-## Interface (`/portfolios`)
+## Interface
 
-- CRUD básico de carteiras e posições.
-- Posições de ações/ETFs/FIIs usam quantidade e preço médio.
-- Posições de renda fixa tradicional e previdência usam valor aplicado, valor atual e rendimento contratado manual.
-- Exportar JSON da carteira ativa.
-- Wizard de importação com tabela de conflitos.
+- **`/portfolios`:** CRUD carteiras e posições.
+- **`/dados`:** export/import (backup, carteira, ativos, proventos).
 
 ## Variáveis de ambiente
 
 - `LOCAL_DATA_DIR` — pasta do usuário (padrão `%LOCALAPPDATA%/carteira-investimento`).
-- `PORTFOLIOS_DATABASE_URL` — SQLite de carteiras (padrão `{LOCAL_DATA_DIR}/portfolios.db`).
-- `DATABASE_URL` — base de ativos (inalterada).
+- `DATABASE_URL` — SQLite unificado (padrão `{LOCAL_DATA_DIR}/carteira.db`).
+
+Ver [Persistência — banco único](persistencia-banco-unico.md).

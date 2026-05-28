@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+
 from app.services.analysis_engine import (
     VIABILIDADE_CODE,
     AnalysisBlock,
@@ -219,3 +221,206 @@ def default_stock_br_viability_rules() -> list[ViabilityRule]:
 
 def default_stock_br_table_display() -> TableDisplaySettings:
     return TableDisplaySettings()
+
+
+PROFILE_FII_BR = "fii_br"
+
+
+def _viability_band_options(
+    options: list[tuple[int, str, str, str]],
+) -> list:
+    return [
+        build_score_option(value, seal, characteristic, color)
+        for value, seal, characteristic, color in options
+    ]
+
+
+def default_fii_br_criteria() -> list[CriterionDefinition]:
+    return [
+        CriterionDefinition(
+            code="vacancia",
+            block=AnalysisBlock.FUNDAMENTAL,
+            label="Vacância",
+            help_text="Taxa de vacância do fundo.",
+            weight=1.0,
+            sort_order=1,
+            score_options=_viability_band_options(
+                [
+                    (5, "Viável", "Vacância até 5%.", "viavel"),
+                    (3, "Requer atenção", "Vacância maior que 5% e até 10%.", "atencao"),
+                    (2, "Bomba", "Vacância maior que 10%.", "bomba"),
+                    (1, "Sem dados", "Sem dados", "sem_dados"),
+                ]
+            ),
+        ),
+        CriterionDefinition(
+            code="qtd_ativos",
+            block=AnalysisBlock.FUNDAMENTAL,
+            label="Qtd de Ativos",
+            help_text="Quantidade de imóveis ou ativos na carteira.",
+            weight=1.0,
+            sort_order=2,
+            score_options=_viability_band_options(
+                [
+                    (5, "Viável", "10 ativos ou mais.", "viavel"),
+                    (3, "Requer atenção", "Entre 5 e 9 ativos.", "atencao"),
+                    (2, "Bomba", "Menos de 5 ativos.", "bomba"),
+                    (1, "Sem dados", "Sem dados", "sem_dados"),
+                ]
+            ),
+        ),
+        CriterionDefinition(
+            code="alavancagem",
+            block=AnalysisBlock.FUNDAMENTAL,
+            label="Alavancagem Financeira",
+            help_text="Endividamento do fundo.",
+            weight=1.0,
+            sort_order=3,
+            score_options=_viability_band_options(
+                [
+                    (5, "Viável", "Alavancagem até 15%.", "viavel"),
+                    (3, "Requer atenção", "Alavancagem maior que 15% e até 25%.", "atencao"),
+                    (2, "Bomba", "Alavancagem maior que 25%.", "bomba"),
+                    (1, "Sem dados", "Sem dados", "sem_dados"),
+                ]
+            ),
+        ),
+        CriterionDefinition(
+            code="segmento_fii",
+            block=AnalysisBlock.FUNDAMENTAL,
+            label="Segmento",
+            help_text="Segmento principal do fundo (catálogo editável).",
+            weight=1.0,
+            sort_order=4,
+            input_type="segment",
+            score_options=[],
+        ),
+        CriterionDefinition(
+            code=VIABILIDADE_CODE,
+            block=AnalysisBlock.FUNDAMENTAL,
+            label="Viabilidade",
+            help_text="Classificação manual de viabilidade do fundo.",
+            weight=1.0,
+            sort_order=5,
+            score_options=[
+                build_score_option(1, "AZULIM", "AZULIM", "azulim"),
+                build_score_option(2, "VIÁVEL", "VIÁVEL", "viavel"),
+                build_score_option(3, "ATENÇÃO", "ATENÇÃO", "atencao"),
+                build_score_option(4, "BOMBA", "BOMBA", "bomba"),
+            ],
+        ),
+        CriterionDefinition(
+            code="localizacao",
+            block=AnalysisBlock.DIAGRAMA,
+            label="Localização",
+            help_text="Os imóveis desse Fundo Imobiliário estão localizados em regiões nobres?",
+            weight=1.0,
+            sort_order=1,
+            input_type="yes_no",
+        ),
+        CriterionDefinition(
+            code="propriedades",
+            block=AnalysisBlock.DIAGRAMA,
+            label="Propriedades",
+            help_text="As propriedades são novas e não consomem manutenção excessiva?",
+            weight=1.0,
+            sort_order=2,
+            input_type="yes_no",
+        ),
+        CriterionDefinition(
+            code="pvp",
+            block=AnalysisBlock.DIAGRAMA,
+            label="P/VP",
+            help_text="O fundo imobiliário está negociado abaixo do P/VP 1?",
+            weight=1.0,
+            sort_order=3,
+            input_type="yes_no",
+        ),
+        CriterionDefinition(
+            code="dividendos_fii",
+            block=AnalysisBlock.DIAGRAMA,
+            label="Dividendos",
+            help_text="Distribui dividendos a mais de 4 anos consistentemente?",
+            weight=1.0,
+            sort_order=4,
+            input_type="yes_no",
+        ),
+        CriterionDefinition(
+            code="dependencia",
+            block=AnalysisBlock.DIAGRAMA,
+            label="Dependência",
+            help_text="Não é dependente de um único inquilino ou imóvel?",
+            weight=1.0,
+            sort_order=5,
+            input_type="yes_no",
+        ),
+        CriterionDefinition(
+            code="setor_yield",
+            block=AnalysisBlock.DIAGRAMA,
+            label="Setor",
+            help_text="O Yield está dentro ou acima da média para fundos imobiliários do mesmo tipo?",
+            weight=1.0,
+            sort_order=6,
+            input_type="yes_no",
+        ),
+        CriterionDefinition(
+            code="pvp_descarte",
+            block=AnalysisBlock.DIAGRAMA,
+            label="P/VP > 1,5",
+            help_text="Acima de 1,5, descarto o investimento em qualquer hipótese.",
+            weight=1.0,
+            sort_order=7,
+            input_type="flag",
+            score_options=[],
+        ),
+    ]
+
+
+def default_fii_br_viability_rules() -> list[ViabilityRule]:
+    return []
+
+
+def default_fii_br_table_display() -> TableDisplaySettings:
+    return TableDisplaySettings()
+
+
+class SegmentCatalogEntry(BaseModel):
+    slug: str
+    name: str
+    score: int
+    weight: float = 1.0
+    help_text: str = ""
+    color: str | None = None
+    sort_order: int = 0
+
+
+def default_fii_br_segments() -> list[SegmentCatalogEntry]:
+    return [
+        SegmentCatalogEntry(
+            slug="shoppings",
+            name="Shoppings",
+            score=5,
+            weight=1.0,
+            help_text=(
+                "Recebeu classificação Viável porque shoppings consolidados mantêm fluxo "
+                "consistente de visitantes e contam com gestão ativa, garantindo resiliência "
+                "e desempenho estável."
+            ),
+            color="viavel",
+            sort_order=1,
+        ),
+        SegmentCatalogEntry(
+            slug="multicategoria",
+            name="Multicategoria",
+            score=3,
+            weight=1.0,
+            help_text=(
+                "Recebeu classificação Requer atenção porque reúne ativos de diferentes "
+                "segmentos, ampliando a diversificação, mas exigindo gestão disciplinada e "
+                "acompanhamento constante da alocação para manter estabilidade e equilíbrio "
+                "de riscos."
+            ),
+            color="atencao",
+            sort_order=2,
+        ),
+    ]

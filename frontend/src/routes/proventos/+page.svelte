@@ -12,10 +12,14 @@
     type DividendPaymentListParams
   } from '$lib/api/dividendPayments';
   import { parseApiError } from '$lib/api/parseApiError';
+  import {
+    getActivePortfolioId,
+    listPortfolios,
+    type Portfolio
+  } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import DividendPaymentForm from '$lib/features/proventos/DividendPaymentForm.svelte';
   import DividendPaymentEditModal from '$lib/features/proventos/DividendPaymentEditModal.svelte';
-  import DividendBulkImport from '$lib/features/proventos/DividendBulkImport.svelte';
   import DividendPaymentList from '$lib/features/proventos/DividendPaymentList.svelte';
 
   let assets: Asset[] = [];
@@ -23,12 +27,15 @@
   let assetsError = '';
   let payments: DividendPayment[] = [];
   let paymentsError = '';
+  let portfolios: Portfolio[] = [];
+  let activePortfolioId: number | null = null;
   let editingPayment: DividendPayment | null = null;
   let editModalOpen = false;
   let message = '';
   let error = '';
   let loading = false;
   let serverFilters: DividendPaymentListParams = {};
+  let portfolioFilter: number | '' = '';
 
   let formComponent: DividendPaymentForm;
 
@@ -58,9 +65,10 @@
     assetsError = '';
     paymentsError = '';
 
-    const [assetsResult, paymentsResult] = await Promise.allSettled([
+    const [assetsResult, portfoliosResult, activeResult] = await Promise.allSettled([
       listAssets(),
-      listDividendPayments()
+      listPortfolios(),
+      getActivePortfolioId()
     ]);
 
     if (assetsResult.status === 'fulfilled') {
@@ -74,12 +82,28 @@
     }
     assetsLoading = false;
 
-    if (paymentsResult.status === 'fulfilled') {
-      payments = paymentsResult.value;
+    if (portfoliosResult.status === 'fulfilled') {
+      portfolios = portfoliosResult.value;
     } else {
+      portfolios = [];
+    }
+    if (activeResult.status === 'fulfilled') {
+      activePortfolioId = activeResult.value;
+    } else {
+      activePortfolioId = null;
+    }
+
+    if (activePortfolioId != null && portfolios.some((p) => p.id === activePortfolioId)) {
+      portfolioFilter = activePortfolioId;
+      serverFilters = { ...serverFilters, portfolio_id: activePortfolioId };
+    }
+
+    try {
+      payments = await listDividendPayments(serverFilters);
+    } catch (err) {
       payments = [];
       paymentsError = parseApiError(
-        paymentsResult.reason,
+        err,
         'Não foi possível carregar os proventos. Reinicie o backend se a tabela de proventos ainda não existir.'
       );
     }
@@ -88,15 +112,6 @@
   onMount(() => {
     void loadInitialData();
   });
-
-  async function handleBulkSaved() {
-    try {
-      await refreshPayments();
-      message = 'Importação em lote concluída.';
-    } catch {
-      error = 'Importação concluída, mas não foi possível atualizar a listagem.';
-    }
-  }
 
   async function handleServerFiltersChange(filters: DividendPaymentListParams) {
     serverFilters = filters;
@@ -236,16 +251,18 @@
         bind:this={formComponent}
         {assets}
         {assetsLoading}
+        {portfolios}
+        {activePortfolioId}
         loading={loading}
         onSubmit={handleCreate}
       />
     </div>
   </section>
 
-  <DividendBulkImport onSaved={handleBulkSaved} />
-
   <DividendPaymentList
     {payments}
+    {portfolios}
+    bind:portfolioFilter
     onEdit={handleEdit}
     onDelete={handleDelete}
     onServerFiltersChange={handleServerFiltersChange}
@@ -256,6 +273,8 @@
     payment={editingPayment}
     {assets}
     {assetsLoading}
+    {portfolios}
+    {activePortfolioId}
     {loading}
     onSubmit={handleUpdate}
     onClose={closeEditModal}

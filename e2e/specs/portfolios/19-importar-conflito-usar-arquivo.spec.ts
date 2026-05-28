@@ -1,18 +1,18 @@
 import { expect, test } from '@playwright/test';
 
-import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
 import {
-  clickAnalyzeImport,
-  clickConfirmImport,
-  gotoPortfoliosPage,
-  setConflictResolution,
-  uploadImportFile
-} from '../helpers/portfoliosPage';
+  clickAnalyzePortfolioImport,
+  clickConfirmPortfolioImport,
+  gotoDadosPage,
+  uploadPortfolioImportFile
+} from '../helpers/dataPage';
+import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
+import { setConflictResolution } from '../helpers/portfoliosPage';
 import { seedPortfoliosForImportConflict } from '../helpers/seedPortfolios';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
 
 /**
- * UI-PRT-019 — Importar com conflito (usar arquivo)
+ * UI-PRT-019 — Importar com conflito (usar arquivo) via /dados
  * @see ../../../casos-de-uso/ui/portfolios/19-importar-conflito-usar-arquivo.md
  */
 test.describe('UI-PRT-019', () => {
@@ -23,12 +23,12 @@ test.describe('UI-PRT-019', () => {
   });
 
   test('resolve conflito de ativo escolhendo usar arquivo', async ({ page }) => {
-    await gotoPortfoliosPage(page);
-    await uploadImportFile(page, 'specs/fixtures/e2e-import-conflict.carteira.json');
-    await clickAnalyzeImport(page);
+    await gotoDadosPage(page);
+    await uploadPortfolioImportFile(page, 'specs/fixtures/e2e-import-conflict.carteira.json');
+    await clickAnalyzePortfolioImport(page);
     await setConflictResolution(page, TICKER_BBSE3, 'name', 'use_file');
-    await clickConfirmImport(page);
-    await expect(page.getByRole('alert').filter({ hasText: /Importação concluída/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'E2E Import Conflito' })).toBeVisible();
+    await clickConfirmPortfolioImport(page);
+    await expect(page.getByText(/Importação concluída/i)).toBeVisible();
+    await expect(page.getByLabel('Selecionar carteira')).toContainText('E2E Import Conflito');
   });
 });

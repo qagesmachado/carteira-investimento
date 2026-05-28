@@ -7,12 +7,19 @@ from sqlmodel import Session, select
 from app.models.analysis import (
     AnalysisCriterionDefinition,
     AnalysisProfileSettings,
+    AnalysisSegmentCatalog,
     AnalysisViabilityRule,
     AssetAnalysisScore,
 )
 from app.models.asset import Asset, DisplayClass
 from app.services.analysis_defaults import (
+    PROFILE_FII_BR,
     PROFILE_STOCK_BR,
+    SegmentCatalogEntry,
+    default_fii_br_criteria,
+    default_fii_br_segments,
+    default_fii_br_table_display,
+    default_fii_br_viability_rules,
     default_stock_br_criteria,
     default_stock_br_table_display,
     default_stock_br_viability_rules,
@@ -21,6 +28,8 @@ from app.services.analysis_engine import (
     AnalysisBlock,
     AnalysisSummary,
     CriterionDefinition,
+    PVP_DESCARTE_CODE,
+    SEGMENTO_FII_CODE,
     ScoreOption,
     TableDisplaySettings,
     TableSumColumnSettings,
@@ -49,7 +58,16 @@ def _criterion_to_db(c: CriterionDefinition, profile: str) -> AnalysisCriterionD
 def _criterion_from_db(row: AnalysisCriterionDefinition) -> CriterionDefinition:
     raw = json.loads(row.score_options_json or "[]")
     score_options = [ScoreOption(**o) for o in raw]
-    input_type = "yes_no" if not score_options else "select"
+    special_input_types = {
+        PVP_DESCARTE_CODE: "flag",
+        SEGMENTO_FII_CODE: "segment",
+    }
+    if row.code in special_input_types:
+        input_type = special_input_types[row.code]
+    elif not score_options:
+        input_type = "yes_no"
+    else:
+        input_type = "select"
     return CriterionDefinition(
         code=row.code,
         block=AnalysisBlock(row.block),
@@ -131,6 +149,67 @@ def _merge_stock_br_criteria(stored: list[CriterionDefinition]) -> list[Criterio
     return merged
 
 
+def _merge_profile_criteria(
+    stored: list[CriterionDefinition],
+    defaults_fn,
+) -> list[CriterionDefinition]:
+    stored_by_code = {c.code: c for c in stored}
+    merged: list[CriterionDefinition] = []
+
+    for default in defaults_fn():
+        existing = stored_by_code.get(default.code)
+        if existing is None:
+            merged.append(default)
+            continue
+
+        if default.input_type in ("yes_no", "flag", "segment"):
+            merged.append(
+                default.model_copy(
+                    update={
+                        "weight": existing.weight,
+                        "sort_order": existing.sort_order,
+                        "label": existing.label,
+                        "help_text": default.help_text,
+                    }
+                )
+            )
+            continue
+
+        stored_by_value = {option.value: option for option in existing.score_options}
+        options: list[ScoreOption] = []
+        for default_option in default.score_options:
+            stored_option = stored_by_value.get(default_option.value)
+            if stored_option is None or not stored_option.characteristic:
+                options.append(default_option)
+                continue
+            options.append(
+                default_option.model_copy(
+                    update={
+                        "seal": stored_option.seal or default_option.seal,
+                        "characteristic": stored_option.characteristic,
+                        "color": stored_option.color or default_option.color,
+                        "label": score_option_dropdown_label(stored_option),
+                    }
+                )
+            )
+
+        merged.append(
+            existing.model_copy(
+                update={
+                    "input_type": default.input_type,
+                    "score_options": options,
+                    "help_text": existing.help_text or default.help_text,
+                }
+            )
+        )
+
+    return merged
+
+
+def _merge_fii_br_criteria(stored: list[CriterionDefinition]) -> list[CriterionDefinition]:
+    return _merge_profile_criteria(stored, default_fii_br_criteria)
+
+
 def _criteria_needs_upgrade(stored: list[CriterionDefinition], merged: list[CriterionDefinition]) -> bool:
     if {c.code for c in stored} != {c.code for c in merged}:
         return True
@@ -189,6 +268,126 @@ def seed_stock_br_config(session: Session) -> None:
     session.commit()
 
 
+def seed_fii_br_config(session: Session) -> None:
+    rows = session.exec(
+        select(AnalysisCriterionDefinition).where(AnalysisCriterionDefinition.profile == PROFILE_FII_BR)
+    ).all()
+    if not rows:
+        for c in default_fii_br_criteria():
+            session.add(_criterion_to_db(c, PROFILE_FII_BR))
+        for r in default_fii_br_viability_rules():
+            session.add(_rule_to_db(r, PROFILE_FII_BR))
+        _ensure_profile_table_display(session, PROFILE_FII_BR, default_fii_br_table_display)
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+        _seed_fii_br_segments(session)
+        return
+
+    stored = [_criterion_from_db(row) for row in rows]
+    merged = _merge_fii_br_criteria(stored)
+    if _criteria_needs_upgrade(stored, merged):
+        for row in rows:
+            session.delete(row)
+        session.flush()
+        for criterion in merged:
+            session.add(_criterion_to_db(criterion, PROFILE_FII_BR))
+        session.commit()
+    _seed_fii_br_segments(session)
+
+
+def _seed_fii_br_segments(session: Session) -> None:
+    rows = session.exec(
+        select(AnalysisSegmentCatalog).where(AnalysisSegmentCatalog.profile == PROFILE_FII_BR)
+    ).all()
+    if rows:
+        return
+    for segment in default_fii_br_segments():
+        session.add(_segment_to_db(segment, PROFILE_FII_BR))
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+
+
+def _segment_to_db(entry: SegmentCatalogEntry, profile: str) -> AnalysisSegmentCatalog:
+    return AnalysisSegmentCatalog(
+        profile=profile,
+        slug=entry.slug,
+        name=entry.name,
+        score=entry.score,
+        weight=entry.weight,
+        help_text=entry.help_text,
+        color=entry.color,
+        sort_order=entry.sort_order,
+    )
+
+
+def _segment_from_db(row: AnalysisSegmentCatalog) -> SegmentCatalogEntry:
+    return SegmentCatalogEntry(
+        slug=row.slug,
+        name=row.name,
+        score=row.score,
+        weight=row.weight,
+        help_text=row.help_text,
+        color=row.color,
+        sort_order=row.sort_order,
+    )
+
+
+def get_profile_segments(session: Session, profile: str) -> list[SegmentCatalogEntry]:
+    if profile == PROFILE_FII_BR:
+        seed_fii_br_config(session)
+    rows = session.exec(
+        select(AnalysisSegmentCatalog)
+        .where(AnalysisSegmentCatalog.profile == profile)
+        .order_by(AnalysisSegmentCatalog.sort_order)
+    ).all()
+    return [_segment_from_db(row) for row in rows]
+
+
+def save_profile_segments(
+    session: Session,
+    profile: str,
+    segments: list[SegmentCatalogEntry],
+) -> None:
+    for row in session.exec(
+        select(AnalysisSegmentCatalog).where(AnalysisSegmentCatalog.profile == profile)
+    ).all():
+        session.delete(row)
+    session.flush()
+    for segment in segments:
+        session.add(_segment_to_db(segment, profile))
+    session.commit()
+
+
+def reset_fii_br_segments(session: Session) -> None:
+    for row in session.exec(
+        select(AnalysisSegmentCatalog).where(AnalysisSegmentCatalog.profile == PROFILE_FII_BR)
+    ).all():
+        session.delete(row)
+    session.commit()
+    _seed_fii_br_segments(session)
+
+
+def reset_fii_br_config(session: Session) -> None:
+    for row in session.exec(
+        select(AnalysisCriterionDefinition).where(AnalysisCriterionDefinition.profile == PROFILE_FII_BR)
+    ).all():
+        session.delete(row)
+    for row in session.exec(
+        select(AnalysisViabilityRule).where(AnalysisViabilityRule.profile == PROFILE_FII_BR)
+    ).all():
+        session.delete(row)
+    settings_row = session.get(AnalysisProfileSettings, PROFILE_FII_BR)
+    if settings_row:
+        session.delete(settings_row)
+    session.commit()
+    seed_fii_br_config(session)
+    reset_fii_br_segments(session)
+
+
 def reset_stock_br_config(session: Session) -> None:
     for row in session.exec(
         select(AnalysisCriterionDefinition).where(AnalysisCriterionDefinition.profile == PROFILE_STOCK_BR)
@@ -205,20 +404,30 @@ def reset_stock_br_config(session: Session) -> None:
     seed_stock_br_config(session)
 
 
-def _ensure_profile_table_display(session: Session, profile: str) -> None:
+def _ensure_profile_table_display(
+    session: Session,
+    profile: str,
+    defaults_fn=default_stock_br_table_display,
+) -> None:
     existing = session.get(AnalysisProfileSettings, profile)
     if existing:
         return
     session.add(
         AnalysisProfileSettings(
             profile=profile,
-            settings_json=json.dumps(default_stock_br_table_display().model_dump()),
+            settings_json=json.dumps(defaults_fn().model_dump()),
         )
     )
 
 
-def _normalize_table_display_settings(payload: dict) -> TableDisplaySettings:
-    defaults = default_stock_br_table_display()
+def _table_display_defaults_for_profile(profile: str):
+    if profile == PROFILE_FII_BR:
+        return default_fii_br_table_display
+    return default_stock_br_table_display
+
+
+def _normalize_table_display_settings(payload: dict, profile: str = PROFILE_STOCK_BR) -> TableDisplaySettings:
+    defaults = _table_display_defaults_for_profile(profile)()
     sum_col = payload.get("sum_column")
     if not isinstance(sum_col, dict):
         return defaults
@@ -245,18 +454,20 @@ def _normalize_table_display_settings(payload: dict) -> TableDisplaySettings:
 def get_profile_table_display(session: Session, profile: str) -> TableDisplaySettings:
     if profile == PROFILE_STOCK_BR:
         seed_stock_br_config(session)
+    elif profile == PROFILE_FII_BR:
+        seed_fii_br_config(session)
 
     row = session.get(AnalysisProfileSettings, profile)
     if not row:
-        _ensure_profile_table_display(session, profile)
+        _ensure_profile_table_display(session, profile, _table_display_defaults_for_profile(profile))
         session.commit()
         row = session.get(AnalysisProfileSettings, profile)
 
     if not row or not row.settings_json:
-        return default_stock_br_table_display()
+        return _table_display_defaults_for_profile(profile)()
 
     payload = json.loads(row.settings_json)
-    return _normalize_table_display_settings(payload)
+    return _normalize_table_display_settings(payload, profile)
 
 
 def save_profile_table_display(
@@ -281,6 +492,8 @@ def save_profile_table_display(
 def get_profile_config(session: Session, profile: str) -> tuple[list[CriterionDefinition], list[ViabilityRule]]:
     if profile == PROFILE_STOCK_BR:
         seed_stock_br_config(session)
+    elif profile == PROFILE_FII_BR:
+        seed_fii_br_config(session)
 
     criteria_rows = session.exec(
         select(AnalysisCriterionDefinition)
@@ -295,6 +508,8 @@ def get_profile_config(session: Session, profile: str) -> tuple[list[CriterionDe
     rules = [_rule_from_db(r) for r in rule_rows]
     if profile == PROFILE_STOCK_BR:
         criteria = _merge_stock_br_criteria(criteria)
+    elif profile == PROFILE_FII_BR:
+        criteria = _merge_fii_br_criteria(criteria)
 
     return (criteria, rules)
 
@@ -335,21 +550,31 @@ def list_eligible_assets(session: Session, profile: str) -> list[Asset]:
             for a in assets
             if infer_display_class(a.asset_type, a.market, a.etf_subtype) == DisplayClass.STOCKS
         ]
+    if profile == PROFILE_FII_BR:
+        return [
+            a
+            for a in assets
+            if infer_display_class(a.asset_type, a.market, a.etf_subtype) == DisplayClass.FUNDS
+        ]
     return list(assets)
 
 
-def get_asset_scores(session: Session, asset_id: int) -> dict[str, int | None]:
+def get_asset_scores(session: Session, asset_id: int) -> tuple[dict[str, int | None], dict[str, str | None]]:
     rows = session.exec(
         select(AssetAnalysisScore).where(AssetAnalysisScore.asset_id == asset_id)
     ).all()
-    return {r.criterion_code: r.score for r in rows}
+    scores = {r.criterion_code: r.score for r in rows}
+    score_refs = {r.criterion_code: r.value_text for r in rows if r.value_text}
+    return scores, score_refs
 
 
 def save_asset_scores(
     session: Session,
     asset_id: int,
     scores: dict[str, int | None],
+    score_refs: dict[str, str | None] | None = None,
 ) -> None:
+    refs = score_refs or {}
     for code, value in scores.items():
         existing = session.exec(
             select(AssetAnalysisScore).where(
@@ -357,8 +582,13 @@ def save_asset_scores(
                 AssetAnalysisScore.criterion_code == code,
             )
         ).first()
+        ref = refs.get(code)
         if existing:
             existing.score = value
+            if code in refs:
+                existing.value_text = ref
+            elif value is None:
+                existing.value_text = None
             existing.updated_at = datetime.utcnow()
             session.add(existing)
         else:
@@ -367,6 +597,7 @@ def save_asset_scores(
                     asset_id=asset_id,
                     criterion_code=code,
                     score=value,
+                    value_text=ref,
                 )
             )
     session.commit()
@@ -376,19 +607,19 @@ def build_asset_analysis_read(
     session: Session,
     asset: Asset,
     profile: str,
-) -> tuple[dict[str, int | None], AnalysisSummary, list[CriterionDefinition], list[ViabilityRule]]:
+) -> tuple[dict[str, int | None], dict[str, str | None], AnalysisSummary, list[CriterionDefinition], list[ViabilityRule]]:
     criteria, rules = get_profile_config(session, profile)
-    scores = get_asset_scores(session, asset.id)
+    scores, score_refs = get_asset_scores(session, asset.id)
     summary = summarize_analysis(scores, criteria, rules)
-    return scores, summary, criteria, rules
+    return scores, score_refs, summary, criteria, rules
 
 
-def list_assets_with_analysis(session: Session, profile: str) -> list[tuple[Asset, dict[str, int | None], AnalysisSummary]]:
+def list_assets_with_analysis(session: Session, profile: str) -> list[tuple[Asset, dict[str, int | None], dict[str, str | None], AnalysisSummary]]:
     criteria, rules = get_profile_config(session, profile)
     assets = list_eligible_assets(session, profile)
-    result: list[tuple[Asset, dict[str, int | None], AnalysisSummary]] = []
+    result: list[tuple[Asset, dict[str, int | None], dict[str, str | None], AnalysisSummary]] = []
     for asset in assets:
-        scores = get_asset_scores(session, asset.id)
+        scores, score_refs = get_asset_scores(session, asset.id)
         summary = summarize_analysis(scores, criteria, rules)
-        result.append((asset, scores, summary))
+        result.append((asset, scores, score_refs, summary))
     return result

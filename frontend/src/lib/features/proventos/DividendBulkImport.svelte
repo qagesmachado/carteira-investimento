@@ -1,10 +1,11 @@
 <script lang="ts">
   import {
-    createBulkDividendPayments,
-    previewBulkDividendPayments,
+    confirmImportDividends,
+    previewImportDividends,
     type BulkDividendPreviewItem,
     type DividendPaymentCreate
-  } from '$lib/api/dividendPayments';
+  } from '$lib/api/data';
+  import type { Portfolio } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import { formatIsoDateToBr } from '$lib/brDate';
   import { formatPaymentTypeForDisplay } from '$lib/proventoLabels';
@@ -18,6 +19,26 @@
   } from './parseDividendImport';
 
   export let onSaved: () => void | Promise<void> = () => undefined;
+  export let portfolios: Portfolio[] = [];
+  export let activePortfolioId: number | null = null;
+
+  let portfolioId: number | '' = '';
+  let portfolioDefaultApplied = false;
+
+  $: if (
+    !portfolioDefaultApplied &&
+    portfolioId === '' &&
+    activePortfolioId != null &&
+    portfolios.some((p) => p.id === activePortfolioId)
+  ) {
+    portfolioId = activePortfolioId;
+    portfolioDefaultApplied = true;
+  }
+
+  function handlePortfolioChange(event: Event) {
+    const value = (event.currentTarget as HTMLSelectElement).value;
+    portfolioId = value === '' ? '' : Number(value);
+  }
 
   let pasteText = '';
   let parsedRows: ParsedDividendImportRow[] = [];
@@ -145,7 +166,7 @@
     message = '';
 
     try {
-      const response = await previewBulkDividendPayments(
+      const response = await previewImportDividends(
         rows.map((row) => ({
           row_index: row.rowIndex,
           symbol: row.symbol,
@@ -157,7 +178,8 @@
           company_cnpj: row.companyCnpj,
           payer_cnpj: row.payerCnpj,
           payer_name: row.payerName
-        }))
+        })),
+        { portfolio_id: portfolioId === '' ? null : Number(portfolioId) }
       );
       previewItems = response.items;
       selected = new Set(
@@ -181,9 +203,17 @@
   }
 
   async function saveSelected() {
+    if (portfolioId === '') {
+      error = 'Selecione uma carteira de destino antes de importar.';
+      return;
+    }
+
     const payloads: DividendPaymentCreate[] = previewItems
       .filter((item) => selected.has(item.row_index) && item.payload)
-      .map((item) => item.payload as DividendPaymentCreate);
+      .map((item) => ({
+        ...(item.payload as DividendPaymentCreate),
+        portfolio_id: Number(portfolioId)
+      }));
 
     if (payloads.length === 0) {
       error = 'Selecione ao menos um provento válido para importar.';
@@ -195,7 +225,9 @@
     message = '';
 
     try {
-      const response = await createBulkDividendPayments(payloads);
+      const response = await confirmImportDividends(payloads, {
+        portfolio_id: Number(portfolioId)
+      });
       const created = response.results.filter((r) => r.status === 'created').length;
       const skipped = response.results.filter((r) => r.status === 'skipped').length;
       const failed = response.results.filter((r) => r.status === 'error').length;
@@ -226,8 +258,30 @@
       <p class="text-sm text-base-content/70">
         Cole CSV ou envie arquivo .csv / .txt / .xlsx. Suporta template
         (<code class="text-xs">ticker, data, valor, tipo…</code>) e layout legado (colunas Ativo, Data, Valor…).
+        A carteira escolhida abaixo é aplicada a <strong>todas</strong> as linhas importadas.
       </p>
     </div>
+
+    <label class="form-control">
+      <span class="label">
+        <span class="label-text">Carteira de destino</span>
+        {#if portfolios.length === 0}
+          <span class="label-text-alt">Nenhuma carteira cadastrada</span>
+        {/if}
+      </span>
+      <select
+        class="select select-bordered max-w-md"
+        value={portfolioId === '' ? '' : String(portfolioId)}
+        on:change={handlePortfolioChange}
+        disabled={portfolios.length === 0}
+        aria-label="Carteira de destino da importacao em lote"
+      >
+        <option value="" disabled>Selecione uma carteira</option>
+        {#each portfolios as portfolio (portfolio.id)}
+          <option value={String(portfolio.id)}>{portfolio.name}</option>
+        {/each}
+      </select>
+    </label>
 
     <label class="form-control">
       <span class="label"><span class="label-text">Conteúdo CSV</span></span>

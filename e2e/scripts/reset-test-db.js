@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const testDbDir = path.join(__dirname, '..', '..', 'backend', 'data', 'test');
-const dbFiles = ['carteira.db', 'portfolios.db'];
+const dbFiles = ['carteira.db'];
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

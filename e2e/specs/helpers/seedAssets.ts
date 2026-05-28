@@ -84,6 +84,24 @@ export async function seedCatalogForFilter(request: APIRequestContext): Promise<
   await seedAssetFromLookup(request, 'FESA4');
 }
 
+export async function seedManyAssetsForPagination(
+  request: APIRequestContext,
+  count = 25
+): Promise<void> {
+  await clearAllTestAssets(request, API_BASE_URL);
+  for (let index = 1; index <= count; index += 1) {
+    const suffix = String(index).padStart(2, '0');
+    await createAssetViaApi(request, {
+      symbol: `E2E-PAG-${suffix}`,
+      name: `Ativo paginação ${suffix}`,
+      asset_type: 'stock',
+      market: 'national',
+      country: 'BR',
+      currency: 'BRL'
+    });
+  }
+}
+
 export async function seedManualFixedIncome(request: APIRequestContext): Promise<void> {
   await deleteAssetBySymbolIfExists(request, E2E_CDB_IDENTIFIER);
   await createAssetViaApi(request, {

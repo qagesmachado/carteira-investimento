@@ -4,13 +4,18 @@
   $: pathname = $page.url.pathname;
   $: dashboardOpen = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
   $: analiseOpen = pathname.startsWith('/analise');
+  $: rebalanceOpen = pathname.startsWith('/rebalanceamento');
+  $: objetivosOpen = pathname.startsWith('/objetivos');
+  $: alocacaoOpen = analiseOpen || rebalanceOpen || objetivosOpen;
   $: cadastroOpen =
     pathname === '/assets' ||
     pathname.startsWith('/assets/') ||
     pathname === '/proventos' ||
     pathname.startsWith('/proventos/') ||
     pathname === '/portfolios' ||
-    (pathname.startsWith('/portfolios/') && pathname !== '/portfolios/consolidada');
+    (pathname.startsWith('/portfolios/') && pathname !== '/portfolios/consolidada') ||
+    pathname === '/dados' ||
+    pathname.startsWith('/dados/');
 </script>
 
 <header class="flex min-h-16 w-full items-center bg-base-100 shadow-sm">
@@ -43,6 +48,9 @@
         <li>
           <a href="/proventos" class:active={pathname === '/proventos'}>Proventos</a>
         </li>
+        <li>
+          <a href="/dados" class:active={pathname === '/dados'}>Dados</a>
+        </li>
       </ul>
     </div>
 
@@ -55,9 +63,9 @@
         tabindex="0"
         role="button"
         class="btn btn-ghost gap-1"
-        class:btn-active={analiseOpen}
+        class:btn-active={alocacaoOpen}
       >
-        Análise
+        Alocação
         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path
             fill-rule="evenodd"
@@ -68,17 +76,13 @@
       </div>
       <ul class="dropdown-content menu z-50 mt-2 w-52 rounded-box bg-base-100 p-2 shadow">
         <li>
-          <a href="/analise/acoes-br" class:active={pathname.startsWith('/analise/acoes-br')}>
-            Ações/ETF BR
-          </a>
+          <a href="/objetivos" class:active={objetivosOpen}>Objetivos</a>
         </li>
         <li>
-          <a
-            href="/analise/configuracao"
-            class:active={pathname.startsWith('/analise/configuracao')}
-          >
-            Configuração
-          </a>
+          <a href="/rebalanceamento" class:active={rebalanceOpen}>Rebalanceamento</a>
+        </li>
+        <li>
+          <a href="/analise/acoes-br" class:active={analiseOpen}>Análise de ativos</a>
         </li>
       </ul>
     </div>

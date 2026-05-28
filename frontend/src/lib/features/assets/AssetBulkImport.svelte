@@ -1,11 +1,10 @@
 <script lang="ts">
   import {
-    createBulkAssets,
-    lookupToAssetCreate,
-    previewBulkAssets,
+    confirmImportAssets,
+    previewImportAssets,
     type AssetCreate,
     type BulkPreviewItem
-  } from '$lib/api/assets';
+  } from '$lib/api/data';
   import {
     buildPreviewTableRows,
     canSelectPreviewItem,
@@ -120,7 +119,7 @@
     message = duplicateCount > 0 ? `${duplicateCount} duplicata(s) removida(s) antes da busca.` : '';
 
     try {
-      const response = await previewBulkAssets(parsedSymbols);
+      const response = await previewImportAssets(parsedSymbols);
       previewItems = response.items;
       draftBySymbol = {};
       selected = new Set(
@@ -190,7 +189,7 @@
     message = '';
 
     try {
-      const response = await createBulkAssets(payloads);
+      const response = await confirmImportAssets(payloads);
       const created = response.results.filter((r) => r.status === 'created').length;
       const skipped = response.results.filter((r) => r.status === 'skipped').length;
       const failed = response.results.filter((r) => r.status === 'error').length;

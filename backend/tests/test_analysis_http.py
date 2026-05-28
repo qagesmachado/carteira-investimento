@@ -148,3 +148,122 @@ def test_reset_config(client: TestClient) -> None:
     reset = client.post("/analysis/profiles/stock-br/config/reset")
     assert reset.status_code == 200
     assert reset.json()["criteria"][0]["weight"] == 1.0
+
+
+def _create_fii(client: TestClient, symbol: str = "HGLG11") -> dict:
+    response = client.post(
+        "/assets",
+        json={
+            "symbol": symbol,
+            "name": f"FII {symbol}",
+            "asset_type": "fii",
+            "market": "national",
+            "country": "BR",
+            "currency": "BRL",
+        },
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
+def test_get_fii_br_config_seeds_defaults(client: TestClient) -> None:
+    response = client.get("/analysis/profiles/fii-br/config")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["profile"] == "fii_br"
+    codes = {c["code"] for c in body["criteria"]}
+    assert {"vacancia", "qtd_ativos", "alavancagem", "segmento_fii", "localizacao", "pvp_descarte"}.issubset(
+        codes
+    )
+    vacancia = next(c for c in body["criteria"] if c["code"] == "vacancia")
+    assert vacancia["score_options"][0]["characteristic"] == "Vacância até 5%."
+
+
+def test_fii_segments_seed(client: TestClient) -> None:
+    response = client.get("/analysis/profiles/fii-br/segments")
+    assert response.status_code == 200
+    segments = response.json()
+    assert len(segments) >= 2
+    names = {s["name"] for s in segments}
+    assert "Shoppings" in names
+    assert "Multicategoria" in names
+
+
+def test_put_fii_segments_rejects_incomplete_entry(client: TestClient) -> None:
+    response = client.put(
+        "/analysis/profiles/fii-br/segments",
+        json={
+            "segments": [
+                {
+                    "slug": "novo",
+                    "name": "",
+                    "score": 3,
+                    "help_text": "Texto explicativo.",
+                    "sort_order": 1,
+                }
+            ]
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_put_fii_scores_and_list(client: TestClient) -> None:
+    asset = _create_fii(client)
+    put = client.put(
+        f"/analysis/assets/{asset['id']}/scores?profile=fii_br",
+        json={
+            "scores": {
+                "vacancia": 5,
+                "qtd_ativos": 5,
+                "alavancagem": 5,
+                "segmento_fii": 5,
+                "viabilidade": 2,
+                "localizacao": 1,
+                "pvp": -1,
+            },
+            "score_refs": {"segmento_fii": "shoppings"},
+        },
+    )
+    assert put.status_code == 200
+    saved = put.json()
+    assert saved["summary"]["viabilidade"]["label"] == "2 - VIÁVEL"
+    assert saved["score_refs"]["segmento_fii"] == "shoppings"
+
+    cleared = client.put(
+        f"/analysis/assets/{asset['id']}/scores?profile=fii_br",
+        json={
+            "scores": {
+                "vacancia": None,
+                "qtd_ativos": None,
+                "alavancagem": None,
+                "segmento_fii": None,
+                "viabilidade": None,
+            },
+            "score_refs": {"segmento_fii": None},
+        },
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["score_refs"].get("segmento_fii") is None
+
+    listed = client.get("/analysis/assets?profile=fii_br").json()
+    assert len(listed) == 1
+    assert listed[0]["symbol"] == "HGLG11"
+
+
+def test_stock_not_in_fii_list(client: TestClient) -> None:
+    _create_stock(client)
+    _create_fii(client, "XPLG11")
+    listed = client.get("/analysis/assets?profile=fii_br").json()
+    symbols = {row["symbol"] for row in listed}
+    assert "XPLG11" in symbols
+    assert "BBSE3" not in symbols
+
+
+def test_pvp_descarte_flag(client: TestClient) -> None:
+    asset = _create_fii(client, "KNRI11")
+    put = client.put(
+        f"/analysis/assets/{asset['id']}/scores?profile=fii_br",
+        json={"scores": {"vacancia": 5, "pvp_descarte": 1}},
+    )
+    assert put.status_code == 200
+    assert put.json()["scores"]["pvp_descarte"] == 1
