@@ -2,7 +2,8 @@
  * UI-AST-014 — Ticker duplicado no cadastro (yfinance)
  * @see ../../../casos-de-uso/ui/assets/14-ticker-duplicado.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { registeredAssetsTable } from '../helpers/assetsPage';
 import { TICKER_BBSE3 } from '../helpers/e2eFixtures';

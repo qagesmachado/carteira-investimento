@@ -2,9 +2,10 @@
  * UI-AST-010 — Fluxo completo: lookup até listagem (yfinance)
  * @see ../../../casos-de-uso/ui/assets/10-fluxo-completo-lookup-ate-lista.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
 
-import { API_BASE_URL } from '../helpers/apiResponses';
+
+import { getWorkerApiBaseUrl } from '../helpers/workerContext';
 import { registeredAssetsTable } from '../helpers/assetsPage';
 import { E2E_CDB_NAME, TICKER_BBSE3, TICKER_VOO } from '../helpers/e2eFixtures';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
@@ -22,7 +23,7 @@ import { clearAllTestAssets, gotoAssetsPage } from '../helpers/seedAssets';
 test.describe('UI-AST-010', () => {
   test.beforeEach(async ({ request }) => {
     await assertYfinanceLookupBackend(request);
-    await clearAllTestAssets(request, API_BASE_URL);
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
   });
 
   test('popula catálogo mínimo com ação, ETF internacional e RF', async ({ page }) => {

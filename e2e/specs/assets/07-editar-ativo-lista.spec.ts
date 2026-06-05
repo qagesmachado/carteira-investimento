@@ -2,7 +2,8 @@
  * UI-AST-007 — Editar ativo na listagem
  * @see ../../../casos-de-uso/ui/assets/07-editar-ativo-lista.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { registeredAssetsTable, reviewForm } from '../helpers/assetsPage';
 import { TICKER_BBSE3 } from '../helpers/e2eFixtures';

@@ -1,0 +1,40 @@
+---
+description: Smoke read-only de navegação por página para garantir integridade do executável empacotado
+globs: frontend/src/routes/**,e2e/specs/smoke/**
+alwaysApply: false
+---
+
+# Smoke read-only — integridade do executável
+
+Complementa [testes.mdc](testes.mdc) e [e2e-paralelo.mdc](e2e-paralelo.mdc).
+
+Toda **página/rota nova** do frontend deve ganhar um teste de **smoke** (somente leitura) que apenas navega até a rota e confirma que a casca da página carrega. Isso garante que o **executável empacotado** (`dist/CarteiraInvestimentos/`) serve todas as rotas (SPA + `/api` na mesma origem) e que o deep-link/refresh cai no `index.html`.
+
+## Regras
+
+- Local: [e2e/specs/smoke/](../../e2e/specs/smoke/) (ex.: `navegacao.spec.ts`).
+- Importar `test`/`expect` de [e2e/specs/fixtures/test.ts](../../e2e/specs/fixtures/test.ts) (igual aos demais specs; **não** importar de `@playwright/test`).
+- Usar **apenas** o fixture `page` — **sem seed**, sem chamadas que mutam dados (somente `page.goto` + asserts de leitura).
+- Marcar cada teste com a tag `@smoke`: `test('carrega /rota', { tag: '@smoke' }, async ({ page }) => { ... })`.
+- Asserção estável: `await expect(page.getByRole('heading', { name: '<Título da página>', exact: true })).toBeVisible();`.
+- Ao adicionar uma rota nova, **incluir** a entrada correspondente na lista de rotas do smoke.
+
+## Dois alvos (mesmos arquivos)
+
+1. **`npm run test:all`** (projeto `ui`): os specs em `specs/smoke/` entram automaticamente, rodando contra os servidores de dev por worker. Nada a configurar.
+2. **Passo 4 do build** ([scripts/build-desktop.ps1](../../scripts/build-desktop.ps1)): reexecuta os mesmos `@smoke` contra o `.exe` via [e2e/playwright.smoke.config.js](../../e2e/playwright.smoke.config.js), que:
+   - lança o executável em porta fixa, **sem abrir navegador** (`CARTEIRA_DESKTOP_NO_BROWSER=1`) e com **banco temporário** (`DATABASE_URL` em `%TEMP%`);
+   - aponta os specs para a origem única via `SMOKE_BASE_URL` (ver override em [e2e/worker-env.js](../../e2e/worker-env.js));
+   - usa `ASSET_LOOKUP_MODE=fake` (sem rede).
+
+## Comandos
+
+- Contra o dev (rápido): `cd e2e` → `npm run test:ui -- specs/smoke/`.
+- Contra o executável: já roda no `pwsh ./scripts/build-desktop.ps1` (passo 4/4); pular com `-SkipSmoke`.
+
+## Checklist — página nova
+
+1. Criei `+page.svelte` em `frontend/src/routes/<rota>/`?
+2. Adicionei o caso `@smoke` em `e2e/specs/smoke/` (rota + heading), sem seed?
+3. `npm run test:ui -- specs/smoke/` verde?
+4. (Quando for empacotar) `build-desktop.ps1` passo 4/4 verde com a nova rota?

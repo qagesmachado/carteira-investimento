@@ -8,6 +8,9 @@
     "db:export": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/db-export.ps1",
     "db:export:public": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/db-export-public.ps1",
     "test:unit": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-unit.ps1",
+    "test:backend:scope": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-backend-scope.ps1",
+    "test:frontend:scope": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-frontend-scope.ps1",
+    "test:e2e:scope": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-e2e-scope.ps1",
     "test:integration": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-integration.ps1",
     "test:report": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-report.ps1",
     "test:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/test-report.ps1"

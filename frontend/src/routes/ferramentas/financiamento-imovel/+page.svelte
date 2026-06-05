@@ -1,0 +1,530 @@
+<script lang="ts">
+
+  import { onMount } from 'svelte';
+
+
+
+  import { parseApiError } from '$lib/api/parseApiError';
+
+  import {
+
+    createFinancingEntry,
+
+    createPropertyFinancing,
+
+    deleteFinancingEntry,
+
+    deletePropertyFinancing,
+
+    getPropertyFinancingSnapshot,
+
+    updateFinancingEntry,
+
+    updatePropertyFinancing,
+
+    type FinancingEntryCreate,
+
+    type PropertyFinancingSnapshot
+
+  } from '$lib/api/propertyFinancings';
+
+  import {
+
+    getActivePortfolioId,
+
+    listPortfolios,
+
+    setActivePortfolioId,
+
+    type Portfolio
+
+  } from '$lib/api/portfolios';
+
+  import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+
+  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
+
+  import { FINANCING_SUMMARY_TAB_ID } from '$lib/features/ferramentas/financiamento-imovel/constants';
+
+  import FinancingDetail from '$lib/features/ferramentas/financiamento-imovel/FinancingDetail.svelte';
+
+  import FinancingEditModal from '$lib/features/ferramentas/financiamento-imovel/FinancingEditModal.svelte';
+
+  import FinancingPanel from '$lib/features/ferramentas/financiamento-imovel/FinancingPanel.svelte';
+
+  import FinancingSummary from '$lib/features/ferramentas/financiamento-imovel/FinancingSummary.svelte';
+
+
+
+  let portfolios: Portfolio[] = [];
+
+  let activeId: number | null = null;
+
+  let snapshot: PropertyFinancingSnapshot | null = null;
+
+  let loading = true;
+
+  let saving = false;
+
+  let error = '';
+
+  let selectedFinancingId: number | null = FINANCING_SUMMARY_TAB_ID;
+
+
+
+  let editModalOpen = false;
+
+  let editMode: 'create' | 'edit' = 'create';
+
+  let editError = '';
+
+
+
+  $: financings = snapshot?.financings ?? [];
+
+  $: showSummary = selectedFinancingId === FINANCING_SUMMARY_TAB_ID;
+
+  $: selectedFinancing =
+
+    !showSummary && selectedFinancingId != null
+
+      ? (financings.find((f) => f.id === selectedFinancingId) ?? null)
+
+      : null;
+
+
+
+  async function loadSnapshot(portfolioId: number) {
+
+    loading = true;
+
+    error = '';
+
+    try {
+
+      snapshot = await getPropertyFinancingSnapshot(portfolioId);
+
+      if (
+
+        selectedFinancingId != null &&
+
+        selectedFinancingId !== FINANCING_SUMMARY_TAB_ID &&
+
+        !snapshot.financings.some((f) => f.id === selectedFinancingId)
+
+      ) {
+
+        selectedFinancingId = FINANCING_SUMMARY_TAB_ID;
+
+      }
+
+    } catch (err) {
+
+      snapshot = null;
+
+      error = parseApiError(err, 'Não foi possível carregar financiamentos.');
+
+    } finally {
+
+      loading = false;
+
+    }
+
+  }
+
+
+
+  async function loadPage() {
+
+    loading = true;
+
+    error = '';
+
+    try {
+
+      portfolios = await listPortfolios();
+
+      activeId = await getActivePortfolioId();
+
+      const id = activeId ?? portfolios[0]?.id ?? null;
+
+      if (id != null) {
+
+        activeId = id;
+
+        await loadSnapshot(id);
+
+      } else {
+
+        snapshot = null;
+
+        loading = false;
+
+      }
+
+    } catch (err) {
+
+      error = parseApiError(err, 'Não foi possível carregar carteiras.');
+
+      loading = false;
+
+    }
+
+  }
+
+
+
+  onMount(() => {
+
+    void loadPage();
+
+  });
+
+
+
+  async function handlePortfolioSelect(id: number) {
+
+    if (id === activeId) return;
+
+    activeId = id;
+
+    selectedFinancingId = FINANCING_SUMMARY_TAB_ID;
+
+    await setActivePortfolioId(id);
+
+    await loadSnapshot(id);
+
+  }
+
+
+
+  function handlePanelSelect(id: number) {
+    selectedFinancingId = id;
+  }
+
+
+
+  function openCreateModal() {
+
+    editMode = 'create';
+
+    editError = '';
+
+    editModalOpen = true;
+
+  }
+
+
+
+  function openEditModal() {
+
+    editMode = 'edit';
+
+    editError = '';
+
+    editModalOpen = true;
+
+  }
+
+
+
+  async function handleFinancingSave(
+
+    event: CustomEvent<{
+
+      name: string;
+
+      property_type: import('$lib/api/propertyFinancings').PropertyType;
+
+      description: string;
+
+    }>
+
+  ) {
+
+    if (activeId == null) return;
+
+    saving = true;
+
+    editError = '';
+
+    try {
+
+      if (editMode === 'create') {
+
+        const created = await createPropertyFinancing(activeId, {
+
+          name: event.detail.name,
+
+          property_type: event.detail.property_type,
+
+          description: event.detail.description || null
+
+        });
+
+        editModalOpen = false;
+
+        await loadSnapshot(activeId);
+
+        selectedFinancingId = created.id;
+
+      } else if (selectedFinancing) {
+
+        await updatePropertyFinancing(activeId, selectedFinancing.id, {
+
+          name: event.detail.name,
+
+          property_type: event.detail.property_type,
+
+          description: event.detail.description || null
+
+        });
+
+        editModalOpen = false;
+
+        await loadSnapshot(activeId);
+
+      }
+
+    } catch (err) {
+
+      editError = parseApiError(err, 'Não foi possível salvar imóvel.');
+
+    } finally {
+
+      saving = false;
+
+    }
+
+  }
+
+
+
+  async function handleDeleteFinancing() {
+
+    if (activeId == null || !selectedFinancing) return;
+
+    if (!confirm(`Excluir o financiamento «${selectedFinancing.name}»?`)) return;
+
+    saving = true;
+
+    error = '';
+
+    try {
+
+      await deletePropertyFinancing(activeId, selectedFinancing.id);
+
+      selectedFinancingId = FINANCING_SUMMARY_TAB_ID;
+
+      await loadSnapshot(activeId);
+
+    } catch (err) {
+
+      error = parseApiError(err, 'Não foi possível excluir imóvel.');
+
+    } finally {
+
+      saving = false;
+
+    }
+
+  }
+
+
+
+  async function handleAddEntry(event: CustomEvent<FinancingEntryCreate>) {
+
+    if (activeId == null || !selectedFinancing) return;
+
+    saving = true;
+
+    error = '';
+
+    try {
+
+      await createFinancingEntry(activeId, selectedFinancing.id, event.detail);
+
+      await loadSnapshot(activeId);
+
+    } catch (err) {
+
+      error = parseApiError(err, 'Não foi possível registrar lançamento.');
+
+    } finally {
+
+      saving = false;
+
+    }
+
+  }
+
+
+
+  async function handleUpdateEntry(
+    event: CustomEvent<{ entryId: number; amount_brl: number }>
+  ) {
+    if (activeId == null) return;
+    saving = true;
+    error = '';
+    try {
+      await updateFinancingEntry(activeId, event.detail.entryId, {
+        amount_brl: event.detail.amount_brl
+      });
+      await loadSnapshot(activeId);
+    } catch (err) {
+      error = parseApiError(err, 'Não foi possível atualizar o valor.');
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function handleDeleteEntry(event: CustomEvent<number>) {
+
+    if (activeId == null) return;
+
+    saving = true;
+
+    error = '';
+
+    try {
+
+      await deleteFinancingEntry(activeId, event.detail);
+
+      await loadSnapshot(activeId);
+
+    } catch (err) {
+
+      error = parseApiError(err, 'Não foi possível excluir lançamento.');
+
+    } finally {
+
+      saving = false;
+
+    }
+
+  }
+
+</script>
+
+
+
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+
+    <div>
+
+      <h2 class="text-xl font-semibold">Financiamento imóvel</h2>
+
+      <p class="text-sm text-base-content/70">
+
+        Registre receitas e despesas por imóvel e acompanhe lucro e capital investido.
+
+      </p>
+
+    </div>
+
+    {#if portfolios.length > 0}
+
+      <PortfolioSelect
+
+        {portfolios}
+
+        {activeId}
+
+        on:select={(e) => void handlePortfolioSelect(e.detail)}
+
+      />
+
+    {/if}
+
+  </div>
+
+
+
+  {#if error}
+
+    <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
+
+  {/if}
+
+
+
+  {#if loading && !snapshot}
+
+    <p class="text-sm opacity-70">Carregando…</p>
+
+  {:else if activeId == null}
+
+    <p class="text-sm opacity-70">Crie uma carteira para usar esta ferramenta.</p>
+
+  {:else if snapshot}
+
+    <div class="mb-4">
+
+      <FinancingPanel
+
+        {financings}
+
+        selectedId={selectedFinancingId}
+
+        on:select={(e) => handlePanelSelect(e.detail)}
+
+        on:create={openCreateModal}
+
+      />
+
+    </div>
+
+
+
+    {#if showSummary}
+
+      <FinancingSummary
+
+        {snapshot}
+
+        on:selectFinancing={(e) => handlePanelSelect(e.detail)}
+
+      />
+
+    {:else if selectedFinancing}
+
+      <FinancingDetail
+
+        financing={selectedFinancing}
+
+        {saving}
+
+        on:edit={openEditModal}
+
+        on:delete={() => void handleDeleteFinancing()}
+
+        on:addEntry={(e) => void handleAddEntry(e)}
+        on:updateEntry={(e) => void handleUpdateEntry(e)}
+        on:deleteEntry={(e) => void handleDeleteEntry(e)}
+
+      />
+
+    {/if}
+
+  {/if}
+
+
+
+<FinancingEditModal
+
+  open={editModalOpen}
+
+  title={editMode === 'create' ? 'Novo imóvel' : 'Editar imóvel'}
+
+  initial={editMode === 'edit' ? selectedFinancing : null}
+
+  {saving}
+
+  error={editError}
+
+  on:close={() => (editModalOpen = false)}
+
+  on:save={(e) => void handleFinancingSave(e)}
+
+/>
+

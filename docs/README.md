@@ -10,14 +10,45 @@ Neste momento não há decisão de stack, banco de dados, framework ou arquitetu
 - [Análise aba a aba](planilha/abas.md): objetivo, campos principais, dependências e possível representação de cada aba em uma aplicação.
 - [Arquitetura funcional](arquitetura/arquitetura-funcional.md): domínios, entidades conceituais e fluxos funcionais observados.
 - [Funcionalidades candidatas](produto/funcionalidades.md): módulos, telas e capacidades que a aplicação pode oferecer.
-- [Cadastro de proventos](produto/desenvolvido/cadastro-proventos.md): lançamentos de dividendos e proventos por ativo (implementado).
+
+### Funcionalidades implementadas (por menu do app)
+
+**Dashboard**
+
 - [Dashboard inicial (Tier 1+2)](produto/desenvolvido/dashboard-inicial.md): visão executiva em `/dashboard` (implementado).
+
+**Visão consolidada**
+
+- [Visualização da carteira](produto/desenvolvido/visualizacao-carteira.md): visão consolidada de posições (implementado).
+
+**Alocação**
+
+- [Rebalanceamento](produto/desenvolvido/rebalanceamento.md): metas por classe, ETF/Ação e score por ativo (implementado).
 - [Classificação de ativos — Ações/ETF BR](produto/desenvolvido/classificacao-ativos-acoes-br.md): análise fundamentalista e diagrama (implementado).
 - [Classificação de ativos — FIIs](produto/desenvolvido/classificacao-ativos-fiis.md): viabilidade, diagrama FIIs e catálogo de segmentos (implementado).
-- [Rebalanceamento](produto/desenvolvido/rebalanceamento.md): metas por classe, ETF/Ação e score por ativo (implementado).
-- [Objetivos financeiros](produto/desenvolvido/objetivos-financeiros.md): alocação parcial de posições por objetivo (implementado).
-- [Persistência — banco único](produto/desenvolvido/persistencia-banco-unico.md): SQLite unificado, FKs e migração legado (implementado).
+- [Classificação de ativos — ETF internacional](produto/desenvolvido/classificacao-ativos-etf-intl.md): alocação percentual manual e link externo (implementado).
+
+**Cadastro**
+
+- [Cadastro de ativos](produto/desenvolvido/cadastro-de-ativos.md): catálogo e posições por carteira (implementado).
+- [Cadastro de proventos](produto/desenvolvido/cadastro-proventos.md): lançamentos de dividendos e proventos por ativo (implementado).
 - [Página Dados](produto/desenvolvido/pagina-dados.md): export/import centralizado em `/dados` (implementado).
+- [Persistência — banco único](produto/desenvolvido/persistencia-banco-unico.md): SQLite unificado, FKs e migração legado (implementado).
+
+**Ferramentas**
+
+- [Objetivos financeiros](produto/desenvolvido/objetivos-financeiros.md): alocação parcial por objetivo em `/ferramentas/objetivos` (implementado).
+- [Controle de aporte previdenciário](produto/desenvolvido/controle-aporte-previdencia.md): meta anual PGBL na modalidade de objetivo (implementado).
+- [Bitcoin e taxas](produto/desenvolvido/bitcoin-taxas.md): posição BTC e histórico de taxas em `/ferramentas/bitcoin` (implementado).
+- [Controle de financiamento imóvel](produto/desenvolvido/controle-financiamento-imovel.md): ferramenta por carteira para bolso vs aluguel (implementado).
+- [Cálculo de preço médio](produto/desenvolvido/calculo-preco-medio.md): calculadora ponderada em Ferramentas (implementado).
+
+**Transversal**
+
+- [Ocultar valores monetários](produto/desenvolvido/ocultar-valores.md): privacidade visual global via navbar (implementado).
+
+### Candidatos (não implementados)
+
 - [Dashboard Tier 3 (candidato)](produto/candidato/dashboard-tier-3.md): aderência no dashboard, evolução patrimonial, multi-carteira (não implementado).
 - [Módulos Tier 4 (candidato)](produto/candidato/modulos-tier-4.md): simulações, IR e extensões de análise (parcial).
 

@@ -2,7 +2,8 @@
  * UI-AST-017 — Lote com ticker já cadastrado (yfinance)
  * @see ../../../casos-de-uso/ui/assets/17-importacao-lote-ja-cadastrado.md
  */
-import { test } from '@playwright/test';
+import { test } from '../fixtures/test';
+
 
 import { TICKER_BBSE3, TICKER_KLBN } from '../helpers/e2eFixtures';
 import {

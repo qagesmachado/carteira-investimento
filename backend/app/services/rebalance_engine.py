@@ -282,6 +282,60 @@ def compute_fund_asset_rows(
     return rows
 
 
+def compute_international_asset_rows(
+    patrimony_brl: float,
+    assets: list[dict],
+    targets: AllocationTargets,
+) -> list[AssetRebalanceRow]:
+    """Distribui % desejada entre ETFs internacionais via alocação manual (etf_intl)."""
+    class_target_pct = targets.classes.international
+    group_current_total = sum(float(asset["current_brl"]) for asset in assets)
+
+    rows: list[AssetRebalanceRow] = []
+    for asset in assets:
+        current = float(asset["current_brl"])
+        current_pct = (
+            (current / group_current_total * 100.0) if group_current_total > 0 else 0.0
+        )
+        target_pct_group = asset.get("target_percent")
+        target_pct_val = (
+            float(target_pct_group) if target_pct_group is not None else None
+        )
+
+        target_pct: float | None = None
+        target_value: float | None = None
+        gap: float | None = None
+        included = False
+
+        if target_pct_val is not None and target_pct_val > 0:
+            included = True
+            target_pct = target_pct_val
+            portfolio_target_pct = target_pct * class_target_pct / 100.0
+            target_value = (
+                patrimony_brl * portfolio_target_pct / 100.0 if patrimony_brl > 0 else 0.0
+            )
+            gap = max(0.0, target_value - current)
+
+        rows.append(
+            AssetRebalanceRow(
+                asset_id=int(asset["asset_id"]),
+                symbol=str(asset["symbol"]),
+                name=str(asset["name"]),
+                asset_type=str(asset["asset_type"]),
+                current_value_brl=round(current, 2),
+                current_percent=round(current_pct, 4),
+                target_percent=round(target_pct, 4) if target_pct is not None else None,
+                target_value_brl=round(target_value, 2) if target_value is not None else None,
+                gap_brl=round(gap, 2) if gap is not None else None,
+                sum_score=target_pct_val,
+                score_included=included,
+            )
+        )
+
+    rows.sort(key=lambda r: r.symbol)
+    return rows
+
+
 def compute_position_asset_rows(
     patrimony_brl: float,
     assets: list[dict],

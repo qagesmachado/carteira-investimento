@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../../fixtures/test';
+
 
 import { analysisPanel, clickClassificarInPortfolios } from '../../helpers/analisePage';
 import { TICKER_HGLG11 } from '../../helpers/e2eFixtures';

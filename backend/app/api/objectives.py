@@ -10,13 +10,18 @@ from app.schemas.objective import (
     ObjectivesSnapshotRead,
     ObjectiveRead,
     ObjectiveUpdate,
+    PensionYearCreate,
+    PensionYearUpdate,
 )
 from app.services.objective_service import (
+    add_pension_year,
     build_objectives_snapshot,
     create_objective,
     delete_objective,
+    delete_pension_year,
     replace_objective_allocations,
     update_objective,
+    upsert_pension_year,
 )
 from app.services.portfolio_service import get_portfolio
 
@@ -83,5 +88,42 @@ def put_objective_allocations(
     session: Annotated[Session, Depends(get_session)],
 ) -> ObjectiveRead:
     replace_objective_allocations(session, portfolio_id, objective_id, payload.allocations)
+    snapshot = build_objectives_snapshot(session, portfolio_id)
+    return _to_objective_read_from_snapshot(snapshot, objective_id)
+
+
+@router.post("/{objective_id}/pension-years", response_model=ObjectiveRead, status_code=status.HTTP_201_CREATED)
+def post_pension_year(
+    portfolio_id: int,
+    objective_id: int,
+    payload: PensionYearCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> ObjectiveRead:
+    add_pension_year(session, portfolio_id, objective_id, payload)
+    snapshot = build_objectives_snapshot(session, portfolio_id)
+    return _to_objective_read_from_snapshot(snapshot, objective_id)
+
+
+@router.put("/{objective_id}/pension-years/{plan_year}", response_model=ObjectiveRead)
+def put_pension_year(
+    portfolio_id: int,
+    objective_id: int,
+    plan_year: int,
+    payload: PensionYearUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> ObjectiveRead:
+    upsert_pension_year(session, portfolio_id, objective_id, plan_year, payload)
+    snapshot = build_objectives_snapshot(session, portfolio_id)
+    return _to_objective_read_from_snapshot(snapshot, objective_id)
+
+
+@router.delete("/{objective_id}/pension-years/{plan_year}", response_model=ObjectiveRead)
+def remove_pension_year(
+    portfolio_id: int,
+    objective_id: int,
+    plan_year: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> ObjectiveRead:
+    delete_pension_year(session, portfolio_id, objective_id, plan_year)
     snapshot = build_objectives_snapshot(session, portfolio_id)
     return _to_objective_read_from_snapshot(snapshot, objective_id)

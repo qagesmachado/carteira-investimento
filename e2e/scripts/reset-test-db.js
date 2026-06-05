@@ -5,8 +5,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { E2E_WORKER_COUNT, listWorkerDbFiles } = require('../worker-env');
+
 const testDbDir = path.join(__dirname, '..', '..', 'backend', 'data', 'test');
-const dbFiles = ['carteira.db'];
+const dbFiles = listWorkerDbFiles(E2E_WORKER_COUNT);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -26,7 +28,7 @@ async function removeIfExists(filePath) {
         if (attempt === 7) {
           console.error(
             `reset-test-db: não foi possível apagar ${filePath} (arquivo em uso).\n` +
-              'Feche processos na porta 8001 (backend E2E) ou apague manualmente backend/data/test/*.db'
+              'Feche processos nas portas E2E (8001–8004, 5174–5177) ou apague manualmente backend/data/test/*.db'
           );
           process.exit(1);
         }

@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { isApiQuoteRefreshResponse } from '../helpers/apiResponses';
 import { TICKER_BBSE3 } from '../helpers/e2eFixtures';

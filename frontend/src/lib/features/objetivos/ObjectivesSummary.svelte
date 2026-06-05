@@ -81,6 +81,8 @@
               <td>
                 {#if obj.mode === 'single_asset'}
                   Um ativo
+                {:else if obj.mode === 'pension_contribution'}
+                  Previdência
                 {:else}
                   Multi-ativo
                 {/if}

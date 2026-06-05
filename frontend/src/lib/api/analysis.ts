@@ -100,6 +100,13 @@ export type SegmentCatalogEntry = {
 
 export const PROFILE_STOCK_BR = 'stock_br';
 export const PROFILE_FII_BR = 'fii_br';
+export const PROFILE_ETF_INTL = 'etf_intl';
+
+export type EtfIntlAllocationInput = {
+  asset_id: number;
+  target_percent: number;
+  analysis_link?: string | null;
+};
 
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -209,4 +216,25 @@ export async function resetFiiSegments(): Promise<SegmentCatalogEntry[]> {
     method: 'POST'
   });
   return parseResponse<SegmentCatalogEntry[]>(response);
+}
+
+export async function getEtfIntlConfig(): Promise<AnalysisConfig> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/etf-intl/config`);
+  return parseResponse<AnalysisConfig>(response);
+}
+
+export async function listEtfIntlAnalysis(): Promise<AssetAnalysis[]> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/assets?profile=etf_intl`);
+  return parseResponse<AssetAnalysis[]>(response);
+}
+
+export async function saveEtfIntlAllocations(
+  allocations: EtfIntlAllocationInput[]
+): Promise<AssetAnalysis[]> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/etf-intl/allocations`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ allocations })
+  });
+  return parseResponse<AssetAnalysis[]>(response);
 }

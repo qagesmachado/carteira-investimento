@@ -7,6 +7,7 @@ from app.api.assets import get_asset_lookup_provider
 from app.db.session import get_session
 from app.models.dividend_payment import DividendPayment
 from app.providers.yfinance_asset_provider import AssetLookupProvider
+from app.schemas.crypto_fee import BitcoinSnapshotRead
 from app.schemas.portfolio import (
     ActivePortfolioRead,
     ImportConfirmRequest,
@@ -25,6 +26,7 @@ from app.schemas.portfolio import (
 )
 from app.schemas.rebalance import RebalanceSnapshotRead
 from app.services.asset_service import get_asset_by_id, list_assets
+from app.services.crypto_fee_service import build_bitcoin_snapshot
 from app.services.import_service import (
     build_export_document,
     confirm_import,
@@ -116,6 +118,16 @@ def get_portfolio_rebalance(
 ) -> RebalanceSnapshotRead:
     get_portfolio(session, portfolio_id)
     return build_rebalance_snapshot(session, session, portfolio_id)
+
+
+@router.get("/{portfolio_id}/bitcoin-snapshot", response_model=BitcoinSnapshotRead)
+def get_portfolio_bitcoin_snapshot(
+    portfolio_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    asset_id: int | None = Query(default=None),
+) -> BitcoinSnapshotRead:
+    get_portfolio(session, portfolio_id)
+    return build_bitcoin_snapshot(session, session, portfolio_id, asset_id=asset_id)
 
 
 @router.get("/{portfolio_id}/positions", response_model=list[PositionRead])

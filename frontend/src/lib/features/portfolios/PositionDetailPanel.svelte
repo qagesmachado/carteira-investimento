@@ -2,6 +2,8 @@
   import type { Asset } from '$lib/api/assets';
   import type { Position } from '$lib/api/portfolios';
 
+  import type { CryptoFeeDetailSummary } from '$lib/features/bitcoin/cryptoFeePositionDetail';
+
   import { buildPositionDetailSections } from './positionDetail';
 
   export let position: Position;
@@ -10,13 +12,16 @@
   export let panelId = 'position-detail-panel';
   /** Resumo de proventos do ativo (somente consolidada). */
   export let dividendsSummary: string | undefined = undefined;
+  /** Lucro após taxas de movimentação (cripto na consolidada). */
+  export let cryptoFeeSummary: CryptoFeeDetailSummary | undefined = undefined;
   /** `portfolio`: /portfolios — sem hints BRL; `consolidated`: /portfolios/consolidada */
   export let variant: 'portfolio' | 'consolidated' = 'portfolio';
 
   $: sections = buildPositionDetailSections(position, asset, {
     usdBrlRate: variant === 'consolidated' ? usdBrlRate : undefined,
     showBrlEquivalentHints: variant === 'consolidated',
-    dividendsSummary: variant === 'consolidated' ? dividendsSummary : undefined
+    dividendsSummary: variant === 'consolidated' ? dividendsSummary : undefined,
+    cryptoFeeSummary: variant === 'consolidated' ? cryptoFeeSummary : undefined
   });
 
   $: isConsolidated = variant === 'consolidated';

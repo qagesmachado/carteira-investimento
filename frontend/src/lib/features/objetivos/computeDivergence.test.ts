@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { AssetDivergence } from '$lib/api/objetivos';
+import { setHideMoneyValues } from '$lib/stores/hideMoneyValues';
 
 import {
   explicitAllocatedForAsset,
@@ -21,6 +22,16 @@ const divergence: AssetDivergence = {
 };
 
 describe('computeDivergence helpers', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setHideMoneyValues(false);
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    setHideMoneyValues(false);
+  });
+
   it('detecta bloqueio por over_total', () => {
     expect(isAssetBlocked([divergence], 1)).toBe(true);
     expect(isAssetBlocked([divergence], 2)).toBe(false);
@@ -32,5 +43,15 @@ describe('computeDivergence helpers', () => {
 
   it('lê totais explícitos por ativo', () => {
     expect(explicitAllocatedForAsset([divergence], 1)).toBe(60);
+  });
+
+  it('mascara mensagem em modo valor quando ocultar valores está ativo', () => {
+    const amountDivergence: AssetDivergence = {
+      ...divergence,
+      split_mode: 'amount',
+      delta: -1500
+    };
+    setHideMoneyValues(true);
+    expect(formatDivergenceMessage(amountDivergence)).toBe('R$ •••••• removidos');
   });
 });

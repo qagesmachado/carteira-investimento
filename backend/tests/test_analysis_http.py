@@ -17,6 +17,23 @@ def _create_stock(client: TestClient, symbol: str = "BBSE3") -> dict:
     return response.json()
 
 
+def _create_international_etf(client: TestClient, symbol: str = "VOO") -> dict:
+    response = client.post(
+        "/assets",
+        json={
+            "symbol": symbol,
+            "name": f"ETF {symbol}",
+            "asset_type": "etf",
+            "market": "international",
+            "country": "US",
+            "currency": "USD",
+            "current_quote": 400,
+        },
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
 def test_get_stock_br_config_seeds_defaults(client: TestClient) -> None:
     response = client.get("/analysis/profiles/stock-br/config")
     assert response.status_code == 200
@@ -267,3 +284,55 @@ def test_pvp_descarte_flag(client: TestClient) -> None:
     )
     assert put.status_code == 200
     assert put.json()["scores"]["pvp_descarte"] == 1
+
+
+def test_get_etf_intl_config_seeds_defaults(client: TestClient) -> None:
+    response = client.get("/analysis/profiles/etf-intl/config")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["profile"] == "etf_intl"
+    codes = {c["code"] for c in body["criteria"]}
+    assert codes == {"target_percent", "analysis_link"}
+    assert body["table_display"]["sum_column"]["enabled"] is False
+
+
+def test_put_etf_intl_allocations(client: TestClient) -> None:
+    voo = _create_international_etf(client, "VOO")
+    vt = _create_international_etf(client, "VT")
+    put = client.put(
+        "/analysis/profiles/etf-intl/allocations",
+        json={
+            "allocations": [
+                {"asset_id": voo["id"], "target_percent": 60, "analysis_link": "https://example.com/voo"},
+                {"asset_id": vt["id"], "target_percent": 40, "analysis_link": None},
+            ]
+        },
+    )
+    assert put.status_code == 200
+    body = put.json()
+    assert len(body) == 2
+    voo_row = next(r for r in body if r["symbol"] == "VOO")
+    assert voo_row["score_refs"]["target_percent"] == "60"
+    assert voo_row["score_refs"]["analysis_link"] == "https://example.com/voo"
+
+    listed = client.get("/analysis/assets?profile=etf_intl").json()
+    symbols = {row["symbol"] for row in listed}
+    assert symbols == {"VOO", "VT"}
+
+
+def test_put_etf_intl_allocations_rejects_bad_sum(client: TestClient) -> None:
+    voo = _create_international_etf(client, "VOO2")
+    put = client.put(
+        "/analysis/profiles/etf-intl/allocations",
+        json={"allocations": [{"asset_id": voo["id"], "target_percent": 90}]},
+    )
+    assert put.status_code == 422
+
+
+def test_stock_not_in_etf_intl_list(client: TestClient) -> None:
+    _create_stock(client)
+    _create_international_etf(client, "VOO3")
+    listed = client.get("/analysis/assets?profile=etf_intl").json()
+    symbols = {row["symbol"] for row in listed}
+    assert "VOO3" in symbols
+    assert "BBSE3" not in symbols

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
@@ -14,6 +14,7 @@ from app.models.objective import (
     ObjectiveStatus,
 )
 from app.models.objective_allocation import ObjectiveAllocation
+from app.models.pension_contribution_year import PensionContributionYear
 from app.models.portfolio import Portfolio
 from app.models.position import Position
 from app.schemas.objective import (
@@ -26,7 +27,12 @@ from app.schemas.objective import (
     ObjectivesSnapshotRead,
     ObjectiveUpdate,
     PartitionSliceRead,
+    PensionContributionRead,
+    PensionContributionSummaryRead,
+    PensionYearCreate,
+    PensionYearUpdate,
 )
+from app.services.pension_contribution_engine import compute_pension_contribution_metrics
 from app.services.asset_service import get_asset_by_id
 from app.services.fx_service import get_usd_brl_state
 from app.services.objective_divergence import compute_divergence
@@ -107,6 +113,119 @@ def _resolve_objective_mode(mode: str) -> ObjectiveMode:
         ) from exc
 
 
+def _validate_single_pension_objective_per_portfolio(
+    session: Session,
+    portfolio_id: int,
+    *,
+    exclude_objective_id: int | None = None,
+) -> None:
+    for objective in list_objectives(session, portfolio_id):
+        if objective.id == exclude_objective_id:
+            continue
+        if _objective_mode_value(objective) == ObjectiveMode.PENSION_CONTRIBUTION:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="pension contribution objective already exists in portfolio",
+            )
+
+
+def _list_pension_years(session: Session, objective_id: int) -> list[PensionContributionYear]:
+    rows = session.exec(
+        select(PensionContributionYear)
+        .where(PensionContributionYear.objective_id == objective_id)
+        .order_by(PensionContributionYear.plan_year.desc()),
+    ).all()
+    return list(rows)
+
+
+def _build_pension_year_read(row: PensionContributionYear) -> PensionContributionRead:
+    metrics = compute_pension_contribution_metrics(
+        plan_year=row.plan_year,
+        annual_gross_income_brl=row.annual_gross_income_brl,
+        contributed_ytd_brl=row.contributed_ytd_brl or 0.0,
+    )
+    return PensionContributionRead(
+        plan_year=metrics.plan_year,
+        annual_gross_income_brl=metrics.annual_gross_income_brl,
+        contributed_ytd_brl=metrics.contributed_ytd_brl,
+        target_annual_brl=metrics.target_annual_brl,
+        remaining_brl=metrics.remaining_brl,
+        months_remaining=metrics.months_remaining,
+        monthly_needed_brl=metrics.monthly_needed_brl,
+        progress_percent=metrics.progress_percent,
+        target_reached=metrics.target_reached,
+    )
+
+
+def _build_pension_contribution_summary(
+    session: Session,
+    objective_id: int,
+) -> PensionContributionSummaryRead:
+    year_reads = [_build_pension_year_read(row) for row in _list_pension_years(session, objective_id)]
+    consolidated = sum(row.contributed_ytd_brl for row in year_reads)
+    return PensionContributionSummaryRead(
+        years=year_reads,
+        consolidated_total_brl=consolidated,
+    )
+
+
+def _get_pension_year_row(
+    session: Session,
+    objective_id: int,
+    plan_year: int,
+) -> PensionContributionYear | None:
+    return session.exec(
+        select(PensionContributionYear).where(
+            PensionContributionYear.objective_id == objective_id,
+            PensionContributionYear.plan_year == plan_year,
+        ),
+    ).first()
+
+
+def _validate_pension_amounts(
+    annual_gross_income_brl: float | None,
+    contributed_ytd_brl: float | None,
+) -> None:
+    if annual_gross_income_brl is not None and annual_gross_income_brl < 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="annual gross income must be non-negative",
+        )
+    if contributed_ytd_brl is not None and contributed_ytd_brl < 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="contributed amount must be non-negative",
+        )
+
+
+def _upsert_pension_year_row(
+    session: Session,
+    objective_id: int,
+    plan_year: int,
+    *,
+    annual_gross_income_brl: float | None = None,
+    contributed_ytd_brl: float | None = None,
+    income_provided: bool = False,
+    contributed_provided: bool = False,
+) -> PensionContributionYear:
+    row = _get_pension_year_row(session, objective_id, plan_year)
+    if row is None:
+        row = PensionContributionYear(
+            objective_id=objective_id,
+            plan_year=plan_year,
+            annual_gross_income_brl=annual_gross_income_brl,
+            contributed_ytd_brl=contributed_ytd_brl or 0.0,
+        )
+    else:
+        if income_provided:
+            row.annual_gross_income_brl = annual_gross_income_brl
+        if contributed_provided:
+            row.contributed_ytd_brl = contributed_ytd_brl or 0.0
+    row.updated_at = datetime.utcnow()
+    session.add(row)
+    return row
+
+
 def _validate_partition_asset(
     session: Session,
     portfolio_id: int,
@@ -155,9 +274,22 @@ def create_objective(session: Session, portfolio_id: int, payload: ObjectiveCrea
 
     mode = _resolve_objective_mode(payload.mode)
     partition_asset_id = payload.partition_asset_id
+    plan_year: int | None = None
+    annual_gross_income_brl: float | None = None
+
     if mode == ObjectiveMode.SINGLE_ASSET:
         if partition_asset_id is not None:
             _validate_partition_asset(session, portfolio_id, partition_asset_id, required=True)
+    elif mode == ObjectiveMode.PENSION_CONTRIBUTION:
+        if partition_asset_id is not None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="partition_asset_id is not allowed for pension_contribution objectives",
+            )
+        _validate_single_pension_objective_per_portfolio(session, portfolio_id)
+        plan_year = payload.plan_year or date.today().year
+        annual_gross_income_brl = payload.annual_gross_income_brl
+        _validate_pension_amounts(annual_gross_income_brl, 0.0)
     elif partition_asset_id is not None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -182,6 +314,18 @@ def create_objective(session: Session, portfolio_id: int, payload: ObjectiveCrea
             detail="objective name already exists in portfolio",
         ) from exc
     session.refresh(objective)
+    if mode == ObjectiveMode.PENSION_CONTRIBUTION and objective.id is not None:
+        _upsert_pension_year_row(
+            session,
+            objective.id,
+            plan_year or date.today().year,
+            annual_gross_income_brl=annual_gross_income_brl,
+            contributed_ytd_brl=0.0,
+            income_provided=True,
+            contributed_provided=True,
+        )
+        session.commit()
+        session.refresh(objective)
     return objective
 
 
@@ -199,6 +343,7 @@ def update_objective(
         )
 
     data = payload.model_dump(exclude_unset=True)
+    mode = _objective_mode_value(objective)
     if "name" in data and data["name"] is not None:
         name = data["name"].strip()
         if not name:
@@ -214,6 +359,7 @@ def update_objective(
         objective.name = name
     if "description" in data:
         objective.description = data["description"]
+
     objective.updated_at = datetime.utcnow()
     session.add(objective)
     try:
@@ -241,6 +387,11 @@ def delete_objective(session: Session, portfolio_id: int, objective_id: int) -> 
     ).all()
     for allocation in allocations:
         session.delete(allocation)
+    pension_years = session.exec(
+        select(PensionContributionYear).where(PensionContributionYear.objective_id == objective_id),
+    ).all()
+    for row in pension_years:
+        session.delete(row)
     session.delete(objective)
     session.commit()
 
@@ -315,6 +466,8 @@ def _explicit_totals_by_asset(
     for objective in objectives:
         if objective.is_default or objective.id == exclude_objective_id:
             continue
+        if _objective_mode_value(objective) == ObjectiveMode.PENSION_CONTRIBUTION:
+            continue
         allocations = session.exec(
             select(ObjectiveAllocation).where(ObjectiveAllocation.objective_id == objective.id),
         ).all()
@@ -339,6 +492,11 @@ def replace_objective_allocations(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="default objective allocations cannot be edited",
+        )
+    if _objective_mode_value(objective) == ObjectiveMode.PENSION_CONTRIBUTION:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="pension contribution objectives do not support asset allocations",
         )
 
     positions = {p.asset_id: p for p in list_positions(session, portfolio_id)}
@@ -640,6 +798,8 @@ def build_objectives_snapshot(session: Session, portfolio_id: int) -> Objectives
     for objective in objectives:
         if objective.is_default or objective.id is None:
             continue
+        if _objective_mode_value(objective) == ObjectiveMode.PENSION_CONTRIBUTION:
+            continue
         allocations = session.exec(
             select(ObjectiveAllocation).where(ObjectiveAllocation.objective_id == objective.id),
         ).all()
@@ -720,8 +880,14 @@ def build_objectives_snapshot(session: Session, portfolio_id: int) -> Objectives
         if objective.id is None:
             continue
         rows = allocation_rows_by_objective.get(objective.id, [])
-        total_value = sum(row.current_value_brl or 0.0 for row in rows)
         mode = _objective_mode_value(objective)
+        pension_contribution: PensionContributionSummaryRead | None = None
+        if mode == ObjectiveMode.PENSION_CONTRIBUTION:
+            assert objective.id is not None
+            pension_contribution = _build_pension_contribution_summary(session, objective.id)
+            total_value = pension_contribution.consolidated_total_brl
+        else:
+            total_value = sum(row.current_value_brl or 0.0 for row in rows)
         objective_reads.append(
             ObjectiveRead(
                 id=objective.id,
@@ -733,6 +899,7 @@ def build_objectives_snapshot(session: Session, portfolio_id: int) -> Objectives
                 partition_asset_id=objective.partition_asset_id,
                 allocations=rows,
                 total_value_brl=total_value,
+                pension_contribution=pension_contribution,
             ),
         )
 
@@ -754,6 +921,164 @@ def build_objectives_snapshot(session: Session, portfolio_id: int) -> Objectives
     )
 
 
+def _require_pension_objective(session: Session, portfolio_id: int, objective_id: int) -> Objective:
+    objective = get_objective(session, portfolio_id, objective_id)
+    if _objective_mode_value(objective) != ObjectiveMode.PENSION_CONTRIBUTION:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="objective is not pension_contribution",
+        )
+    return objective
+
+
+def add_pension_year(
+    session: Session,
+    portfolio_id: int,
+    objective_id: int,
+    payload: PensionYearCreate,
+) -> None:
+    objective = _require_pension_objective(session, portfolio_id, objective_id)
+    assert objective.id is not None
+    _validate_pension_amounts(payload.annual_gross_income_brl, payload.contributed_ytd_brl)
+    if _get_pension_year_row(session, objective.id, payload.plan_year) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="pension year already exists for objective",
+        )
+    _upsert_pension_year_row(
+        session,
+        objective.id,
+        payload.plan_year,
+        annual_gross_income_brl=payload.annual_gross_income_brl,
+        contributed_ytd_brl=payload.contributed_ytd_brl or 0.0,
+        income_provided=True,
+        contributed_provided=True,
+    )
+    objective.updated_at = datetime.utcnow()
+    session.add(objective)
+    session.commit()
+
+
+def upsert_pension_year(
+    session: Session,
+    portfolio_id: int,
+    objective_id: int,
+    plan_year: int,
+    payload: PensionYearUpdate,
+) -> None:
+    objective = _require_pension_objective(session, portfolio_id, objective_id)
+    assert objective.id is not None
+    data = payload.model_dump(exclude_unset=True)
+    income = data.get("annual_gross_income_brl")
+    contributed = data.get("contributed_ytd_brl")
+    _validate_pension_amounts(income, contributed)
+    if _get_pension_year_row(session, objective.id, plan_year) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="pension year not found",
+        )
+    _upsert_pension_year_row(
+        session,
+        objective.id,
+        plan_year,
+        annual_gross_income_brl=income,
+        contributed_ytd_brl=contributed,
+        income_provided="annual_gross_income_brl" in data,
+        contributed_provided="contributed_ytd_brl" in data,
+    )
+    objective.updated_at = datetime.utcnow()
+    session.add(objective)
+    session.commit()
+
+
+def delete_pension_year(
+    session: Session,
+    portfolio_id: int,
+    objective_id: int,
+    plan_year: int,
+) -> None:
+    objective = _require_pension_objective(session, portfolio_id, objective_id)
+    assert objective.id is not None
+    row = _get_pension_year_row(session, objective.id, plan_year)
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="pension year not found",
+        )
+    if len(_list_pension_years(session, objective.id)) <= 1:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="cannot delete the last pension year",
+        )
+    session.delete(row)
+    objective.updated_at = datetime.utcnow()
+    session.add(objective)
+    session.commit()
+
+
+def migrate_legacy_pension_objectives_to_years(session: Session) -> None:
+    objectives = session.exec(select(Objective)).all()
+    by_portfolio: dict[int, list[Objective]] = {}
+    for objective in objectives:
+        if _objective_mode_value(objective) != ObjectiveMode.PENSION_CONTRIBUTION:
+            continue
+        by_portfolio.setdefault(objective.portfolio_id, []).append(objective)
+
+    for portfolio_id, pension_objectives in by_portfolio.items():
+        pension_objectives.sort(key=lambda item: item.id or 0)
+        keeper = pension_objectives[0]
+        assert keeper.id is not None
+
+        for objective in pension_objectives:
+            assert objective.id is not None
+            if (
+                objective.plan_year is not None
+                or objective.annual_gross_income_brl is not None
+                or (objective.contributed_ytd_brl or 0.0) > 0
+            ):
+                target_id = keeper.id if objective.id != keeper.id else objective.id
+                plan_year = objective.plan_year or date.today().year
+                existing = _get_pension_year_row(session, target_id, plan_year)
+                if existing is None:
+                    _upsert_pension_year_row(
+                        session,
+                        target_id,
+                        plan_year,
+                        annual_gross_income_brl=objective.annual_gross_income_brl,
+                        contributed_ytd_brl=objective.contributed_ytd_brl or 0.0,
+                        income_provided=True,
+                        contributed_provided=True,
+                    )
+                elif objective.id != keeper.id:
+                    if objective.annual_gross_income_brl is not None and existing.annual_gross_income_brl is None:
+                        existing.annual_gross_income_brl = objective.annual_gross_income_brl
+                    existing.contributed_ytd_brl = max(
+                        existing.contributed_ytd_brl or 0.0,
+                        objective.contributed_ytd_brl or 0.0,
+                    )
+                    existing.updated_at = datetime.utcnow()
+                    session.add(existing)
+                objective.plan_year = None
+                objective.annual_gross_income_brl = None
+                objective.contributed_ytd_brl = 0.0
+                session.add(objective)
+
+        for objective in pension_objectives[1:]:
+            assert objective.id is not None
+            extra_years = _list_pension_years(session, objective.id)
+            for row in extra_years:
+                row.objective_id = keeper.id
+                session.add(row)
+            allocations = session.exec(
+                select(ObjectiveAllocation).where(ObjectiveAllocation.objective_id == objective.id),
+            ).all()
+            for allocation in allocations:
+                session.delete(allocation)
+            session.delete(objective)
+
+    session.commit()
+
+
 def delete_objectives_for_portfolio(session: Session, portfolio_id: int) -> None:
     objectives = session.exec(
         select(Objective).where(Objective.portfolio_id == portfolio_id),
@@ -764,4 +1089,11 @@ def delete_objectives_for_portfolio(session: Session, portfolio_id: int) -> None
         ).all()
         for allocation in allocations:
             session.delete(allocation)
+        pension_years = session.exec(
+            select(PensionContributionYear).where(
+                PensionContributionYear.objective_id == objective.id,
+            ),
+        ).all()
+        for row in pension_years:
+            session.delete(row)
         session.delete(objective)

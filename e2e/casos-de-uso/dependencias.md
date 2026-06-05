@@ -10,11 +10,12 @@ O Playwright sobe backend e frontend com bases **isoladas** do desenvolvimento l
 
 | Recurso | Valor na suíte E2E |
 | ------- | ------------------ |
-| Banco único | `backend/data/test/carteira.db` (ativos, carteiras, posições, proventos) |
-| Recriação do banco | `e2e/scripts/reset-test-db.js` (via `pretest:ui`, **antes** do servidor subir) |
+| Banco por worker | `backend/data/test/carteira-{N}.db` (N = índice do worker, 0–3) |
+| Recriação dos bancos | `e2e/scripts/reset-test-db.js` (via `pretest:ui`, **antes** do servidor subir) |
 | Lookup de ativos | `yfinance` (`ASSET_LOOKUP_MODE=yfinance` no Playwright) |
-| API | `http://127.0.0.1:8001` (porta dedicada; ver `e2e/test-env.js`) |
-| Frontend | `http://127.0.0.1:5174` (`VITE_API_BASE_URL` aponta para a API de teste) |
+| API worker 0 | `http://127.0.0.1:8001` (workers seguintes: +1; ver `e2e/worker-env.js`) |
+| Frontend worker 0 | `http://127.0.0.1:5174` (workers seguintes: +1) |
+| Workers Playwright | **4** por padrão (`E2E_WORKERS`); `fullyParallel: true` entre arquivos |
 
 **Não usar:** `backend/carteira.db`, `backend/seed/assets.json` (catálogo de dev), carteiras em `%LOCALAPPDATA%`, nem qualquer dado do ambiente de desenvolvimento. Cada spec cria o estado necessário via API no `beforeEach`.
 
@@ -45,10 +46,11 @@ flowchart LR
 
 ## Estado compartilhado entre casos
 
-1. **`pretest:ui`** / reset deixa `carteira.db` **vazio** antes da primeira spec.
-2. Cada spec em `e2e/specs/assets/`, `e2e/specs/portfolios/` e `e2e/specs/consolidada/` faz **seed via API** no `beforeEach` (autocontido; não depende da ordem entre arquivos).
+1. **`pretest:ui`** / reset deixa `carteira-{0..N-1}.db` **vazios** antes da primeira spec.
+2. Cada spec faz **seed via API** no `beforeEach` (autocontido; não depende da ordem entre arquivos).
 3. Os `.md` em `ui/portfolios/` podem referenciar ativos típicos (`BBSE3`, RF manual, etc.) — o seed do spec cria o estado necessário.
-4. Playwright: `workers: 1`, `fullyParallel: false`.
+4. Playwright: **`workers: 4`** (default), **`fullyParallel: true`**; isolamento por worker (DB + API + frontend). Serial: `npm run test:ui:serial`.
+5. Fixture: [`e2e/specs/fixtures/test.ts`](../specs/fixtures/test.ts) — não importar `@playwright/test` direto nos specs.
 
 ## Convenção de IDs
 
@@ -62,7 +64,8 @@ flowchart LR
 | `UI-ANL-` | `/analise` | `UI-ANL-002` |
 | `UI-REB-` | `/rebalanceamento` | `UI-REB-002` |
 | `UI-DAD-` | `/dados` | `UI-DAD-002` |
-| `UI-OBJ-` | `/objetivos` | `UI-OBJ-002` |
+| `UI-OBJ-` | `/ferramentas/objetivos` | `UI-OBJ-002` |
+| `UI-BTC-` | `/ferramentas/bitcoin` | `UI-BTC-001` |
 
 ## Mapa rápido de dependências entre pastas
 
@@ -76,7 +79,8 @@ flowchart LR
 | [`ui/analise/`](ui/analise/README.md) | Seed API no spec (`seedAnalysis*`) — ativos stocks + config |
 | [`ui/rebalanceamento/`](ui/rebalanceamento/README.md) | Seed API no spec (`seedRebalance*`) — carteira + posições + scores |
 | [`ui/dados/`](ui/dados/README.md) | Seed API no spec (`seedDados*`, `seedPortfolios*`, `seedProventos*`) — export/import centralizado |
-| [`ui/objetivos/`](ui/objetivos/README.md) | Seed API no spec (`seedObjetivos*`) — carteira + posições + objetivos |
+| [`ui/ferramentas/objetivos/`](ui/ferramentas/objetivos/README.md) | Seed API no spec (`seedObjetivos*`) — carteira + posições + objetivos |
+| [`ui/ferramentas/bitcoin/`](ui/ferramentas/bitcoin/README.md) | Seed API no spec (`seedBitcoin*`) — carteira + posição BTC-USD |
 
 ## Ordem sugerida de implementação (fase 2)
 

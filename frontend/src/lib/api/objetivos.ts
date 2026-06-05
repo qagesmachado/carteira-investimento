@@ -3,7 +3,24 @@ import { apiFetch } from './http';
 
 export type SplitMode = 'shares' | 'amount';
 
-export type ObjectiveMode = 'multi_asset' | 'single_asset';
+export type ObjectiveMode = 'multi_asset' | 'single_asset' | 'pension_contribution';
+
+export type PensionContribution = {
+  plan_year: number;
+  annual_gross_income_brl: number | null;
+  contributed_ytd_brl: number;
+  target_annual_brl: number;
+  remaining_brl: number;
+  months_remaining: number;
+  monthly_needed_brl: number | null;
+  progress_percent: number;
+  target_reached: boolean;
+};
+
+export type PensionContributionSummary = {
+  years: PensionContribution[];
+  consolidated_total_brl: number;
+};
 
 export type ObjectiveAllocation = {
   id: number;
@@ -68,6 +85,7 @@ export type Objective = {
   partition_asset_id: number | null;
   allocations: ObjectiveAllocation[];
   total_value_brl: number;
+  pension_contribution: PensionContributionSummary | null;
 };
 
 export type ObjectivesSnapshot = {
@@ -83,11 +101,24 @@ export type ObjectiveCreatePayload = {
   description?: string | null;
   mode?: ObjectiveMode;
   partition_asset_id?: number | null;
+  plan_year?: number | null;
+  annual_gross_income_brl?: number | null;
 };
 
 export type ObjectiveUpdatePayload = {
   name?: string;
   description?: string | null;
+};
+
+export type PensionYearCreatePayload = {
+  plan_year: number;
+  annual_gross_income_brl?: number | null;
+  contributed_ytd_brl?: number | null;
+};
+
+export type PensionYearUpdatePayload = {
+  annual_gross_income_brl?: number | null;
+  contributed_ytd_brl?: number | null;
 };
 
 export type ObjectiveAllocationItem = {
@@ -159,6 +190,51 @@ export async function replaceObjectiveAllocations(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ allocations })
     }
+  );
+  return parseResponse<Objective>(response);
+}
+
+export async function addPensionYear(
+  portfolioId: number,
+  objectiveId: number,
+  payload: PensionYearCreatePayload
+): Promise<Objective> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/portfolios/${portfolioId}/objectives/${objectiveId}/pension-years`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }
+  );
+  return parseResponse<Objective>(response);
+}
+
+export async function updatePensionYear(
+  portfolioId: number,
+  objectiveId: number,
+  planYear: number,
+  payload: PensionYearUpdatePayload
+): Promise<Objective> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/portfolios/${portfolioId}/objectives/${objectiveId}/pension-years/${planYear}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }
+  );
+  return parseResponse<Objective>(response);
+}
+
+export async function deletePensionYear(
+  portfolioId: number,
+  objectiveId: number,
+  planYear: number
+): Promise<Objective> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/portfolios/${portfolioId}/objectives/${objectiveId}/pension-years/${planYear}`,
+    { method: 'DELETE' }
   );
   return parseResponse<Objective>(response);
 }

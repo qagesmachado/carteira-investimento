@@ -10,11 +10,12 @@ from app.schemas.rebalance import (
     RebalanceSnapshotRead,
     StocksSubTypeRebalanceRowRead,
 )
-from app.services.analysis_defaults import PROFILE_FII_BR, PROFILE_STOCK_BR
+from app.services.analysis_defaults import PROFILE_ETF_INTL, PROFILE_FII_BR, PROFILE_STOCK_BR
 from app.services.analysis_engine import compute_table_sum_score
 from app.services.analysis_service import (
     build_asset_analysis_read,
     get_profile_table_display,
+    parse_target_percent_from_refs,
 )
 from app.services.asset_service import get_asset_by_id, infer_display_class
 from app.services.fx_service import get_usd_brl_state
@@ -23,7 +24,7 @@ from app.services.position_metrics import position_current_value, value_in_brl
 from app.services.rebalance_engine import (
     compute_class_rows,
     compute_fund_asset_rows,
-    compute_position_asset_rows,
+    compute_international_asset_rows,
     compute_stock_asset_rows,
     compute_stocks_sub_rows,
     parse_allocation_targets,
@@ -101,6 +102,10 @@ def build_rebalance_snapshot(
                 }
             )
         elif display_class == DisplayClass.INTERNATIONAL.value:
+            scores, score_refs, _, _, _ = build_asset_analysis_read(
+                assets_session, asset, PROFILE_ETF_INTL
+            )
+            target_percent = parse_target_percent_from_refs(score_refs)
             international_assets_input.append(
                 {
                     "asset_id": asset.id,
@@ -108,6 +113,7 @@ def build_rebalance_snapshot(
                     "name": asset.name,
                     "asset_type": asset.asset_type.value,
                     "current_brl": brl,
+                    "target_percent": target_percent,
                 }
             )
         elif display_class == DisplayClass.FUNDS.value:
@@ -134,7 +140,9 @@ def build_rebalance_snapshot(
         patrimony_brl, stocks_current, current_by_sub, targets
     )
     asset_rows = compute_stock_asset_rows(patrimony_brl, stock_assets_input, targets)
-    international_rows = compute_position_asset_rows(patrimony_brl, international_assets_input)
+    international_rows = compute_international_asset_rows(
+        patrimony_brl, international_assets_input, targets
+    )
     fund_rows = compute_fund_asset_rows(patrimony_brl, fund_assets_input, targets)
     total_gap = sum(r.gap_brl for r in class_rows)
     without_score = sum(1 for r in asset_rows if not r.score_included)

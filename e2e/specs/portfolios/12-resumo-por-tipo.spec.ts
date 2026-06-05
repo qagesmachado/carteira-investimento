@@ -1,4 +1,5 @@
-import { test } from '@playwright/test';
+import { test } from '../fixtures/test';
+
 
 import { expectSummaryByType, gotoPortfoliosPage } from '../helpers/portfoliosPage';
 import { seedPortfoliosFullMix } from '../helpers/seedPortfolios';

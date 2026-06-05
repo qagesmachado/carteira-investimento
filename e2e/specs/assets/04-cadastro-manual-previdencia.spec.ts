@@ -2,9 +2,10 @@
  * UI-AST-004 — Cadastro manual de previdência
  * @see ../../../casos-de-uso/ui/assets/04-cadastro-manual-previdencia.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
 
-import { API_BASE_URL } from '../helpers/apiResponses';
+
+import { getWorkerApiBaseUrl } from '../helpers/workerContext';
 import { registeredAssetsTable } from '../helpers/assetsPage';
 import { E2E_PENSION_IDENTIFIER, E2E_PENSION_NAME } from '../helpers/e2eFixtures';
 import { fillAndSaveManualPension, startManualPension } from '../helpers/manualAssetForm';
@@ -12,7 +13,7 @@ import { clearAllTestAssets, gotoAssetsPage } from '../helpers/seedAssets';
 
 test.describe('UI-AST-004', () => {
   test.beforeEach(async ({ request }) => {
-    await clearAllTestAssets(request, API_BASE_URL);
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
   });
 
   test('cadastra previdência manual e persiste', async ({ page }) => {

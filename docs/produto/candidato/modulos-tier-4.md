@@ -37,7 +37,7 @@
 
 **Entregue:**
 
-- Página `/objetivos` com objetivo «Livre» automático
+- Página `/ferramentas/objetivos` com objetivo «Livre» automático
 - Divisão por cotas (ações, ETF, FII) ou valor (RF, previdência)
 - Flag de divergência após mudança externa de posição
 - API `/portfolios/{id}/objectives`

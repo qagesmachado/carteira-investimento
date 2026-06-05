@@ -2,6 +2,10 @@ import type { Asset } from '$lib/api/assets';
 import type { Position } from '$lib/api/portfolios';
 import { formatMoneyAmount, formatSectorForDisplay } from '$lib/assetLabels';
 import {
+  formatCryptoProfitAfterFees,
+  type CryptoFeeDetailSummary
+} from '$lib/features/bitcoin/cryptoFeePositionDetail';
+import {
   computePositionProfit,
   formatPositionProfit,
   formatQuantityForDisplay,
@@ -62,6 +66,8 @@ export function buildPositionDetailSections(
     usdBrlRate?: number | null;
     showBrlEquivalentHints?: boolean;
     dividendsSummary?: string;
+    /** Resumo de taxas BTC (consolidada), alinhado ao endpoint `/bitcoin-snapshot`. */
+    cryptoFeeSummary?: CryptoFeeDetailSummary;
   }
 ): PositionDetailSections {
   const usdBrlRate = options?.usdBrlRate;
@@ -129,6 +135,19 @@ export function buildPositionDetailSections(
       totals.push({
         label: 'Lucro',
         value: formatPositionProfit(position, asset)
+      });
+    }
+    if (options?.cryptoFeeSummary && asset.asset_type === 'crypto') {
+      const formatted = formatCryptoProfitAfterFees(
+        options.cryptoFeeSummary,
+        currency,
+        usdBrlRate,
+        brlHints
+      );
+      totals.push({
+        label: 'Lucro − taxas',
+        value: formatted.value,
+        hint: formatted.hint
       });
     }
   }

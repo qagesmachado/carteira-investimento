@@ -2,7 +2,8 @@
  * UI-AST-019 — Paginação da listagem de ativos
  * @see ../../../casos-de-uso/ui/assets/19-paginacao-listagem.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { registeredAssetsPagination, registeredAssetsTable } from '../helpers/assetsPage';
 import { gotoAssetsPage, seedManyAssetsForPagination } from '../helpers/seedAssets';

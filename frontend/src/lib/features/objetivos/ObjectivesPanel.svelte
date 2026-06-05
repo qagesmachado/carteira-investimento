@@ -45,6 +45,8 @@
       <span class="badge badge-ghost ml-1">{formatBrl(objective.total_value_brl)}</span>
       {#if objective.mode === 'single_asset'}
         <span class="badge badge-info badge-xs ml-1">1 ativo</span>
+      {:else if objective.mode === 'pension_contribution'}
+        <span class="badge badge-secondary badge-xs ml-1">Previdência</span>
       {/if}
     </button>
   {/each}

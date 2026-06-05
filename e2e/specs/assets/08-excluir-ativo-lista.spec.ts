@@ -2,7 +2,8 @@
  * UI-AST-008 — Excluir ativo na listagem
  * @see ../../../casos-de-uso/ui/assets/08-excluir-ativo-lista.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { registeredAssetsTable } from '../helpers/assetsPage';
 import { TICKER_ITSA4 } from '../helpers/e2eFixtures';

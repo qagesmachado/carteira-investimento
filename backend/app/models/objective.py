@@ -15,6 +15,7 @@ class ObjectiveStatus(StrEnum):
 class ObjectiveMode(StrEnum):
     MULTI_ASSET = "multi_asset"
     SINGLE_ASSET = "single_asset"
+    PENSION_CONTRIBUTION = "pension_contribution"
 
 
 class Objective(SQLModel, table=True):
@@ -27,6 +28,9 @@ class Objective(SQLModel, table=True):
     is_default: bool = False
     mode: ObjectiveMode = ObjectiveMode.MULTI_ASSET
     partition_asset_id: int | None = Field(default=None, foreign_key="asset.id")
+    plan_year: int | None = None
+    annual_gross_income_brl: float | None = None
+    contributed_ytd_brl: float = 0.0
     status: ObjectiveStatus = ObjectiveStatus.ACTIVE
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

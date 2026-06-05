@@ -264,6 +264,41 @@ def test_get_rebalance_includes_international_and_fii_assets(client: TestClient)
         assert body["international_assets"][0]["target_percent"] is None
 
 
+def test_get_rebalance_international_with_allocation(client: TestClient) -> None:
+    voo_id = client.post(
+        "/assets",
+        json={
+            "symbol": "VOO",
+            "name": "Vanguard S&P 500",
+            "asset_type": "etf",
+            "market": "international",
+            "country": "US",
+            "currency": "USD",
+            "current_quote": 400,
+        },
+    ).json()["id"]
+
+    portfolio_id = client.post("/portfolios", json={"name": "Intl alloc"}).json()["id"]
+    client.post(
+        f"/portfolios/{portfolio_id}/positions",
+        json={"asset_id": voo_id, "quantity": 10, "average_price": 380},
+    )
+    alloc = client.put(
+        "/analysis/profiles/etf-intl/allocations",
+        json={"allocations": [{"asset_id": voo_id, "target_percent": 100}]},
+    )
+    assert alloc.status_code == 200
+    fx = client.post("/fx/usd-brl/refresh")
+
+    response = client.get(f"/portfolios/{portfolio_id}/rebalance")
+    assert response.status_code == 200
+    body = response.json()
+    if fx.status_code == 200:
+        assert len(body["international_assets"]) == 1
+        assert body["international_assets"][0]["symbol"] == "VOO"
+        assert body["international_assets"][0]["target_percent"] == 100.0
+
+
 def test_get_rebalance_fii_assets_with_scores(client: TestClient) -> None:
     fii_a = client.post(
         "/assets",

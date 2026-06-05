@@ -2,20 +2,36 @@
   import {
     formatBrDecimalDisplay,
     formatBrDecimalForEditing,
+    formatBtcDecimalDisplay,
+    formatBtcDecimalForEditing,
     parseBrDecimalInput,
     sanitizeBrDecimalTyping
   } from '$lib/brDecimal';
+  import { formatBrl } from '$lib/features/rebalance/allocationTargets';
+  import { hideMoneyValues } from '$lib/stores/hideMoneyValues';
 
   export let value = 0;
   export let label = '';
   export let disabled = false;
+  export let currency = false;
+  export let btcQuantity = false;
   export let inputClass = 'input input-bordered w-28';
+  export let testId: string | undefined = undefined;
 
   let text = '';
   let editing = false;
 
   $: if (!editing) {
-    text = value === 0 ? '' : formatBrDecimalDisplay(value);
+    void $hideMoneyValues;
+    if (value === 0) {
+      text = '';
+    } else if (currency && disabled) {
+      text = formatBrl(value);
+    } else if (btcQuantity) {
+      text = formatBtcDecimalDisplay(value);
+    } else {
+      text = formatBrDecimalDisplay(value);
+    }
   }
 
   export function flush(): boolean {
@@ -33,14 +49,23 @@
       return false;
     }
     value = parsed;
-    text = formatBrDecimalDisplay(parsed);
+    text =
+      currency && disabled
+        ? formatBrl(parsed)
+        : btcQuantity
+          ? formatBtcDecimalDisplay(parsed)
+          : formatBrDecimalDisplay(parsed);
     editing = false;
     return true;
   }
 
   function handleFocus() {
     editing = true;
-    text = value === 0 ? '' : formatBrDecimalForEditing(value);
+    if (value === 0) {
+      text = '';
+      return;
+    }
+    text = btcQuantity ? formatBtcDecimalForEditing(value) : formatBrDecimalForEditing(value);
   }
 
   function handleInput(event: Event) {
@@ -64,6 +89,7 @@
     inputmode="decimal"
     autocomplete="off"
     {disabled}
+    data-testid={testId}
     bind:value={text}
     on:focus={handleFocus}
     on:input={handleInput}

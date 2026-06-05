@@ -20,21 +20,30 @@ npx playwright install chromium
 
 ## Ambiente que o Playwright sobe sozinho
 
-| Serviço   | URL                         | Notas                          |
-| --------- | --------------------------- | ------------------------------ |
-| API       | http://127.0.0.1:8001       | Não use a porta 8000 do dev    |
-| Frontend  | http://127.0.0.1:5174       | Não use a porta 5173 do dev    |
-| DB unificado | `backend/data/test/carteira.db` | Recriado no `pretest:ui`   |
+Cada **worker** Playwright recebe API, frontend e SQLite dedicados (paralelismo seguro).
+
+| Worker | API | Frontend | Banco |
+| ------ | --- | -------- | ----- |
+| 0 | http://127.0.0.1:8001 | http://127.0.0.1:5174 | `backend/data/test/carteira-0.db` |
+| 1 | :8002 | :5175 | `carteira-1.db` |
+| 2 | :8003 | :5176 | `carteira-2.db` |
+| 3 | :8004 | :5177 | `carteira-3.db` |
+
+Padrão: **`E2E_WORKERS=4`** (ver [`worker-env.js`](worker-env.js)). Worker 0 usa as portas documentadas nos casos de uso.
 
 Não é preciso rodar `npm run dev` nem uvicorn manualmente para os testes UI.
 
 ## Executar testes UI
 
-| Comando | Projeto | Lookup | Requisitos |
-| ------- | ------- | ------ | ---------- |
-| `npm run test:ui` | `ui` | `yfinance` (rede) | Internet |
+| Comando | Workers | Notas |
+| ------- | ------- | ----- |
+| `npm run test:ui` | 4 (padrão) | Suíte completa paralela |
+| `npm run test:ui:serial` | 1 | Debug / investigar falhas |
+| `E2E_WORKERS=2 npm run test:ui` | 2 | Máquinas com menos RAM |
 
-Antes de cada `npm run test:ui`, o npm executa `pretest:ui` → [`scripts/reset-test-db.js`](scripts/reset-test-db.js) (apaga os `.db` de teste **antes** do servidor subir).
+Antes de cada `npm run test:ui`, o npm executa `pretest:ui` → [`scripts/reset-test-db.js`](scripts/reset-test-db.js) (apaga `carteira-{N}.db` **antes** dos servidores subirem).
+
+Specs importam `test`/`expect` de [`specs/fixtures/test.ts`](specs/fixtures/test.ts) (contexto por worker).
 
 ### Suíte por página
 
@@ -129,7 +138,7 @@ npx playwright show-report
 
 ### `reset-test-db: arquivo em uso`
 
-Outro processo está com os `.db` ou a porta **8001** aberta.
+Outro processo está com os `.db` ou portas E2E abertas (**8001–8004**, **5174–5177**).
 
 1. Feche terminais com uvicorn/playwright presos  
 2. Rode de novo `npm run test:ui`  

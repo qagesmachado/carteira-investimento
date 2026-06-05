@@ -16,7 +16,7 @@ Comparar alocação **atual** vs. **desejada** da carteira ativa, calcular **FAL
 
 ## Fora do escopo
 
-- Sugestão por ativo em **internacional** e **crypto** (sem módulo de análise).
+- Sugestão por ativo em **crypto** (sem módulo de análise).
 - Card de aderência no dashboard (Tier 3).
 - Preço teto e recomendação compra/venda.
 
@@ -73,19 +73,32 @@ faltando = max(0, valor_desejável − valor_atual)
 
 `soma_fii` = coluna **Soma** do perfil `fii_br` (`compute_table_sum_score`). FIIs com flag P/VP > 1,5 (descartados) ou sem classificação não entram no denominador.
 
+### Por ativo (ETF internacional)
+
+Dentro da classe **Internacional** (`international`):
+
+```
+pct_no_grupo = target_percent manual (soma 100% entre ETFs configurados)
+pct_carteira = pct_no_grupo × meta_international / 100
+valor_desejável = patrimônio × pct_carteira / 100
+faltando = max(0, valor_desejável − valor_atual)
+```
+
+`target_percent` = alocação definida em `/analise/internacional` (perfil `etf_intl`).
+
 ## Integração com análise
 
 | Classe rebalance | Perfil análise | Onde classificar |
 | ---------------- | -------------- | ---------------- |
 | Ações/ETF BR | `stock_br` | `/analise/acoes-br` |
 | FIIs | `fii_br` | `/analise/fiis` |
-| Internacional | — | pendente |
+| Internacional | `etf_intl` | `/analise/internacional` |
 
 Campos no snapshot `GET /portfolios/{id}/rebalance`:
 
 - `stock_assets`, `assets_without_score_count`
 - `fund_assets`, `fund_assets_without_score_count`
-- `international_assets` (sem % desejada)
+- `international_assets` (% desejada via perfil `etf_intl`)
 
 ## API
 
@@ -98,5 +111,6 @@ Campos no snapshot `GET /portfolios/{id}/rebalance`:
 
 - [classificacao-ativos-acoes-br.md](classificacao-ativos-acoes-br.md)
 - [classificacao-ativos-fiis.md](classificacao-ativos-fiis.md)
+- [classificacao-ativos-etf-intl.md](classificacao-ativos-etf-intl.md)
 - [abas.md — BALANCEAMENTO](../../planilha/abas.md)
 - Casos E2E: [e2e/casos-de-uso/ui/rebalanceamento/](../../../e2e/casos-de-uso/ui/rebalanceamento/README.md)

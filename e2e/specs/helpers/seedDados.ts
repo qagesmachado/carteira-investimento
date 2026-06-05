@@ -1,6 +1,6 @@
 import type { APIRequestContext } from '@playwright/test';
 
-import { API_BASE_URL } from './apiResponses';
+import { getWorkerApiBaseUrl } from './workerContext';
 import {
   E2E_PORTFOLIO_PRINCIPAL,
   TICKER_BBSE3,
@@ -20,7 +20,7 @@ import {
 export async function seedDadosPortfolioExportWithDividend(
   request: APIRequestContext
 ): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_BBSE3);
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
@@ -39,7 +39,7 @@ export async function seedDadosPortfolioExportWithDividend(
 }
 
 export async function seedDadosTwoCatalogAssets(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await createAssetViaApi(request, {
     symbol: TICKER_BBSE3,
@@ -62,7 +62,7 @@ export async function seedDadosTwoCatalogAssets(request: APIRequestContext): Pro
 export async function seedDadosKlbnPositionWithDividend(
   request: APIRequestContext
 ): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_KLBN);
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);

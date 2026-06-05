@@ -2,9 +2,10 @@
  * UI-AST-012 — Lookup com ticker inválido (yfinance)
  * @see ../../../casos-de-uso/ui/assets/12-lookup-erro-ticker-invalido.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
 
-import { API_BASE_URL } from '../helpers/apiResponses';
+
+import { getWorkerApiBaseUrl } from '../helpers/workerContext';
 import { registeredAssetsTable } from '../helpers/assetsPage';
 import { TICKER_INVALID } from '../helpers/e2eFixtures';
 import { searchInvalidTicker } from '../helpers/lookupFlows';
@@ -12,7 +13,7 @@ import { clearAllTestAssets, gotoAssetsPage } from '../helpers/seedAssets';
 
 test.describe('UI-AST-012', () => {
   test.beforeEach(async ({ request }) => {
-    await clearAllTestAssets(request, API_BASE_URL);
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
   });
 
   test('exibe erro e não cadastra ticker inválido', async ({ page }) => {

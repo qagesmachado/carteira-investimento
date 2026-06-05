@@ -8,6 +8,7 @@
     type AssetType,
     type DisplayClass
   } from '$lib/api/assets';
+  import { getBitcoinSnapshot, type BitcoinSnapshot } from '$lib/api/cryptoFees';
   import { getUsdBrl, refreshUsdBrl } from '$lib/api/fx';
   import { listDividendPayments, type DividendPayment } from '$lib/api/dividendPayments';
   import {
@@ -28,6 +29,7 @@
     formatMoneyAmount
   } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import type { CryptoFeeDetailSummary } from '$lib/features/bitcoin/cryptoFeePositionDetail';
   import BrlEquivalentHint from '$lib/features/portfolios/BrlEquivalentHint.svelte';
   import PositionDetailPanel from '$lib/features/portfolios/PositionDetailPanel.svelte';
   import {
@@ -108,12 +110,51 @@
   let loadError = '';
   let expandedPositionId: number | null = null;
   let prevActiveIdForExpanded: number | null = null;
+  let bitcoinSnapshot: BitcoinSnapshot | null = null;
 
   $: assetById = Object.fromEntries(assets.map((a) => [a.id, a]));
   $: dividendTotalsByAssetId = buildDividendTotalsByAssetId(dividendPayments);
 
   function dividendsSummaryForAsset(asset: Asset): string {
     return formatDividendsReceivedSummary(dividendTotalsByAssetId.get(asset.id), asset);
+  }
+
+  function cryptoFeeSummaryForAsset(asset: Asset): CryptoFeeDetailSummary | undefined {
+    if (asset.asset_type !== 'crypto' || !bitcoinSnapshot) {
+      return undefined;
+    }
+    const snapshotAssetId = bitcoinSnapshot.position.asset_id;
+    if (snapshotAssetId != null && snapshotAssetId !== asset.id) {
+      return undefined;
+    }
+    return {
+      profitAfterFeesBrl: bitcoinSnapshot.profit_after_fees_brl,
+      appreciationAfterFeesPercent: bitcoinSnapshot.appreciation_after_fees_percent,
+      totalFeesBrl: bitcoinSnapshot.total_fees_brl,
+      totalFeesUsd: bitcoinSnapshot.total_fees_usd
+    };
+  }
+
+  async function loadBitcoinSnapshot(
+    portfolioId: number | null,
+    positionList: Position[],
+    assetList: Asset[]
+  ) {
+    if (portfolioId == null) {
+      bitcoinSnapshot = null;
+      return;
+    }
+    const byId = Object.fromEntries(assetList.map((a) => [a.id, a]));
+    const hasCrypto = positionList.some((p) => byId[p.asset_id]?.asset_type === 'crypto');
+    if (!hasCrypto) {
+      bitcoinSnapshot = null;
+      return;
+    }
+    try {
+      bitcoinSnapshot = await getBitcoinSnapshot(portfolioId);
+    } catch {
+      bitcoinSnapshot = null;
+    }
   }
 
   $: if (activeId !== prevActiveIdForExpanded) {
@@ -537,6 +578,7 @@
     } catch {
       dividendPayments = [];
     }
+    await loadBitcoinSnapshot(activeId, positions, assets);
     await loadFx();
   }
 
@@ -552,6 +594,7 @@
     } catch {
       dividendPayments = [];
     }
+    await loadBitcoinSnapshot(id, positions, assets);
   }
 
   async function handlePortfolioSelect(id: number) {
@@ -1096,6 +1139,7 @@
                             variant="consolidated"
                             usdBrlRate={usdBrlRate}
                             dividendsSummary={dividendsSummaryForAsset(row.asset)}
+                            cryptoFeeSummary={cryptoFeeSummaryForAsset(row.asset)}
                             panelId={positionDetailPanelId(row.position.id)}
                           />
                         </td>

@@ -2,7 +2,8 @@
  * UI-AST-016 — Cancelar exclusão na listagem
  * @see ../../../casos-de-uso/ui/assets/16-excluir-cancelar.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { registeredAssetsTable } from '../helpers/assetsPage';
 import { TICKER_FLRY3 } from '../helpers/e2eFixtures';

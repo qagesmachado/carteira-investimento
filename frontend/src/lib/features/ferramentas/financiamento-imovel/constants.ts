@@ -1,0 +1,1 @@
+export const FINANCING_SUMMARY_TAB_ID = 0;

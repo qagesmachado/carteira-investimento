@@ -1,4 +1,5 @@
 import type { AssetType, DisplayClass } from '$lib/api/assets';
+import { hiddenMoneyForCurrency, isMoneyHidden } from '$lib/moneyDisplay';
 
 /** Países comuns em cadastro de investimentos (ISO 3166-1 alfa-2). */
 const COMMON_COUNTRY_CODES = [
@@ -93,6 +94,9 @@ export function formatMoneyAmount(value: number, currencyCode: string): string {
   const currency = currencyCode.trim().toUpperCase();
   if (!Number.isFinite(value)) {
     return '—';
+  }
+  if (isMoneyHidden()) {
+    return hiddenMoneyForCurrency(currency);
   }
   if (MONEY_FORMAT_CURRENCIES.has(currency)) {
     try {

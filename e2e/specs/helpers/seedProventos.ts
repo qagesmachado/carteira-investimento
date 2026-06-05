@@ -1,6 +1,6 @@
 import type { APIRequestContext } from '@playwright/test';
 
-import { API_BASE_URL } from './apiResponses';
+import { getWorkerApiBaseUrl } from './workerContext';
 import { TICKER_BBSE3, TICKER_ITSA4, TICKER_VOO } from './e2eFixtures';
 import { clearAllTestAssets, createAssetViaApi } from './seedAssets';
 import { clearAllDividendPayments, createDividendPaymentViaApi } from './testDividendPayments';
@@ -11,7 +11,7 @@ const DEFAULT_PORTFOLIO_NAME = 'Carteira Proventos';
 async function resetProventosData(request: APIRequestContext): Promise<void> {
   await clearAllDividendPayments(request);
   await clearAllPortfolios(request);
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
 }
 
 async function ensureDefaultPortfolio(request: APIRequestContext): Promise<number> {
@@ -201,10 +201,10 @@ export async function seedProventosSeparacaoPorCarteira(
   const assetId = await getAssetIdBySymbol(request, TICKER_BBSE3);
 
   // Posicoes para aparecer na visao consolidada de cada carteira.
-  await request.post(`${API_BASE_URL}/portfolios/${portfolioA.id}/positions`, {
+  await request.post(`${getWorkerApiBaseUrl()}/portfolios/${portfolioA.id}/positions`, {
     data: { asset_id: assetId, quantity: 10, average_price: 30 }
   });
-  await request.post(`${API_BASE_URL}/portfolios/${portfolioB.id}/positions`, {
+  await request.post(`${getWorkerApiBaseUrl()}/portfolios/${portfolioB.id}/positions`, {
     data: { asset_id: assetId, quantity: 5, average_price: 32 }
   });
 

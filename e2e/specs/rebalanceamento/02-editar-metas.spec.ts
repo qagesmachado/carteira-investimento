@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { gotoRebalanceConfigPage, gotoRebalancePage } from '../helpers/rebalancePage';
 import { seedRebalanceEmpty } from '../helpers/seedRebalance';

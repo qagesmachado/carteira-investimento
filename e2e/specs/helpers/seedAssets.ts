@@ -1,6 +1,7 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
-import { API_BASE_URL, isApiAssetsListResponse } from './apiResponses';
+import { isApiAssetsListResponse } from './apiResponses';
+import { getWorkerApiBaseUrl } from './workerContext';
 import {
   E2E_CDB_IDENTIFIER,
   E2E_CDB_NAME,
@@ -33,7 +34,7 @@ export async function createAssetViaApi(
   request: APIRequestContext,
   payload: AssetPayload
 ): Promise<{ id: number; symbol: string }> {
-  const response = await request.post(`${API_BASE_URL}/assets`, { data: payload });
+  const response = await request.post(`${getWorkerApiBaseUrl()}/assets`, { data: payload });
   expect(response.ok()).toBeTruthy();
   const body = (await response.json()) as { id: number; symbol: string };
   return body;
@@ -45,7 +46,7 @@ export async function seedAssetFromLookup(
   extra?: Partial<AssetPayload>
 ): Promise<void> {
   const lookupResponse = await request.get(
-    `${API_BASE_URL}/assets/lookup?symbol=${encodeURIComponent(symbol)}`
+    `${getWorkerApiBaseUrl()}/assets/lookup?symbol=${encodeURIComponent(symbol)}`
   );
   expect(lookupResponse.ok()).toBeTruthy();
   const lookup = (await lookupResponse.json()) as AssetPayload;
@@ -78,7 +79,7 @@ export async function seedFlry3(request: APIRequestContext): Promise<void> {
 }
 
 export async function seedCatalogForFilter(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await seedAssetFromLookup(request, TICKER_BBSE3);
   await seedAssetFromLookup(request, TICKER_PETR4);
   await seedAssetFromLookup(request, 'FESA4');
@@ -88,7 +89,7 @@ export async function seedManyAssetsForPagination(
   request: APIRequestContext,
   count = 25
 ): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   for (let index = 1; index <= count; index += 1) {
     const suffix = String(index).padStart(2, '0');
     await createAssetViaApi(request, {
@@ -123,7 +124,7 @@ export async function deleteAssetBySymbolIfExists(
   request: APIRequestContext,
   symbol: string
 ): Promise<void> {
-  const listResponse = await request.get(`${API_BASE_URL}/assets`);
+  const listResponse = await request.get(`${getWorkerApiBaseUrl()}/assets`);
   expect(listResponse.ok()).toBeTruthy();
 
   const assets = (await listResponse.json()) as { id: number; symbol: string }[];
@@ -132,7 +133,7 @@ export async function deleteAssetBySymbolIfExists(
   for (const asset of assets) {
     const normalized = asset.symbol.trim().toUpperCase().replace(/\.SA$/, '');
     if (normalized === target) {
-      const deleteResponse = await request.delete(`${API_BASE_URL}/assets/${asset.id}`);
+      const deleteResponse = await request.delete(`${getWorkerApiBaseUrl()}/assets/${asset.id}`);
       expect(deleteResponse.ok()).toBeTruthy();
     }
   }

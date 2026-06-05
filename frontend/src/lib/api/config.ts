@@ -8,7 +8,8 @@ function resolveApiBaseUrl(): string {
   if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
     return '/api';
   }
-  return 'http://127.0.0.1:8000';
+  // Build de produção (app empacotado): mesma origem, API montada sob /api.
+  return '/api';
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();

@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   formatBrDecimalDisplay,
   formatBrDecimalForEditing,
+  formatBtcDecimalDisplay,
+  formatBtcDecimalForEditing,
   parseBrDecimalInput,
   sanitizeBrDecimalTyping
 } from './brDecimal';
@@ -41,6 +43,21 @@ describe('formatBrDecimalDisplay', () => {
 describe('formatBrDecimalForEditing', () => {
   it('formata sem milhar para edição', () => {
     expect(formatBrDecimalForEditing(1234.56)).toBe('1234,56');
+  });
+});
+
+describe('formatBtcDecimalDisplay', () => {
+  it('formata com 8 casas decimais fixas', () => {
+    expect(formatBtcDecimalDisplay(0.00003)).toBe('0,00003000');
+    expect(formatBtcDecimalDisplay(0.0037087)).toBe('0,00370870');
+    expect(formatBtcDecimalDisplay(0.00083916)).toBe('0,00083916');
+  });
+});
+
+describe('formatBtcDecimalForEditing', () => {
+  it('formata com vírgula e 8 casas decimais', () => {
+    expect(formatBtcDecimalForEditing(0.00003)).toBe('0,00003000');
+    expect(formatBtcDecimalForEditing(0.00110391)).toBe('0,00110391');
   });
 });
 

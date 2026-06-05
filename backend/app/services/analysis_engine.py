@@ -7,11 +7,13 @@ from pydantic import BaseModel, Field
 class AnalysisBlock(StrEnum):
     FUNDAMENTAL = "fundamental"
     DIAGRAMA = "diagrama"
+    ALLOCATION = "allocation"
 
 
 class AnalysisProfile(StrEnum):
     STOCK_BR = "stock_br"
     FII_BR = "fii_br"
+    ETF_INTL = "etf_intl"
 
 
 VIABILIDADE_CODE = "viabilidade"

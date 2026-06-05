@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { TICKER_VOO } from '../helpers/e2eFixtures';
 import {

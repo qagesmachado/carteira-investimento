@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
-import { API_BASE_URL } from './apiResponses';
+import { getWorkerApiBaseUrl } from './workerContext';
 import { LOOKUP_ERROR_MESSAGE as LOOKUP_ERROR } from './e2eFixtures';
 
 export const LOOKUP_SUCCESS_MESSAGE = 'Ativo encontrado. Revise os dados antes de salvar.';
@@ -11,7 +11,7 @@ export async function deleteAssetBySymbolIfExists(
   request: APIRequestContext,
   symbol: string
 ): Promise<void> {
-  const listResponse = await request.get(`${API_BASE_URL}/assets`);
+  const listResponse = await request.get(`${getWorkerApiBaseUrl()}/assets`);
   expect(listResponse.ok()).toBeTruthy();
 
   const assets = (await listResponse.json()) as { id: number; symbol: string }[];
@@ -20,7 +20,7 @@ export async function deleteAssetBySymbolIfExists(
   for (const asset of assets) {
     const normalized = asset.symbol.trim().toUpperCase().replace(/\.SA$/, '');
     if (normalized === target) {
-      const deleteResponse = await request.delete(`${API_BASE_URL}/assets/${asset.id}`);
+      const deleteResponse = await request.delete(`${getWorkerApiBaseUrl()}/assets/${asset.id}`);
       expect(deleteResponse.ok()).toBeTruthy();
     }
   }

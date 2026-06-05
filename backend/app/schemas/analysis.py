@@ -101,6 +101,16 @@ class AssetScoresUpdate(BaseModel):
     score_refs: dict[str, str | None] = Field(default_factory=dict)
 
 
+class EtfIntlAllocationUpdate(BaseModel):
+    asset_id: int
+    target_percent: float = Field(ge=0, le=100)
+    analysis_link: str | None = None
+
+
+class EtfIntlAllocationsBulkUpdate(BaseModel):
+    allocations: list[EtfIntlAllocationUpdate] = Field(min_length=1)
+
+
 class SegmentCatalogEntryRead(BaseModel):
     slug: str
     name: str

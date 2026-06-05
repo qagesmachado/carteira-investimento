@@ -1,6 +1,6 @@
 import type { APIRequestContext } from '@playwright/test';
 
-import { API_BASE_URL } from './apiResponses';
+import { getWorkerApiBaseUrl } from './workerContext';
 import {
   E2E_CDB_IDENTIFIER,
   E2E_CDB_NAME,
@@ -44,7 +44,7 @@ export async function seedManualFixedIncomeAsset(request: APIRequestContext): Pr
 }
 
 export async function seedConsolidadaPrincipal(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
 
   await seedAssetFromLookup(request, TICKER_BBSE3);
@@ -83,7 +83,7 @@ export async function seedConsolidadaTwoPortfolios(request: APIRequestContext): 
 }
 
 export async function seedConsolidadaForRfFilter(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
 
   await seedAssetFromLookup(request, TICKER_BBSE3);

@@ -1,6 +1,6 @@
 import type { APIRequestContext } from '@playwright/test';
 
-import { API_BASE_URL } from './apiResponses';
+import { getWorkerApiBaseUrl } from './workerContext';
 import {
   E2E_CDB_IDENTIFIER,
   E2E_CDB_NAME,
@@ -27,25 +27,25 @@ import {
 } from './testPortfolios';
 
 export async function seedPortfoliosEmptyAssetsOnly(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_BBSE3);
 }
 
 export async function seedPortfoliosPrincipalOnly(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_BBSE3);
   await seedAssetFromLookup(request, TICKER_VOO);
 }
 
 export async function seedPortfoliosEmpty(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
 }
 
 export async function seedPortfoliosPrincipalWithBbse3(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_BBSE3);
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
@@ -56,7 +56,7 @@ export async function seedPortfoliosPrincipalWithBbse3(request: APIRequestContex
 }
 
 export async function seedPortfoliosPrincipalWithVoo(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_VOO);
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
@@ -70,7 +70,7 @@ export async function seedPortfoliosTwoPortfolios(request: APIRequestContext): P
   principalId: number;
   secondaryId: number;
 }> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_BBSE3);
   const principal = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
@@ -82,7 +82,7 @@ export async function seedPortfoliosTwoPortfolios(request: APIRequestContext): P
 }
 
 export async function seedPortfoliosAuxForRename(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_BBSE3);
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_AUX);
@@ -91,7 +91,7 @@ export async function seedPortfoliosAuxForRename(request: APIRequestContext): Pr
 }
 
 export async function seedPortfoliosWithRfPosition(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedManualFixedIncome(request);
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
@@ -106,7 +106,7 @@ export async function seedPortfoliosWithRfPosition(request: APIRequestContext): 
 }
 
 export async function seedPortfoliosWithPension(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await createAssetViaApi(request, {
     symbol: E2E_PENSION_IDENTIFIER,
@@ -122,7 +122,7 @@ export async function seedPortfoliosWithPension(request: APIRequestContext): Pro
 }
 
 export async function seedPortfoliosFullMix(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_BBSE3);
   await seedAssetFromLookup(request, TICKER_VOO);
@@ -144,13 +144,13 @@ export async function seedPortfoliosFullMix(request: APIRequestContext): Promise
 
 /** BBSE3 no DB via lookup; fixture JSON traz `name` diferente para gerar conflito na importação. */
 export async function seedPortfoliosForImportConflict(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_BBSE3);
 }
 
 export async function seedPortfoliosForImport(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, TICKER_BBSE3);
   await seedAssetFromLookup(request, TICKER_VOO);
@@ -159,7 +159,7 @@ export async function seedPortfoliosForImport(request: APIRequestContext): Promi
 export async function seedPortfoliosPrincipalWithFlry3Disposable(
   request: APIRequestContext
 ): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await seedAssetFromLookup(request, 'FLRY3');
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);

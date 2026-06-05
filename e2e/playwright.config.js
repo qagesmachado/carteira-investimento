@@ -1,20 +1,51 @@
 // @ts-check
 const { defineConfig, devices } = require('@playwright/test');
 const { resolveBackendPython } = require('./resolve-backend-python');
+const { E2E_WORKER_COUNT, getWorkerEnv, E2E_FRONTEND_BASE_URL } = require('./worker-env');
 
 const backendPython = resolveBackendPython();
-const { E2E_API_PORT, E2E_API_BASE_URL, E2E_FRONTEND_PORT, E2E_FRONTEND_BASE_URL } =
-  require('./test-env');
-
 const reuseExistingServer = false;
+
+/** @type {import('@playwright/test').PlaywrightTestConfig['webServer']} */
+function buildWebServers() {
+  /** @type {import('@playwright/test').PlaywrightTestConfig['webServer']} */
+  const servers = [];
+
+  for (let i = 0; i < E2E_WORKER_COUNT; i += 1) {
+    const env = getWorkerEnv(i);
+    servers.push({
+      command: `"${backendPython}" -m uvicorn app.main:app --host 127.0.0.1 --port ${env.apiPort}`,
+      cwd: '../backend',
+      url: `${env.apiBaseUrl}/health`,
+      timeout: 120_000,
+      reuseExistingServer,
+      env: {
+        DATABASE_URL: env.databaseUrl,
+        ASSET_LOOKUP_MODE: 'yfinance'
+      }
+    });
+    servers.push({
+      command: `npm run dev -- --host 127.0.0.1 --port ${env.frontendPort} --strictPort`,
+      cwd: '../frontend',
+      url: env.frontendBaseUrl,
+      timeout: 120_000,
+      reuseExistingServer,
+      env: {
+        VITE_API_BASE_URL: env.apiBaseUrl
+      }
+    });
+  }
+
+  return servers;
+}
 
 /** @type {import('@playwright/test').PlaywrightTestConfig} */
 module.exports = defineConfig({
   globalSetup: require.resolve('./global-setup.js'),
-  fullyParallel: false,
+  fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
-  workers: 1,
+  workers: E2E_WORKER_COUNT,
   reporter: [
     ['list'],
     ['html', { open: 'never' }],
@@ -35,7 +66,7 @@ module.exports = defineConfig({
       name: 'ui',
       testDir: './specs',
       testMatch: '**/*.spec.ts',
-      testIgnore: '**/helpers/**',
+      testIgnore: ['**/helpers/**', '**/fixtures/**'],
       timeout: 60_000,
       retries: process.env.CI ? 1 : 0,
       use: {
@@ -45,27 +76,5 @@ module.exports = defineConfig({
       }
     }
   ],
-  webServer: [
-    {
-      command: `"${backendPython}" -m uvicorn app.main:app --host 127.0.0.1 --port ${E2E_API_PORT}`,
-      cwd: '../backend',
-      url: `${E2E_API_BASE_URL}/health`,
-      timeout: 120_000,
-      reuseExistingServer,
-      env: {
-        DATABASE_URL: 'sqlite:///./data/test/carteira.db',
-        ASSET_LOOKUP_MODE: 'yfinance'
-      }
-    },
-    {
-      command: `npm run dev -- --host 127.0.0.1 --port ${E2E_FRONTEND_PORT} --strictPort`,
-      cwd: '../frontend',
-      url: E2E_FRONTEND_BASE_URL,
-      timeout: 120_000,
-      reuseExistingServer,
-      env: {
-        VITE_API_BASE_URL: E2E_API_BASE_URL
-      }
-    }
-  ]
+  webServer: buildWebServers()
 });

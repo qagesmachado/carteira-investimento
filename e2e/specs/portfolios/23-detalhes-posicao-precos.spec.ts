@@ -1,4 +1,5 @@
-import { test } from '@playwright/test';
+import { test } from '../fixtures/test';
+
 
 import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
 import {

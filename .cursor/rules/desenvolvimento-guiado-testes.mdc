@@ -17,7 +17,8 @@ Complementa [testes.mdc](testes.mdc) (TDD, suítes e execução).
 | 2. Casos de uso E2E | `e2e/casos-de-uso/` | No **planejamento**, junto com a doc |
 | 3. Testes (vermelho) | `backend/tests/`, `frontend/**/*.test.ts`, `e2e/specs/` | **Antes** ou **junto** com o código |
 | 4. Implementação | backend, frontend | Mínimo para verde |
-| 5. Validação | raiz | `npm run test:all` + relatório em `test-reports/` |
+| 5a. Validação escopo | camada afetada | Testes do escopo (ver [testes.mdc](testes.mdc)) |
+| 5b. Validação completa | raiz | `npm run test:all` + relatório em `test-reports/` (após estabilizar) |
 
 Correções pequenas podem pular doc/caso novo se o comportamento já estiver documentado — mas **sempre** atualizar o teste que cobre a mudança.
 
@@ -48,6 +49,7 @@ No **planejamento** (antes de implementar UI/API exposta):
 - Um spec por caso (ou arquivo espelhando o `.md`), ID alinhado (`test.describe('UI-PRV-002', …)`).
 - `@see` apontando para o `.md` correspondente em `casos-de-uso/`.
 - Helpers compartilhados em `e2e/specs/helpers/` (seed, page objects).
+- Importar `test`/`expect` de `e2e/specs/fixtures/test.ts` — ver [e2e-paralelo.mdc](e2e-paralelo.mdc).
 - Após spec verde: status do caso → **`implementado`** no README da pasta.
 
 ## 4. TDD em todas as camadas
@@ -66,7 +68,8 @@ Mesmo ciclo **vermelho → verde → refatorar** em cada camada afetada:
 - [ ] Casos em `e2e/casos-de-uso/` criados/atualizados e **aprovados**
 - [ ] Specs em `e2e/specs/` passando (quando há UI/API E2E)
 - [ ] Testes unitários nas camadas alteradas
-- [ ] `npm run test:all` verde; relatório reportado
+- [ ] Escopo afetado verde durante TDD
+- [ ] `npm run test:all` verde **após estabilização**; relatório reportado
 
 ## O que evitar
 

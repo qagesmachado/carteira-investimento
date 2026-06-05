@@ -263,16 +263,18 @@
           text="Há {snapshot.fund_assets_without_score_count} FII(s) sem pontuação (Soma). Classifique em Análise de ativos (aba FIIs) para calcular % desejada."
         />
       {/if}
-      {#if assetGroupTab === 'international'}
-        <p class="mb-4 text-sm opacity-70">
-          % desejada por ativo para ETF internacional será habilitada quando o módulo de análise
-          correspondente estiver disponível.
-        </p>
+      {#if assetGroupTab === 'international' && snapshot.usd_brl_rate == null}
+        <DismissibleAlert
+          variant="warning"
+          text="Câmbio USD/BRL indisponível — valores monetários exibem «—» até atualizar a cotação."
+        />
       {/if}
       <AssetRebalanceTable
         rows={activeAssetRows}
         emptyMessage={activeAssetEmptyMessage}
         showSumColumn={assetGroupTab === 'stocks' || assetGroupTab === 'funds'}
+        showUsdPrimary={assetGroupTab === 'international'}
+        usdBrlRate={snapshot.usd_brl_rate}
         currentPatrimonyBrl={snapshot.patrimony_brl}
         finalPatrimonyBrl={finalPatrimonyInput > 0 ? finalPatrimonyInput : null}
       />

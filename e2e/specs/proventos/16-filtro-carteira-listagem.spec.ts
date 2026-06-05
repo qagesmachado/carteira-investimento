@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { gotoProventosPage, paymentsListSection, paymentsTable } from '../helpers/proventosPage';
 import { seedProventosSeparacaoPorCarteira } from '../helpers/seedProventos';

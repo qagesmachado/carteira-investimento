@@ -2,7 +2,8 @@
  * UI-AST-005 — Salvar ETF nacional com subtipo renda fixa (yfinance)
  * @see ../../../casos-de-uso/ui/assets/05-salvar-etf-nacional-subtipo-rf.md
  */
-import { test } from '@playwright/test';
+import { test } from '../fixtures/test';
+
 
 import { TICKER_AUVP11 } from '../helpers/e2eFixtures';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';

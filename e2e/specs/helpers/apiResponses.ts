@@ -1,11 +1,15 @@
 import type { Response } from '@playwright/test';
 
-const { E2E_API_BASE_URL: API_BASE_URL } = require('../../test-env');
+import { getWorkerApiBaseUrl } from './workerContext';
+
+function apiOrigin(): string {
+  return getWorkerApiBaseUrl();
+}
 
 export function isApiAssetsListResponse(response: Response, method: 'GET' | 'POST'): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname.replace(/\/$/, '') === '/assets' &&
     response.request().method() === method
   );
@@ -13,13 +17,13 @@ export function isApiAssetsListResponse(response: Response, method: 'GET' | 'POS
 
 export function isApiLookupResponse(response: Response): boolean {
   const url = new URL(response.url());
-  return url.origin === API_BASE_URL && url.pathname === '/assets/lookup';
+  return url.origin === apiOrigin() && url.pathname === '/assets/lookup';
 }
 
 export function isApiPortfoliosListResponse(response: Response, method: 'GET' | 'POST' = 'GET'): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname.replace(/\/$/, '') === '/portfolios' &&
     response.request().method() === method
   );
@@ -31,7 +35,7 @@ export function isApiPositionsResponse(
   portfolioId?: number
 ): boolean {
   const url = new URL(response.url());
-  if (url.origin !== API_BASE_URL || !url.pathname.includes('/positions')) {
+  if (url.origin !== apiOrigin() || !url.pathname.includes('/positions')) {
     return false;
   }
   if (portfolioId != null && !url.pathname.includes(`/portfolios/${portfolioId}/positions`)) {
@@ -43,7 +47,7 @@ export function isApiPositionsResponse(
 export function isApiQuoteRefreshResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     /\/portfolios\/\d+\/quotes\/refresh$/.test(url.pathname) &&
     response.request().method() === 'POST'
   );
@@ -51,13 +55,13 @@ export function isApiQuoteRefreshResponse(response: Response): boolean {
 
 export function isApiFxGetResponse(response: Response): boolean {
   const url = new URL(response.url());
-  return url.origin === API_BASE_URL && url.pathname === '/fx/usd-brl' && response.request().method() === 'GET';
+  return url.origin === apiOrigin() && url.pathname === '/fx/usd-brl' && response.request().method() === 'GET';
 }
 
 export function isApiFxRefreshResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/fx/usd-brl/refresh' &&
     response.request().method() === 'POST'
   );
@@ -66,7 +70,7 @@ export function isApiFxRefreshResponse(response: Response): boolean {
 export function isApiPortfolioExportResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     /\/portfolios\/\d+\/export$/.test(url.pathname) &&
     response.request().method() === 'GET' &&
     response.ok()
@@ -76,7 +80,7 @@ export function isApiPortfolioExportResponse(response: Response): boolean {
 export function isApiImportPreviewResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/portfolios/import/preview' &&
     response.request().method() === 'POST'
   );
@@ -85,7 +89,7 @@ export function isApiImportPreviewResponse(response: Response): boolean {
 export function isApiImportConfirmResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/portfolios/import' &&
     response.request().method() === 'POST'
   );
@@ -94,7 +98,7 @@ export function isApiImportConfirmResponse(response: Response): boolean {
 export function isApiDividendPaymentsListResponse(response: Response, method: 'GET' = 'GET'): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname.replace(/\/$/, '') === '/dividend-payments' &&
     response.request().method() === method
   );
@@ -107,7 +111,7 @@ export function isApiDividendPaymentPostResponse(response: Response): boolean {
 export function isApiDividendPaymentPatchResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     /^\/dividend-payments\/\d+$/.test(url.pathname) &&
     response.request().method() === 'PATCH'
   );
@@ -116,7 +120,7 @@ export function isApiDividendPaymentPatchResponse(response: Response): boolean {
 export function isApiDividendPaymentDeleteResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     /^\/dividend-payments\/\d+$/.test(url.pathname) &&
     response.request().method() === 'DELETE'
   );
@@ -125,7 +129,7 @@ export function isApiDividendPaymentDeleteResponse(response: Response): boolean 
 export function isApiDividendBulkPreviewResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     (url.pathname === '/dividend-payments/bulk/preview' ||
       url.pathname === '/data/import/dividends/preview') &&
     response.request().method() === 'POST'
@@ -135,7 +139,7 @@ export function isApiDividendBulkPreviewResponse(response: Response): boolean {
 export function isApiDividendBulkCreateResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     (url.pathname === '/dividend-payments/bulk' ||
       url.pathname === '/data/import/dividends/confirm') &&
     response.request().method() === 'POST'
@@ -145,7 +149,7 @@ export function isApiDividendBulkCreateResponse(response: Response): boolean {
 export function isApiDataAssetsImportPreviewResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/data/import/assets/preview' &&
     response.request().method() === 'POST'
   );
@@ -154,7 +158,7 @@ export function isApiDataAssetsImportPreviewResponse(response: Response): boolea
 export function isApiDataAssetsImportConfirmResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/data/import/assets/confirm' &&
     response.request().method() === 'POST'
   );
@@ -163,7 +167,7 @@ export function isApiDataAssetsImportConfirmResponse(response: Response): boolea
 export function isApiDataExportAssetsResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/data/export/assets' &&
     response.request().method() === 'GET' &&
     response.ok()
@@ -173,7 +177,7 @@ export function isApiDataExportAssetsResponse(response: Response): boolean {
 export function isApiDataExportDividendsResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/data/export/dividends' &&
     response.request().method() === 'GET' &&
     response.ok()
@@ -183,19 +187,29 @@ export function isApiDataExportDividendsResponse(response: Response): boolean {
 export function isApiDataExportFullResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/data/export/full' &&
     response.request().method() === 'GET' &&
     response.ok()
   );
 }
 
+export function isApiEtfIntlAllocationsPutResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === apiOrigin() &&
+    url.pathname === '/analysis/profiles/etf-intl/allocations' &&
+    response.request().method() === 'PUT'
+  );
+}
+
 export function isApiAnalysisConfigGetResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     (url.pathname === '/analysis/profiles/stock-br/config' ||
-      url.pathname === '/analysis/profiles/fii-br/config') &&
+      url.pathname === '/analysis/profiles/fii-br/config' ||
+      url.pathname === '/analysis/profiles/etf-intl/config') &&
     response.request().method() === 'GET'
   );
 }
@@ -203,7 +217,7 @@ export function isApiAnalysisConfigGetResponse(response: Response): boolean {
 export function isApiAnalysisConfigPutResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     (url.pathname === '/analysis/profiles/stock-br/config' ||
       url.pathname === '/analysis/profiles/fii-br/config') &&
     response.request().method() === 'PUT'
@@ -213,7 +227,7 @@ export function isApiAnalysisConfigPutResponse(response: Response): boolean {
 export function isApiFiiSegmentsGetResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/analysis/profiles/fii-br/segments' &&
     response.request().method() === 'GET'
   );
@@ -222,7 +236,7 @@ export function isApiFiiSegmentsGetResponse(response: Response): boolean {
 export function isApiAnalysisAssetsListResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     url.pathname === '/analysis/assets' &&
     response.request().method() === 'GET'
   );
@@ -231,10 +245,8 @@ export function isApiAnalysisAssetsListResponse(response: Response): boolean {
 export function isApiAnalysisScoresPutResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
-    url.origin === API_BASE_URL &&
+    url.origin === apiOrigin() &&
     /^\/analysis\/assets\/\d+\/scores$/.test(url.pathname) &&
     response.request().method() === 'PUT'
   );
 }
-
-export { API_BASE_URL };

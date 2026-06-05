@@ -2,9 +2,10 @@
  * UI-AST-018 — Lote com ETF nacional e subtipo RF (yfinance)
  * @see ../../../casos-de-uso/ui/assets/18-importacao-lote-etf-subtipo.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
 
-import { API_BASE_URL } from '../helpers/apiResponses';
+
+import { getWorkerApiBaseUrl } from '../helpers/workerContext';
 import { registeredAssetsTable } from '../helpers/assetsPage';
 import { TICKER_AUPO11 } from '../helpers/e2eFixtures';
 import {
@@ -19,7 +20,7 @@ import { clearAllTestAssets, gotoAssetsPage } from '../helpers/seedAssets';
 test.describe('UI-AST-018', () => {
   test.beforeEach(async ({ request }) => {
     await assertYfinanceLookupBackend(request);
-    await clearAllTestAssets(request, API_BASE_URL);
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
   });
 
   test('informa subtipo RF na prévia do lote e salva ETF', async ({ page }) => {

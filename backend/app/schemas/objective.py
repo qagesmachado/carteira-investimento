@@ -1,11 +1,41 @@
 from pydantic import BaseModel, Field
 
 
+class PensionContributionRead(BaseModel):
+    plan_year: int
+    annual_gross_income_brl: float | None
+    contributed_ytd_brl: float
+    target_annual_brl: float
+    remaining_brl: float
+    months_remaining: int
+    monthly_needed_brl: float | None
+    progress_percent: float
+    target_reached: bool
+
+
+class PensionContributionSummaryRead(BaseModel):
+    years: list[PensionContributionRead]
+    consolidated_total_brl: float
+
+
+class PensionYearCreate(BaseModel):
+    plan_year: int
+    annual_gross_income_brl: float | None = None
+    contributed_ytd_brl: float | None = None
+
+
+class PensionYearUpdate(BaseModel):
+    annual_gross_income_brl: float | None = None
+    contributed_ytd_brl: float | None = None
+
+
 class ObjectiveCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     description: str | None = None
     mode: str = "multi_asset"
     partition_asset_id: int | None = None
+    plan_year: int | None = None
+    annual_gross_income_brl: float | None = None
 
 
 class ObjectiveUpdate(BaseModel):
@@ -87,6 +117,7 @@ class ObjectiveRead(BaseModel):
     partition_asset_id: int | None
     allocations: list[ObjectiveAllocationRead]
     total_value_brl: float
+    pension_contribution: PensionContributionSummaryRead | None = None
 
 
 class ObjectivesSnapshotRead(BaseModel):

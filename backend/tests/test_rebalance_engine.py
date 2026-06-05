@@ -8,6 +8,7 @@ from app.services.rebalance_engine import (
     REBALANCE_CLASS_LABELS,
     compute_class_rows,
     compute_fund_asset_rows,
+    compute_international_asset_rows,
     compute_position_asset_rows,
     compute_stock_asset_rows,
     compute_stocks_sub_rows,
@@ -191,3 +192,23 @@ def test_compute_position_asset_rows_without_targets() -> None:
     voo = rows[0]
     assert voo.target_percent is None
     assert voo.current_percent == 100.0
+
+
+def test_compute_international_asset_rows_with_allocation() -> None:
+    targets = parse_allocation_targets(None)
+    assets = [
+        {
+            "asset_id": 1,
+            "symbol": "VOO",
+            "name": "Vanguard",
+            "asset_type": "etf",
+            "current_brl": 20_000.0,
+            "target_percent": 100.0,
+        },
+    ]
+    rows = compute_international_asset_rows(100_000.0, assets, targets)
+    assert len(rows) == 1
+    voo = rows[0]
+    assert voo.target_percent == 100.0
+    assert voo.target_value_brl == pytest.approx(20_000.0)
+    assert voo.score_included is True

@@ -1,0 +1,59 @@
+---
+description: E2E Playwright paralelo — workers, isolamento por DB/porta e checklist de novos specs
+alwaysApply: true
+---
+
+# E2E paralelo — workers e isolamento
+
+Complementa [testes.mdc](testes.mdc) e [e2e/casos-de-uso/dependencias.md](../../e2e/casos-de-uso/dependencias.md).
+
+## Configuração padrão
+
+| Variável | Default | Descrição |
+| -------- | ------- | --------- |
+| `E2E_WORKERS` | `4` (ou `min(4, max(1, floor(cpus/2)))`) | Workers Playwright |
+| Worker `N` API | `8001 + N` | Uvicorn dedicado |
+| Worker `N` frontend | `5174 + N` | Vite dedicado |
+| Worker `N` DB | `backend/data/test/carteira-{N}.db` | SQLite isolado |
+
+Worker **0** usa as portas documentadas nos casos de uso (**8001** / **5174**).
+
+Comandos:
+
+```powershell
+cd e2e
+npm run test:ui              # 4 workers (padrão)
+npm run test:ui:serial       # E2E_WORKERS=1 — debug
+E2E_WORKERS=2 npm run test:ui
+```
+
+## Regras de isolamento
+
+- **Proibido** aumentar `workers` sem par API + frontend + DB por índice.
+- **Proibido** specs que apagam ou escrevem em `carteira-{M}.db` de outro worker.
+- **Proibido** hardcodar `:8001` / `:5174` em specs ou helpers — usar `getWorkerApiBaseUrl()` / fixture `workerEnv`.
+- Novos specs importam `test` e `expect` de [`e2e/specs/fixtures/test.ts`](../../e2e/specs/fixtures/test.ts), **não** de `@playwright/test` diretamente.
+
+Infra: [`e2e/worker-env.js`](../../e2e/worker-env.js), [`e2e/playwright.config.js`](../../e2e/playwright.config.js), [`e2e/specs/fixtures/test.ts`](../../e2e/specs/fixtures/test.ts).
+
+## Checklist — nova funcionalidade com E2E
+
+Antes de merge, responder:
+
+1. Seed no `beforeEach` usa `clearAll*` (padrão do projeto)?
+2. Escreve em path fixo no disco compartilhado (fora do DB do worker)?
+3. Depende de ordem de execução entre arquivos?
+4. Manipula migração legado ou `apppreference` global?
+5. Precisa `test.describe.configure({ mode: 'serial' })`?
+
+| Resposta | Ação |
+| -------- | ---- |
+| 1–4 OK, 5 não | Nenhuma config extra — isolamento por worker basta |
+| 2 ou 4 sim | Documentar exceção; isolar DB/pasta temporária; considerar `mode: 'serial'` |
+| 3 sim | Refatorar para seed autocontido — **não** depender de ordem |
+
+## Quando revisar `E2E_WORKERS`
+
+- Suíte **> 200 specs** e máquina com 16 GB+ RAM: benchmark com `E2E_WORKERS=6`.
+- Flakiness yfinance aumentou: reduzir para `2` temporariamente.
+- Nova feature **não exige** novo worker — workers são genéricos; só revisar se houver exceção no checklist acima.

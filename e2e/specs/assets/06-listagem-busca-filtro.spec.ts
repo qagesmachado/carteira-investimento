@@ -2,7 +2,8 @@
  * UI-AST-006 — Listagem com busca e filtro
  * @see ../../../casos-de-uso/ui/assets/06-listagem-busca-filtro.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { TICKER_BBSE3, TICKER_PETR4 } from '../helpers/e2eFixtures';
 import {

@@ -1,4 +1,5 @@
-import { test } from '@playwright/test';
+import { test } from '../fixtures/test';
+
 
 import { E2E_CDB_IDENTIFIER } from '../helpers/e2eFixtures';
 import { expectNoClassificarInRow } from '../helpers/analisePage';

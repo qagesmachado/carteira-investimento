@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../../fixtures/test';
+
 
 import { gotoFiisPage } from '../../helpers/analisePage';
 import { seedAnalysisEmpty } from '../../helpers/seedAnalysis';

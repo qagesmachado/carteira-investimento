@@ -1,6 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
 
-import { API_BASE_URL, isApiAssetsListResponse } from '../helpers/apiResponses';
+
+import { isApiAssetsListResponse } from '../helpers/apiResponses';
+import { getWorkerApiBaseUrl } from '../helpers/workerContext';
 import { clearAllTestAssets } from '../helpers/testAssets';
 
 /**
@@ -9,7 +11,7 @@ import { clearAllTestAssets } from '../helpers/testAssets';
  */
 test.describe('UI-AST-001', () => {
   test.beforeEach(async ({ request }) => {
-    await clearAllTestAssets(request, API_BASE_URL);
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
   });
 
   test('página carrega com lista vazia na base de teste', async ({ page }) => {

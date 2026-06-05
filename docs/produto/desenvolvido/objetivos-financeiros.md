@@ -8,7 +8,7 @@ Origem na planilha: aba `AUPO11AREA11` (ETFs de renda fixa por caixinha). Na apl
 
 ## Escopo MVP
 
-- Página **`/objetivos`**: visualização e gestão de alocações parciais por objetivo (sem venda/remoção de posição).
+- Página **`/ferramentas/objetivos`** (menu Ferramentas → «Gerenciamento de objetivos»): visualização e gestão de alocações parciais por objetivo (sem venda/remoção de posição).
 - **Aba Resumo** (inicial): dashboard com patrimônio, tabela só de **objetivos custom** e **partição unificada por ativo**.
 - Objetivo **«Livre»** continua na API (resto não alocado), mas **não aparece** nas abas, no resumo nem nas tabelas de partição.
 - Objetivos **por carteira** (`Objective.portfolio_id`).
@@ -16,6 +16,7 @@ Origem na planilha: aba `AUPO11AREA11` (ETFs de renda fixa por caixinha). Na apl
 - **Modalidades de objetivo:**
   - `multi_asset` — vários ativos no mesmo objetivo (padrão).
   - `single_asset` — vinculado a um `partition_asset_id`; só aloca fatias desse ativo (partição entre objetivos).
+  - `pension_contribution` — controle de aporte previdenciário anual (meta 12% PGBL); sem alocações de ativos. Ver [controle-aporte-previdencia.md](controle-aporte-previdencia.md).
 - **Métricas por alocação** no snapshot: `invested_value_brl`, `profit_brl`, `profit_percent` (proporcionais à fatia).
 - **Split por tipo de ativo** (`asset_type`):
   - `fixed_income` e `pension` → divisão por **valor (R$)**.
@@ -36,7 +37,7 @@ Origem na planilha: aba `AUPO11AREA11` (ETFs de renda fixa por caixinha). Na apl
 
 | Entidade | Campos principais |
 | -------- | ----------------- |
-| `Objective` | `portfolio_id`, `name`, `description`, `is_default`, `mode`, `partition_asset_id`, `status` |
+| `Objective` | `portfolio_id`, `name`, `description`, `is_default`, `mode`, `partition_asset_id`, `plan_year`, `annual_gross_income_brl`, `contributed_ytd_brl`, `status` |
 | `ObjectiveAllocation` | `objective_id`, `asset_id`, `slice_name`, `quantity` **ou** `amount` |
 
 Regras:
@@ -96,4 +97,5 @@ Exemplo: 100 cotas alocadas (60+40), vendeu 50 → total=50, alocado=100, delta=
 - [Arquitetura funcional — Objetivos financeiros](../../arquitetura/arquitetura-funcional.md)
 - [Planilha — AUPO11AREA11](../../planilha/abas.md)
 - [Rebalanceamento](rebalanceamento.md)
-- [Casos E2E — objetivos](../../../e2e/casos-de-uso/ui/objetivos/README.md)
+- [Controle de aporte previdenciário](controle-aporte-previdencia.md)
+- [Casos E2E — objetivos](../../../e2e/casos-de-uso/ui/ferramentas/objetivos/README.md)

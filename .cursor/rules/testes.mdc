@@ -33,15 +33,19 @@ Fluxo completo (doc → casos de uso → specs → código): ver [desenvolviment
 | API (unit/integration HTTP) | `backend/tests/` | `cd backend` → `python -m pytest` |
 | Frontend (unit) | `frontend/src/**/*.test.ts` | `cd frontend` → `npm test` |
 | Unitários (ambos) | raiz | `npm run test:unit` |
-| E2E UI (Playwright, cenário real) | `e2e/specs/` | `cd e2e` → `npm run test:ui` |
+| E2E UI (Playwright, cenário real) | `e2e/specs/` | `cd e2e` → `npm run test:ui` (4 workers; ver [e2e-paralelo.mdc](e2e-paralelo.mdc)) |
+| E2E serial (debug) | `e2e/specs/` | `cd e2e` → `npm run test:ui:serial` |
 | Tudo (3 níveis + relatório) | raiz | `npm run test:all` ou `npm run test:report` |
 | Só unitários (sem E2E) | raiz | `npm run test:unit` |
+| Escopo — backend | `backend/tests/` | `npm run test:backend:scope -- tests/test_foo.py` |
+| Escopo — frontend | `frontend/src/` | `npm run test:frontend:scope -- src/.../foo.test.ts` |
+| Escopo — E2E | `e2e/specs/` | `npm run test:e2e:scope -- specs/pasta/` |
 
 Documentação: `docs/`, `README.md`, `e2e/README.md`, `e2e/casos-de-uso/`, `test-reports/README.md`.
 
-## Obrigatoriedade — três níveis em toda alteração
+## Obrigatoriedade — três níveis na entrega
 
-**Qualquer alteração** em código de produção **ou** de teste exige execução dos **3 níveis**:
+Na **conclusão** da tarefa (Definition of Done), exige-se execução dos **3 níveis**:
 
 1. Backend — `pytest` (suíte completa em `backend/tests/`)
 2. Frontend — Vitest (`frontend/src/**/*.test.ts`)
@@ -49,8 +53,39 @@ Documentação: `docs/`, `README.md`, `e2e/README.md`, `e2e/casos-de-uso/`, `tes
 
 Comando padrão na raiz: **`npm run test:all`** (equivale a `npm run test:report`).
 
-- Não concluir tarefa rodando só a camada “afetada”; mudança mínima pode quebrar outro nível.
-- Ciclo TDD local (red/green) pode usar arquivo isolado **durante** a tarefa; a prova final é sempre a suíte completa dos 3 níveis.
+## Execução durante desenvolvimento (TDD / iterando)
+
+Enquanto a área alterada **não está estável**, rodar **somente o escopo afetado**:
+
+| Camada | Comando exemplo |
+| ------ | --------------- |
+| Backend | `cd backend` → `python -m pytest tests/test_<modulo>.py` ou `-k "padrão"` |
+| Frontend | `cd frontend` → `npm test -- src/lib/features/<area>/**/*.test.ts` |
+| E2E | `cd e2e` → `npm run test:ui -- specs/<pasta>/` ou um `.spec.ts` |
+
+Na raiz (pass-through de argumentos):
+
+- `npm run test:backend:scope -- tests/test_objectives.py`
+- `npm run test:frontend:scope -- src/lib/features/objetivos/foo.test.ts`
+- `npm run test:e2e:scope -- specs/ferramentas/objetivos/`
+
+**Não** rodar `test:all` a cada ciclo red/green. Quando backend + frontend + E2E do escopo estiverem verdes, aí sim partir para a suíte completa.
+
+### Mapeamento área → escopo mínimo
+
+| Pasta alterada | E2E | Backend típico | Frontend típico |
+| -------------- | --- | -------------- | --------------- |
+| `frontend/.../objetivos/` | `specs/ferramentas/objetivos/` | `test_objectives*.py` | `features/objetivos/**/*.test.ts` |
+| `backend/.../property_financing*` | `specs/ferramentas/financiamento-imovel/` | `test_property_financing*.py` | helpers relacionados |
+| `frontend/src/routes/assets/` | `specs/assets/` | `test_assets*.py` | `features/assets/**/*.test.ts` |
+| *(padrão)* | pasta `specs/` espelhando rota | `test_<dominio>*.py` | `*.test.ts` co-localizados |
+
+## Execução — estabilização e entrega
+
+Quando a área alterada está **estável** localmente (escopo + regressões adjacentes verdes):
+
+- Rodar **`npm run test:all`** (backend + frontend + E2E UI + relatório datado).
+- **Nunca** usar só um arquivo ou pasta como prova final na entrega.
 
 ## Relatórios datados (versionados)
 
@@ -71,14 +106,16 @@ Artefatos individuais por nível:
 - Relatórios são **versionados no repositório** (histórico de execuções).
 - Ao concluir tarefa, informar o caminho do relatório (`test-reports/<timestamp>/summary.md`) e o resultado de cada nível.
 
-## Execução — sempre a suíte inteira
+## Execução — estabilização e entrega
 
-Ao **validar** alterações (após implementar, refatorar ou corrigir testes):
+Quando a área alterada está **estável** localmente (escopo + regressões adjacentes verdes):
 
-- **Nunca** usar um único arquivo ou pasta como prova final, exceto no ciclo TDD local (red/green) dentro da mesma tarefa.
-- Ao **concluir** a tarefa, rodar **`npm run test:all`** (backend + frontend + E2E UI + relatório datado).
+- Rodar **`npm run test:all`** (backend + frontend + E2E UI + relatório datado).
+- **Nunca** usar só um arquivo ou pasta como prova final na entrega.
 
-Preferir scripts npm (`npm run test:ui`, `npm run test:all`) para disparar hooks (`pretest:ui` reseta DB em `backend/data/test/`). Evitar `npx playwright test` direto sem o hook de pré-teste.
+Preferir scripts npm (`npm run test:ui`, `npm run test:all`) para disparar hooks (`pretest:ui` reseta DBs `carteira-{N}.db` em `backend/data/test/`). Evitar `npx playwright test` direto sem o hook de pré-teste.
+
+Paralelismo E2E: ver [e2e-paralelo.mdc](e2e-paralelo.mdc) (`E2E_WORKERS=4` padrão).
 
 Reportar no fim: caminho do relatório, quais suítes rodaram e se passaram. Se E2E falhar por rede (yfinance), indicar no `summary.md` e sugerir nova execução quando estável.
 
@@ -87,8 +124,9 @@ Reportar no fim: caminho do relatório, quais suítes rodaram e se passaram. Se 
 1. **Doc de produto** em `docs/produto/` (ver [desenvolvimento-guiado-testes.mdc](desenvolvimento-guiado-testes.mdc)).
 2. **Caso de uso** em `e2e/casos-de-uso/` — template `_template.md`, status **`aprovado`** antes de automatizar.
 3. **Spec Playwright** em `e2e/specs/{assets|portfolios|consolidada|dashboard|proventos}/` — **na mesma tarefa** que a funcionalidade, ID alinhado (`UI-AST`, `UI-PRT`, `UI-CNS`, `UI-DASH`, `UI-PRV`).
-4. Cenário real: API 8001, frontend 5174, lookup yfinance — ver `e2e/casos-de-uso/estrategia-e2e-ui.md`.
+4. Cenário real: API worker 0 em `8001`, frontend worker 0 em `5174`, lookup yfinance — ver `e2e/casos-de-uso/estrategia-e2e-ui.md` e [e2e-paralelo.mdc](e2e-paralelo.mdc).
 5. Spec verde → marcar caso como **`implementado`** no README da pasta.
+6. Novos specs: `import { test, expect } from '…/fixtures/test'` (nunca `@playwright/test` direto).
 
 ## O que evitar
 

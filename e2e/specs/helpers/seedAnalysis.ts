@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext } from '@playwright/test';
 
-import { API_BASE_URL } from './apiResponses';
+import { getWorkerApiBaseUrl } from './workerContext';
 import {
   E2E_PORTFOLIO_PRINCIPAL,
   TICKER_BBSE3,
@@ -17,24 +17,24 @@ import {
 } from './testPortfolios';
 
 async function resetAnalysisConfig(request: APIRequestContext): Promise<void> {
-  const response = await request.post(`${API_BASE_URL}/analysis/profiles/stock-br/config/reset`);
+  const response = await request.post(`${getWorkerApiBaseUrl()}/analysis/profiles/stock-br/config/reset`);
   expect(response.ok()).toBeTruthy();
 }
 
 async function resetFiiAnalysisConfig(request: APIRequestContext): Promise<void> {
-  const response = await request.post(`${API_BASE_URL}/analysis/profiles/fii-br/config/reset`);
+  const response = await request.post(`${getWorkerApiBaseUrl()}/analysis/profiles/fii-br/config/reset`);
   expect(response.ok()).toBeTruthy();
 }
 
 export async function seedAnalysisEmpty(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await resetAnalysisConfig(request);
   await resetFiiAnalysisConfig(request);
 }
 
 export async function seedAnalysisWithBbse3(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await resetAnalysisConfig(request);
   await createAssetViaApi(request, {
@@ -52,7 +52,7 @@ export async function seedAnalysisWithBbse3(request: APIRequestContext): Promise
 }
 
 export async function seedAnalysisWithFii(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await resetAnalysisConfig(request);
   await resetFiiAnalysisConfig(request);
@@ -71,7 +71,7 @@ export async function seedAnalysisWithFii(request: APIRequestContext): Promise<v
 }
 
 export async function seedAnalysisWithTwoFiis(request: APIRequestContext): Promise<void> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await resetAnalysisConfig(request);
   await resetFiiAnalysisConfig(request);

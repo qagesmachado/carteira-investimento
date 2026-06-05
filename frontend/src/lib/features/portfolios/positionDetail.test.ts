@@ -104,4 +104,29 @@ describe('buildPositionDetailSections', () => {
     });
     expect(sections.dividendsValue).toBe('R$ 150,50 (2 lançamentos)');
   });
+
+  it('inclui lucro após taxas para cripto com resumo de taxas', () => {
+    const btc: Asset = {
+      ...stockAsset,
+      symbol: 'BTC-USD',
+      asset_type: 'crypto',
+      market: 'international',
+      currency: 'USD',
+      current_quote: 71_000
+    };
+    const pos: Position = { ...stockPosition, average_price: 80_988.55, quantity: 0.01491742 };
+    const sections = buildPositionDetailSections(pos, btc, {
+      usdBrlRate: 5.5,
+      showBrlEquivalentHints: true,
+      cryptoFeeSummary: {
+        profitAfterFeesBrl: -750,
+        appreciationAfterFeesPercent: -12.5,
+        totalFeesBrl: 22.5,
+        totalFeesUsd: 4.06
+      }
+    });
+    const afterFees = sections.totals.find((i) => i.label === 'Lucro − taxas');
+    expect(afterFees?.value).toMatch(/US\$/);
+    expect(sections.totals.find((i) => i.label === 'Lucro')).toBeDefined();
+  });
 });

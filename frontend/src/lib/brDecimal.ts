@@ -3,6 +3,11 @@ const DISPLAY_FORMATTER = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 8
 });
 
+const BTC_DISPLAY_FORMATTER = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 8,
+  maximumFractionDigits: 8
+});
+
 /** Remove caracteres inválidos durante a digitação (apenas dígitos e uma vírgula). */
 export function sanitizeBrDecimalTyping(raw: string): string {
   let s = raw.replace(/[^\d,]/g, '');
@@ -67,5 +72,23 @@ export function formatBrDecimalForEditing(value: number): string {
     return str;
   }
   const [intPart, decPart] = str.split('.');
+  return `${intPart},${decPart}`;
+}
+
+/** Exibição BTC com 8 casas decimais fixas: `0.00003` → `0,00003000`. */
+export function formatBtcDecimalDisplay(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+  return BTC_DISPLAY_FORMATTER.format(value);
+}
+
+/** Forma para edição BTC com 8 casas decimais: `0.00003` → `0,00003000`. */
+export function formatBtcDecimalForEditing(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '';
+  }
+  const fixed = value.toFixed(8);
+  const [intPart, decPart] = fixed.split('.');
   return `${intPart},${decPart}`;
 }

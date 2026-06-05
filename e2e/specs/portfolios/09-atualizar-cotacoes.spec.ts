@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { clickRefreshQuotes, gotoPortfoliosPage } from '../helpers/portfoliosPage';
 import { seedPortfoliosFullMix } from '../helpers/seedPortfolios';

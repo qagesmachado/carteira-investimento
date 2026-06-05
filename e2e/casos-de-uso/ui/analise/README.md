@@ -13,6 +13,8 @@
 
 **FIIs:** ver [fiis/README.md](fiis/README.md) (UI-ANL-007 a 013).
 
-**Total:** 6 casos ações · **13 specs** (com FIIs)
+**ETF internacional:** ver [internacional/README.md](internacional/README.md) (UI-ANL-014 a 016).
+
+**Total:** 6 casos ações · **16 specs** (com FIIs e internacional)
 
 **Doc produto:** [classificacao-ativos-acoes-br.md](../../../../docs/produto/desenvolvido/classificacao-ativos-acoes-br.md)

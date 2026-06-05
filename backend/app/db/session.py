@@ -1,4 +1,8 @@
+import logging
+import shutil
 from collections.abc import Generator
+from datetime import datetime
+from pathlib import Path
 
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, SQLModel, create_engine
@@ -14,11 +18,23 @@ from app.models.analysis import (
     AssetAnalysisScore,
 )
 from app.models.asset import Asset
+from app.models.crypto_fee import CryptoFee, CryptoFeeType
 from app.models.dividend_payment import DividendPayment
 from app.models.objective import Objective
 from app.models.objective_allocation import ObjectiveAllocation
+from app.models.pension_contribution_year import PensionContributionYear
+from app.models.property_financing import (
+    PropertyFinancing,
+    PropertyFinancingEntry,
+)
 from app.models.portfolio import AppPreference, Portfolio
 from app.models.position import Position
+
+logger = logging.getLogger(__name__)
+
+# Versão do schema esperada pelo código. Incrementar ao adicionar uma migração
+# nova; é comparada com o `PRAGMA user_version` gravado dentro do arquivo do banco.
+SCHEMA_VERSION = 1
 
 engine = create_engine(
     settings.database_url,
@@ -30,6 +46,7 @@ engine = create_engine(
 ASSET_TABLES = [
     Asset.__table__,
     DividendPayment.__table__,
+    CryptoFee.__table__,
     AnalysisCriterionDefinition.__table__,
     AnalysisProfileSettings.__table__,
     AnalysisViabilityRule.__table__,
@@ -42,6 +59,9 @@ PORTFOLIO_TABLES = [
     AppPreference.__table__,
     Objective.__table__,
     ObjectiveAllocation.__table__,
+    PensionContributionYear.__table__,
+    PropertyFinancing.__table__,
+    PropertyFinancingEntry.__table__,
 ]
 ALL_TABLES = ASSET_TABLES + PORTFOLIO_TABLES
 
@@ -66,6 +86,9 @@ ASSET_ANALYSIS_SCORE_OPTIONAL_COLUMNS = {
 OBJECTIVE_OPTIONAL_COLUMNS = {
     "mode": "VARCHAR",
     "partition_asset_id": "INTEGER",
+    "plan_year": "INTEGER",
+    "annual_gross_income_brl": "FLOAT",
+    "contributed_ytd_brl": "FLOAT DEFAULT 0",
 }
 
 
@@ -212,7 +235,71 @@ def _ensure_dividend_payment_portfolio_column(engine_param: Engine) -> None:
             )
 
 
+def _migrate_property_financing_schema(engine_param: Engine) -> None:
+    """Recria lançamentos quando o schema antigo (períodos mensais) ainda existir."""
+    with engine_param.begin() as connection:
+        tables = {
+            row[0]
+            for row in connection.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        if "propertyfinancingentry" not in tables:
+            return
+        columns = {
+            row[1]
+            for row in connection.exec_driver_sql(
+                "PRAGMA table_info(propertyfinancingentry)"
+            ).fetchall()
+        }
+        if "financing_id" in columns and "event_date" in columns:
+            return
+        connection.exec_driver_sql("DROP TABLE IF EXISTS propertyfinancingentry")
+        connection.exec_driver_sql("DROP TABLE IF EXISTS propertyfinancingperiod")
+    SQLModel.metadata.create_all(engine_param, tables=[PropertyFinancingEntry.__table__])
+
+
+def _database_file_path(engine_param: Engine) -> Path | None:
+    """Caminho do arquivo SQLite, ou None para bancos em memória/outros."""
+    database = engine_param.url.database
+    if not database or database == ":memory:":
+        return None
+    return Path(database)
+
+
+def read_user_version(engine_param: Engine) -> int:
+    """Versão do schema gravada dentro do arquivo do banco (0 por padrão)."""
+    with engine_param.connect() as connection:
+        row = connection.exec_driver_sql("PRAGMA user_version").fetchone()
+        return int(row[0]) if row else 0
+
+
+def _write_user_version(engine_param: Engine, version: int) -> None:
+    with engine_param.begin() as connection:
+        connection.exec_driver_sql(f"PRAGMA user_version = {int(version)}")
+
+
+def _backup_database(path: Path, current_version: int) -> Path | None:
+    """Copia o banco antes de migrar; retorna o caminho do backup criado."""
+    if not path.exists() or path.stat().st_size == 0:
+        return None
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup_path = path.with_name(f"{path.name}.bak-v{current_version}-{timestamp}")
+    shutil.copy2(path, backup_path)
+    logger.info("Backup do banco criado antes da migração: %s", backup_path)
+    return backup_path
+
+
 def init_db() -> None:
+    db_path = _database_file_path(engine)
+    pre_existing = bool(db_path and db_path.exists() and db_path.stat().st_size > 0)
+    current_version = read_user_version(engine) if pre_existing else 0
+    needs_migration = current_version < SCHEMA_VERSION
+
+    # Antes de mexer em um banco já existente desatualizado, fazer backup.
+    if needs_migration and pre_existing and db_path is not None:
+        _backup_database(db_path, current_version)
+
     SQLModel.metadata.create_all(engine, tables=ALL_TABLES)
     migrate_legacy_databases(engine)
     _ensure_asset_columns(engine)
@@ -221,7 +308,20 @@ def init_db() -> None:
     _ensure_objective_columns(engine)
     _migrate_objective_allocation_slices(engine)
     _ensure_dividend_payment_portfolio_column(engine)
+    _migrate_property_financing_schema(engine)
+    _migrate_pension_contribution_years(engine)
     _ensure_default_objectives(engine)
+
+    if needs_migration:
+        _write_user_version(engine, SCHEMA_VERSION)
+
+
+def _migrate_pension_contribution_years(engine_param: Engine) -> None:
+    from app.models.objective import ObjectiveMode
+    from app.services.objective_service import migrate_legacy_pension_objectives_to_years
+
+    with Session(engine_param) as session:
+        migrate_legacy_pension_objectives_to_years(session)
 
 
 def _ensure_default_objectives(engine_param: Engine) -> None:

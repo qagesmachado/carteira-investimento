@@ -1,6 +1,7 @@
-import { test, type APIRequestContext } from '@playwright/test';
+import type { APIRequestContext } from '@playwright/test';
 
-import { API_BASE_URL } from './apiResponses';
+import { test } from '../fixtures/test';
+import { getWorkerApiBaseUrl } from './workerContext';
 import { TICKER_BBSE3 } from './e2eFixtures';
 
 type LookupPayload = {
@@ -13,13 +14,13 @@ type LookupPayload = {
 
 export async function assertYfinanceLookupBackend(request: APIRequestContext): Promise<void> {
   const lookupResponse = await request
-    .get(`${API_BASE_URL}/assets/lookup?symbol=${TICKER_BBSE3}`, { timeout: 45_000 })
+    .get(`${getWorkerApiBaseUrl()}/assets/lookup?symbol=${TICKER_BBSE3}`, { timeout: 45_000 })
     .catch(() => null);
 
   if (!lookupResponse?.ok()) {
     test.skip(
       true,
-      `Lookup yfinance indisponível em ${API_BASE_URL}. Verifique rede ou rode npm run test:ui.`
+      `Lookup yfinance indisponível em ${getWorkerApiBaseUrl()}. Verifique rede ou rode npm run test:ui.`
     );
   }
 

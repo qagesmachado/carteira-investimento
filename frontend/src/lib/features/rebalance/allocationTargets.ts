@@ -1,3 +1,5 @@
+import { HIDDEN_MONEY_BRL, isMoneyHidden } from '$lib/moneyDisplay';
+
 export type ClassTargets = {
   stocks: number;
   funds: number;
@@ -5,7 +7,6 @@ export type ClassTargets = {
   fixed_income: number;
   crypto: number;
 };
-
 export type StocksSplitTargets = {
   etf: number;
   stock: number;
@@ -93,6 +94,9 @@ export function formatPercent(value: number | null | undefined): string {
 export function formatBrl(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) {
     return '—';
+  }
+  if (isMoneyHidden()) {
+    return HIDDEN_MONEY_BRL;
   }
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }

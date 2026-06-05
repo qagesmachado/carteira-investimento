@@ -38,3 +38,10 @@ backend/seed/assets.local.json
 
 # testes
 test-reports
+
+# Build do executável desktop (PyInstaller) e backups de banco
+dist/
+backend/build/
+backend/dist/
+*.spec
+carteira.db.bak-*

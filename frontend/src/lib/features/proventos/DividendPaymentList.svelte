@@ -15,6 +15,7 @@
     paymentTypeOptions,
     type DividendPaymentType
   } from '$lib/proventoLabels';
+  import { hiddenMoneyForCurrency, isMoneyHidden } from '$lib/moneyDisplay';
 
   import DividendPaymentsSummary from './DividendPaymentsSummary.svelte';
   import DividendTablePagination from './DividendTablePagination.svelte';
@@ -176,9 +177,13 @@
   }
 
   function formatAmount(amount: number, currency: string): string {
+    const code = currency.length === 3 ? currency : 'BRL';
+    if (isMoneyHidden()) {
+      return hiddenMoneyForCurrency(code);
+    }
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: currency.length === 3 ? currency : 'BRL'
+      currency: code
     }).format(amount);
   }
 

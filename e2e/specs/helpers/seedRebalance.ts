@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext } from '@playwright/test';
 
-import { API_BASE_URL } from './apiResponses';
+import { getWorkerApiBaseUrl } from './workerContext';
 import { E2E_PORTFOLIO_PRINCIPAL } from './e2eFixtures';
 import { clearAllTestAssets, createAssetViaApi } from './seedAssets';
 import {
@@ -13,12 +13,12 @@ import {
 const VIABILIDADE = 'viabilidade';
 
 async function resetAnalysisConfig(request: APIRequestContext): Promise<void> {
-  const response = await request.post(`${API_BASE_URL}/analysis/profiles/stock-br/config/reset`);
+  const response = await request.post(`${getWorkerApiBaseUrl()}/analysis/profiles/stock-br/config/reset`);
   expect(response.ok()).toBeTruthy();
 }
 
 async function resetFiiAnalysisConfig(request: APIRequestContext): Promise<void> {
-  const response = await request.post(`${API_BASE_URL}/analysis/profiles/fii-br/config/reset`);
+  const response = await request.post(`${getWorkerApiBaseUrl()}/analysis/profiles/fii-br/config/reset`);
   expect(response.ok()).toBeTruthy();
 }
 
@@ -37,7 +37,7 @@ async function setAssetScores(
     cagr: 1,
     ...overrides
   };
-  const response = await request.put(`${API_BASE_URL}/analysis/assets/${assetId}/scores`, {
+  const response = await request.put(`${getWorkerApiBaseUrl()}/analysis/assets/${assetId}/scores`, {
     data: { scores }
   });
   expect(response.ok()).toBeTruthy();
@@ -59,14 +59,14 @@ async function setFiiScores(
     ...overrides
   };
   const response = await request.put(
-    `${API_BASE_URL}/analysis/assets/${assetId}/scores?profile=fii_br`,
+    `${getWorkerApiBaseUrl()}/analysis/assets/${assetId}/scores?profile=fii_br`,
     { data: { scores } }
   );
   expect(response.ok()).toBeTruthy();
 }
 
 async function getAssetId(request: APIRequestContext, symbol: string): Promise<number> {
-  const response = await request.get(`${API_BASE_URL}/assets`);
+  const response = await request.get(`${getWorkerApiBaseUrl()}/assets`);
   expect(response.ok()).toBeTruthy();
   const assets = (await response.json()) as { id: number; symbol: string }[];
   const asset = assets.find((a) => a.symbol === symbol);
@@ -77,7 +77,7 @@ async function getAssetId(request: APIRequestContext, symbol: string): Promise<n
 }
 
 export async function seedRebalanceEmpty(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await resetAnalysisConfig(request);
   await resetFiiAnalysisConfig(request);
@@ -87,7 +87,7 @@ export async function seedRebalanceEmpty(request: APIRequestContext): Promise<nu
 }
 
 export async function seedRebalanceWithMix(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await resetAnalysisConfig(request);
   await resetFiiAnalysisConfig(request);
@@ -152,7 +152,7 @@ export async function seedRebalanceWithMix(request: APIRequestContext): Promise<
 export async function seedRebalanceTwoStocksScored(
   request: APIRequestContext
 ): Promise<{ portfolioId: number; aaaId: number; bbbId: number }> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await resetAnalysisConfig(request);
   await resetFiiAnalysisConfig(request);
@@ -191,7 +191,7 @@ export async function seedRebalanceTwoStocksScored(
 export async function seedRebalanceTwoFiisScored(
   request: APIRequestContext
 ): Promise<{ portfolioId: number; hglgId: number; xplgId: number }> {
-  await clearAllTestAssets(request, API_BASE_URL);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await resetAnalysisConfig(request);
   await resetFiiAnalysisConfig(request);

@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { isApiFxRefreshResponse } from '../helpers/apiResponses';
 import { clickRefreshFx, gotoDashboardPage } from '../helpers/dashboardPage';

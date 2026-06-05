@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { E2E_PORTFOLIO_AUX } from '../helpers/e2eFixtures';
 import { acceptDialogs, deleteActivePortfolio, gotoPortfoliosPage } from '../helpers/portfoliosPage';

@@ -5,6 +5,8 @@
   "scripts": {
     "pretest:ui": "node ./scripts/reset-test-db.js",
     "test:ui": "playwright test --project=ui",
+    "test:ui:serial": "cross-env E2E_WORKERS=1 playwright test --project=ui",
+    "test:smoke": "playwright test --config=playwright.smoke.config.js",
     "test": "npm run test:ui"
   },
   "devDependencies": {

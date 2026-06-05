@@ -5,6 +5,7 @@ import {
   isApiAnalysisConfigGetResponse,
   isApiAnalysisConfigPutResponse,
   isApiAnalysisScoresPutResponse,
+  isApiEtfIntlAllocationsPutResponse,
   isApiFiiSegmentsGetResponse
 } from './apiResponses';
 
@@ -15,6 +16,14 @@ export async function gotoAcoesBrPage(page: Page): Promise<void> {
   ]);
   await page.goto('/analise/acoes-br');
   await responses;
+}
+
+export async function gotoInternacionalPage(page: Page): Promise<void> {
+  const assetsResponse = page.waitForResponse(
+    (r) => isApiAnalysisAssetsListResponse(r) && r.url().includes('profile=etf_intl') && r.ok()
+  );
+  await page.goto('/analise/internacional');
+  await assetsResponse;
 }
 
 export async function gotoFiisPage(page: Page): Promise<void> {
@@ -55,6 +64,25 @@ export async function gotoAnaliseConfigPage(page: Page): Promise<void> {
 
 export function analysisTableSection(page: Page): Locator {
   return page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Ações e ETFs (Brasil)' }) });
+}
+
+export function etfIntlAnalysisTableSection(page: Page): Locator {
+  return page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'ETFs internacionais' }) });
+}
+
+export function etfIntlAnalysisTable(page: Page): Locator {
+  return etfIntlAnalysisTableSection(page).locator('table tbody');
+}
+
+export function etfIntlAnalysisRow(page: Page, ticker: string): Locator {
+  return etfIntlAnalysisTable(page).locator('tr').filter({ hasText: ticker }).first();
+}
+
+export async function saveEtfIntlAllocation(page: Page): Promise<void> {
+  const saveResponse = page.waitForResponse((r) => isApiEtfIntlAllocationsPutResponse(r) && r.ok());
+  await page.getByRole('button', { name: 'Salvar alocação' }).click();
+  await saveResponse;
+  await expect(page.getByText('Alocação salva com sucesso.')).toBeVisible();
 }
 
 export function fiiAnalysisTableSection(page: Page): Locator {

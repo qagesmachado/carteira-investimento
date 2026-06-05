@@ -26,6 +26,7 @@ Seed via API no `beforeEach` de cada spec (não depende da suíte UI de portfoli
 | `UI-CNS-015` | [15-limpar-filtro-restaura-linhas.md](15-limpar-filtro-restaura-linhas.md) | implementado | `15-limpar-filtro-restaura-linhas.spec.ts` |
 | `UI-CNS-016` | [16-detalhes-posicao-precos.md](16-detalhes-posicao-precos.md) | implementado | `16-detalhes-posicao-precos.spec.ts` |
 | `UI-CNS-017` | [17-proventos-no-detalhe.md](17-proventos-no-detalhe.md) | rascunho | — |
+| `UI-CNS-018` | [18-detalhes-btc-lucro-taxas.md](18-detalhes-btc-lucro-taxas.md) | implementado | `17-detalhes-btc-lucro-taxas.spec.ts` |
 
 Caminho completo: `e2e/specs/consolidada/`.
 

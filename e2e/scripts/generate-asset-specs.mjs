@@ -12,9 +12,8 @@ const shared = {
     id: '003',
     title: 'Cadastro manual de renda fixa',
     md: '03-cadastro-manual-renda-fixa.md',
-    body: `import { expect, test } from '@playwright/test';
+    body: `import { expect, test } from '../fixtures/test';
 
-import { API_BASE_URL } from '../helpers/apiResponses';
 import { registeredAssetsTable } from '../helpers/assetsPage';
 import { E2E_CDB_NAME } from '../helpers/e2eFixtures';
 import {
@@ -22,10 +21,11 @@ import {
   startManualFixedIncome
 } from '../helpers/manualAssetForm';
 import { clearAllTestAssets, gotoAssetsPage } from '../helpers/seedAssets';
+import { getWorkerApiBaseUrl } from '../helpers/workerContext';
 
 test.describe('UI-AST-003', () => {
   test.beforeEach(async ({ request }) => {
-    await clearAllTestAssets(request, API_BASE_URL);
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
   });
 
   test('cadastra renda fixa manual e persiste', async ({ page }) => {

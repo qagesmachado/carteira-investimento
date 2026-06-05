@@ -1,14 +1,22 @@
 # Casos de uso — interface (E2E)
 
-Documentação organizada por página, na ordem **1 → 2 → 3**:
+Documentação organizada pela hierarquia de menus do app:
 
-| # | Pasta | Rota |
-| - | ----- | ---- |
-| 1 | [`assets/`](assets/README.md) | `/assets` |
-| 2 | [`portfolios/`](portfolios/README.md) | `/portfolios` |
-| 3 | [`consolidada/`](consolidada/README.md) | `/portfolios/consolidada` |
-| 4 | [`proventos/`](proventos/README.md) | `/proventos` |
-| 5 | [`dashboard/`](dashboard/README.md) | `/dashboard` |
+| Menu | Pasta | Rota |
+| ---- | ----- | ---- |
+| Dashboard | [`dashboard/`](dashboard/README.md) | `/dashboard` |
+| Visão consolidada | [`consolidada/`](consolidada/README.md) | `/portfolios/consolidada` |
+| Alocação → Rebalanceamento | [`rebalanceamento/`](rebalanceamento/README.md) | `/rebalanceamento` |
+| Alocação → Análise de ativos | [`analise/`](analise/README.md) | `/analise` |
+| Cadastro → Ativos | [`assets/`](assets/README.md) | `/assets` |
+| Cadastro → Carteiras | [`portfolios/`](portfolios/README.md) | `/portfolios` |
+| Cadastro → Proventos | [`proventos/`](proventos/README.md) | `/proventos` |
+| Cadastro → Dados | [`dados/`](dados/README.md) | `/dados` |
+| Ferramentas → Gerenciamento de objetivos | [`ferramentas/objetivos/`](ferramentas/objetivos/README.md) | `/ferramentas/objetivos` |
+| Ferramentas → Taxas bitcoin | [`ferramentas/bitcoin/`](ferramentas/bitcoin/README.md) | `/ferramentas/bitcoin` |
+| Ferramentas → Financiamento imóvel | [`ferramentas/financiamento-imovel/`](ferramentas/financiamento-imovel/README.md) | `/ferramentas/financiamento-imovel` |
+| Ferramentas → Cálculo de preço médio | [`ferramentas/calculo-preco-medio/`](ferramentas/calculo-preco-medio/README.md) | `/ferramentas/calculo-preco-medio` |
+| Navbar (transversal) | [`nav/`](nav/README.md) | navbar global |
 
 Ver também [`../dependencias.md`](../dependencias.md) (bases `data/test/*.db`).
 

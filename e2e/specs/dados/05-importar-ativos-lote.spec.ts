@@ -2,9 +2,10 @@
  * UI-DAD-005 — Importar ativos em lote via /dados
  * @see ../../../casos-de-uso/ui/dados/05-importar-ativos-lote.md
  */
-import { test } from '@playwright/test';
+import { test } from '../fixtures/test';
 
-import { API_BASE_URL } from '../helpers/apiResponses';
+
+import { getWorkerApiBaseUrl } from '../helpers/workerContext';
 import { BULK_TICKERS_FAKE } from '../helpers/e2eFixtures';
 import {
   expectRegisteredTickers,
@@ -18,7 +19,7 @@ import { clearAllTestAssets, gotoAssetsPage } from '../helpers/seedAssets';
 test.describe('UI-DAD-005', () => {
   test.beforeEach(async ({ request }) => {
     await assertYfinanceLookupBackend(request);
-    await clearAllTestAssets(request, API_BASE_URL);
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
   });
 
   test('importa três tickers em lote pela página Dados', async ({ page }) => {

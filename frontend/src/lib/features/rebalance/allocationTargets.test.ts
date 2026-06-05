@@ -1,13 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { setHideMoneyValues } from '$lib/stores/hideMoneyValues';
 
 import {
   defaultAllocationTargets,
+  formatBrl,
   parseAllocationTargets,
   serializeAllocationTargets,
   validateAllocationTargets
 } from './allocationTargets';
 
 describe('allocationTargets', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setHideMoneyValues(false);
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    setHideMoneyValues(false);
+  });
+
   it('returns defaults when json is null', () => {
     const targets = parseAllocationTargets(null);
     expect(targets.classes.stocks).toBe(30);
@@ -40,5 +53,10 @@ describe('allocationTargets', () => {
     const targets = defaultAllocationTargets();
     targets.stocks_split.etf = 80;
     expect(validateAllocationTargets(targets)).toMatch(/ETF\/Ação/);
+  });
+
+  it('formatBrl mascara quando ocultar valores está ativo', () => {
+    setHideMoneyValues(true);
+    expect(formatBrl(216_000)).toBe('R$ ••••••');
   });
 });

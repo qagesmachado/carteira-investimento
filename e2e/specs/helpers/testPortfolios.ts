@@ -1,15 +1,15 @@
 import { expect, type APIRequestContext } from '@playwright/test';
 
-import { API_BASE_URL } from './apiResponses';
+import { getWorkerApiBaseUrl } from './workerContext';
 
 export async function clearAllPortfolios(request: APIRequestContext): Promise<void> {
-  const listResponse = await request.get(`${API_BASE_URL}/portfolios`);
+  const listResponse = await request.get(`${getWorkerApiBaseUrl()}/portfolios`);
   expect(listResponse.ok()).toBeTruthy();
   const portfolios = (await listResponse.json()) as { id: number }[];
 
   for (const portfolio of portfolios) {
     const deleteResponse = await request.delete(
-      `${API_BASE_URL}/portfolios/${portfolio.id}?cascade=all`
+      `${getWorkerApiBaseUrl()}/portfolios/${portfolio.id}?cascade=all`
     );
     expect(deleteResponse.ok()).toBeTruthy();
   }
@@ -19,7 +19,7 @@ export async function createPortfolio(
   request: APIRequestContext,
   name: string
 ): Promise<{ id: number; name: string }> {
-  const response = await request.post(`${API_BASE_URL}/portfolios`, {
+  const response = await request.post(`${getWorkerApiBaseUrl()}/portfolios`, {
     data: { name, base_currency: 'BRL' }
   });
   expect(response.ok()).toBeTruthy();
@@ -30,7 +30,7 @@ export async function setActivePortfolio(
   request: APIRequestContext,
   portfolioId: number
 ): Promise<void> {
-  const response = await request.put(`${API_BASE_URL}/portfolios/active`, {
+  const response = await request.put(`${getWorkerApiBaseUrl()}/portfolios/active`, {
     data: { portfolio_id: portfolioId }
   });
   expect(response.ok()).toBeTruthy();
@@ -61,7 +61,7 @@ export async function createPosition(
     data.quantity = options.quantity ?? 10;
     data.average_price = options.average_price ?? 25;
   }
-  const response = await request.post(`${API_BASE_URL}/portfolios/${portfolioId}/positions`, {
+  const response = await request.post(`${getWorkerApiBaseUrl()}/portfolios/${portfolioId}/positions`, {
     data
   });
   expect(response.ok()).toBeTruthy();
@@ -71,7 +71,7 @@ export async function getAssetIdBySymbol(
   request: APIRequestContext,
   symbol: string
 ): Promise<number> {
-  const listResponse = await request.get(`${API_BASE_URL}/assets`);
+  const listResponse = await request.get(`${getWorkerApiBaseUrl()}/assets`);
   expect(listResponse.ok()).toBeTruthy();
   const assets = (await listResponse.json()) as { id: number; symbol: string }[];
   const target = symbol.trim().toUpperCase().replace(/\.SA$/, '');

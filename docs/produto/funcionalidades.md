@@ -2,6 +2,20 @@
 
 Este documento traduz a planilha em módulos e telas possíveis para uma aplicação. As funcionalidades abaixo ainda não representam escopo fechado de desenvolvimento; elas servem para organizar o produto antes de discutir stack ou implementação.
 
+## Mapa de navegação (menus do app)
+
+A barra de navegação organiza as áreas implementadas nesta ordem e hierarquia:
+
+| Ordem | Menu | Itens | Rotas |
+| ----- | ---- | ----- | ----- |
+| 1 | Dashboard | — | `/dashboard` |
+| 2 | Visão consolidada | — | `/portfolios/consolidada` |
+| 3 | Alocação | Rebalanceamento · Análise de ativos | `/rebalanceamento` · `/analise` |
+| 4 | Cadastro | Ativos · Carteiras · Proventos · Dados | `/assets` · `/portfolios` · `/proventos` · `/dados` |
+| 5 | Ferramentas | Gerenciamento de objetivos · Taxas bitcoin · Financiamento imóvel · Cálculo de preço médio | `/ferramentas/objetivos` · `/ferramentas/bitcoin` · `/ferramentas/financiamento-imovel` · `/ferramentas/calculo-preco-medio` |
+
+As seções numeradas a seguir descrevem os módulos por domínio (origem na planilha) e podem ser lidas independentemente da posição no menu.
+
 ## 1. Dashboard inicial
 
 Detalhamento: [Dashboard inicial](dashboard-inicial.md) · **Implementado (Tier 1+2):** [desenvolvido/dashboard-inicial.md](desenvolvido/dashboard-inicial.md) · **Futuro:** [candidato/dashboard-tier-3.md](candidato/dashboard-tier-3.md)
@@ -164,7 +178,7 @@ Possíveis telas:
 
 Detalhamento: **[desenvolvido/objetivos-financeiros.md](desenvolvido/objetivos-financeiros.md)** (implementado — MVP).
 
-**Status:** parcial — `/objetivos` com alocação parcial por objetivo dentro da carteira ativa. Meta de valor alvo e dashboard por objetivo permanecem candidatos.
+**Status:** parcial — `/ferramentas/objetivos` com alocação parcial por objetivo e modalidade **controle de aporte previdenciário** (meta 12% PGBL). Meta de valor alvo genérica e dashboard por objetivo permanecem candidatos. Ver [desenvolvido/controle-aporte-previdencia.md](desenvolvido/controle-aporte-previdencia.md).
 
 Origem na planilha:
 
@@ -181,6 +195,7 @@ Funcionalidades:
 - Visualizar posições por objetivo e valor agregado.
 - Detectar divergência quando posição muda em outra tela (venda/aporte) e exigir reajuste manual.
 - Excluir objetivo devolve alocações ao Livre.
+- Modalidade **previdência**: informar renda bruta anual, total aportado no ano; calcular meta (12%), faltante e aporte mensal necessário.
 
 Possíveis telas:
 
@@ -249,14 +264,15 @@ Possíveis telas:
 
 ## 9. Análise de ativos
 
-**Status:** parcialmente implementado — [classificacao-ativos-acoes-br.md](desenvolvido/classificacao-ativos-acoes-br.md) (Ações/ETF BR) e [classificacao-ativos-fiis.md](desenvolvido/classificacao-ativos-fiis.md) (FIIs).
+**Status:** parcialmente implementado — [classificacao-ativos-acoes-br.md](desenvolvido/classificacao-ativos-acoes-br.md) (Ações/ETF BR), [classificacao-ativos-fiis.md](desenvolvido/classificacao-ativos-fiis.md) (FIIs) e [classificacao-ativos-etf-intl.md](desenvolvido/classificacao-ativos-etf-intl.md) (ETF internacional).
 
 Origem na planilha:
 
 - `Análise de açõesetf br` — **MVP**
 - `DIAGRAMA AÇÕES` — **MVP**
 - `Análise de fundos`, `DIAGRAMA FIIS` — **MVP FIIs**
-- `Análise etf`, `Perguntas` — candidato
+- `Análise etf` — **MVP ETF internacional**
+- `Perguntas` — candidato
 
 Objetivo: apoiar decisão de investimento com critérios e pontuações.
 
@@ -277,9 +293,15 @@ Funcionalidades FIIs (entregue):
 - Atalho Classificar para FIIs em carteiras.
 - **% desejado por FII** no rebalanceamento (aba FII, via Soma).
 
+Funcionalidades ETF internacional (entregue):
+
+- Alocação manual por % desejado (soma 100% no grupo) e link externo opcional.
+- Tela `/analise/internacional`.
+- **% desejado por ETF** no rebalanceamento (aba ETF internacional).
+
 Funcionalidades (fases posteriores):
 
-- ETF internacional, preço teto por FII, ranking global.
+- Preço teto por FII, ranking global.
 
 ## 10. Renda fixa
 
@@ -317,6 +339,8 @@ Origem na planilha:
 
 - `Bitcoin`
 - `Bitcoin taxas`
+
+**Status:** parcial — `/ferramentas/bitcoin` com posição, taxas CRUD e snapshot; ver [bitcoin-taxas.md](desenvolvido/bitcoin-taxas.md).
 
 Objetivo: acompanhar posição em BTC e custos de movimentação.
 
@@ -385,6 +409,44 @@ Relatórios candidatos:
 - Renda fixa por vencimento.
 - Objetivos financeiros por valor atual.
 - Ativos com recomendação de compra.
+
+## 10. Privacidade visual — ocultar valores
+
+Detalhamento: **[desenvolvido/ocultar-valores.md](desenvolvido/ocultar-valores.md)** (implementado).
+
+**Status:** implementado — toggle na navbar oculta valores monetários em todas as telas; preferência em `localStorage`.
+
+Funcionalidades:
+
+- Botão olho no canto superior direito da navbar.
+- Mascaramento global via formatadores de moeda (`R$ ••••••`, etc.).
+- Persistência ao navegar entre páginas e recarregar o browser.
+- Campos em edição continuam exibindo valor real.
+
+## 14. Ferramentas — financiamento imóvel
+
+Detalhamento: **[desenvolvido/controle-financiamento-imovel.md](desenvolvido/controle-financiamento-imovel.md)** (implementado).
+
+**Status:** implementado — `/ferramentas/financiamento-imovel` com controle mensal por imóvel, KPIs bolso vs aluguel, gráficos e lançamentos extras por carteira.
+
+Funcionalidades:
+
+- Cadastrar múltiplos financiamentos por carteira (tipo de imóvel, parcela, aluguel).
+- Lançamentos mensais com despesas/rendimentos extras e chamada de capital.
+- Resumo consolidado e detalhe por imóvel (padrão Objetivos).
+- Gráfico mensal/anual: gasto do bolso vs coberto pelo aluguel.
+
+## 15. Ferramentas — cálculo de preço médio
+
+Detalhamento: **[desenvolvido/calculo-preco-medio.md](desenvolvido/calculo-preco-medio.md)** (implementado).
+
+**Status:** implementado — `/ferramentas/calculo-preco-medio` com calculadora de preço médio ponderado (modo manual e pré-preenchimento com posição da carteira).
+
+Funcionalidades:
+
+- Informar dois lotes (quantidade + preço médio) e ver quantidade total, preço médio e valor investido.
+- Pré-preencher Lote 1 a partir de posição de mercado da carteira ativa.
+- Sem persistência — resultado para uso manual na edição de posição.
 
 ## Priorização inicial sugerida
 

@@ -154,8 +154,10 @@ def delete_portfolio(
     for position in positions:
         session.delete(position)
     from app.services.objective_service import delete_objectives_for_portfolio
+    from app.services.property_financing_service import delete_property_financings_for_portfolio
 
     delete_objectives_for_portfolio(session, portfolio_id)
+    delete_property_financings_for_portfolio(session, portfolio_id)
     session.delete(portfolio)
     pref = session.get(AppPreference, ACTIVE_PORTFOLIO_KEY)
     if pref and pref.value == str(portfolio_id):

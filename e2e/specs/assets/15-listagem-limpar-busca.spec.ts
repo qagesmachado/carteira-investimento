@@ -2,7 +2,8 @@
  * UI-AST-015 — Limpar busca na listagem
  * @see ../../../casos-de-uso/ui/assets/15-listagem-limpar-busca.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
 import { clearListFilter, filterRegisteredAssets, listFilterInput } from '../helpers/listagem';

@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { expectSummaryCardsVisible, gotoConsolidadaPage } from '../helpers/consolidadaPage';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';

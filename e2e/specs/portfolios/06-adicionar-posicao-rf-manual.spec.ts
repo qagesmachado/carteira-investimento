@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { E2E_CDB_IDENTIFIER, E2E_PORTFOLIO_PRINCIPAL } from '../helpers/e2eFixtures';
 import {

@@ -2,9 +2,10 @@
  * UI-AST-003 — Cadastro manual de renda fixa
  * @see ../../../casos-de-uso/ui/assets/03-cadastro-manual-renda-fixa.md
  */
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
 
-import { API_BASE_URL } from '../helpers/apiResponses';
+
+import { getWorkerApiBaseUrl } from '../helpers/workerContext';
 import { registeredAssetsTable } from '../helpers/assetsPage';
 import { E2E_CDB_NAME } from '../helpers/e2eFixtures';
 import {
@@ -15,7 +16,7 @@ import { clearAllTestAssets, gotoAssetsPage } from '../helpers/seedAssets';
 
 test.describe('UI-AST-003', () => {
   test.beforeEach(async ({ request }) => {
-    await clearAllTestAssets(request, API_BASE_URL);
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
   });
 
   test('cadastra renda fixa manual e persiste', async ({ page }) => {

@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../fixtures/test';
+
 
 import { gotoAnaliseConfigPage, analysisConfigProfileTabs, saveAnalysisConfig, setSumColumnDiagramMultiplier } from '../helpers/analisePage';
 import { seedAnalysisWithBbse3 } from '../helpers/seedAnalysis';
