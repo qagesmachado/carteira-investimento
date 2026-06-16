@@ -39,9 +39,6 @@ backend/seed/assets.local.json
 # testes
 test-reports
 
-# Contexto efêmero do release (gerado por scripts/release.ps1)
-.release/
-
 # Build do executável desktop (PyInstaller) e backups de banco
 dist/
 backend/build/

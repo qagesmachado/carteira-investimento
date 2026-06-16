@@ -1,13 +1,11 @@
 import { expect, test } from '../fixtures/test';
 
 /**
- * UI-INFO-001 — Página Info mostra versões e estado do banco
+ * UI-INFO-001 — Página Info mostra estado do banco
  * @see ../../../casos-de-uso/ui/info/01-info-versoes.md
  */
 test.describe('UI-INFO-001', () => {
-  test('exibe versões (app, frontend, schema, banco) e selo de banco atualizado', async ({
-    page
-  }) => {
+  test('exibe versão do banco, selo de atualizado e caminho do banco', async ({ page }) => {
     await page.goto('/info');
 
     await expect(page.getByRole('heading', { name: 'Informações do sistema' })).toBeVisible();
@@ -15,11 +13,7 @@ test.describe('UI-INFO-001', () => {
     const table = page.getByTestId('info-table');
     await expect(table).toBeVisible();
 
-    await expect(page.getByTestId('info-app-version')).toContainText('v');
-    await expect(page.getByTestId('info-frontend-version')).toContainText('v');
-    await expect(page.getByTestId('info-schema-version')).toContainText('v');
     await expect(page.getByTestId('info-db-version')).toContainText('v');
-    await expect(page.getByTestId('info-python-version')).not.toBeEmpty();
     await expect(page.getByTestId('info-db-path')).not.toBeEmpty();
 
     // Após init_db, o banco é gravado na versão atual do schema → atualizado.

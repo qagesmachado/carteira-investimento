@@ -4,15 +4,9 @@ import { apiFetch } from './http';
 type ApiFetcher = typeof apiFetch;
 
 export type AppInfo = {
-  app_version: string;
-  schema_version: number;
   db_user_version: number;
   db_up_to_date: boolean;
-  python_version: string;
   database_path: string;
-  lookup_mode: string;
-  released_at: string | null;
-  release_notes: string[];
 };
 
 export async function getAppInfo(fetcher: ApiFetcher = apiFetch): Promise<AppInfo> {

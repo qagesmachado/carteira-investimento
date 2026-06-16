@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
 
   import { getAppInfo, type AppInfo } from '$lib/api/info';
-  import { FRONTEND_VERSION } from '$lib/version';
 
   let info: AppInfo | null = null;
   let loading = true;
@@ -23,7 +22,7 @@
   <header>
     <h1 class="text-2xl font-bold">Informações do sistema</h1>
     <p class="text-sm text-base-content/60">
-      Versões e detalhes técnicos para conferência e suporte.
+      Estado do banco de dados para conferência e suporte.
     </p>
   </header>
 
@@ -41,19 +40,7 @@
       <table class="table" data-testid="info-table">
         <tbody>
           <tr>
-            <th class="w-1/3">Aplicação (backend)</th>
-            <td data-testid="info-app-version">v{info.app_version}</td>
-          </tr>
-          <tr>
-            <th>Frontend</th>
-            <td data-testid="info-frontend-version">v{FRONTEND_VERSION}</td>
-          </tr>
-          <tr>
-            <th>Schema esperado (código)</th>
-            <td data-testid="info-schema-version">v{info.schema_version}</td>
-          </tr>
-          <tr>
-            <th>Banco (arquivo do usuário)</th>
+            <th class="w-1/3">Banco (arquivo do usuário)</th>
             <td class="flex flex-wrap items-center gap-2">
               <span data-testid="info-db-version">v{info.db_user_version}</span>
               {#if info.db_up_to_date}
@@ -68,14 +55,6 @@
             </td>
           </tr>
           <tr>
-            <th>Python</th>
-            <td data-testid="info-python-version">{info.python_version}</td>
-          </tr>
-          <tr>
-            <th>Modo de lookup</th>
-            <td data-testid="info-lookup-mode">{info.lookup_mode}</td>
-          </tr>
-          <tr>
             <th>Caminho do banco</th>
             <td class="break-all font-mono text-xs" data-testid="info-db-path">
               {info.database_path}
@@ -84,26 +63,5 @@
         </tbody>
       </table>
     </section>
-
-    {#if info.release_notes.length > 0}
-      <section
-        class="rounded-box bg-base-100 p-4 shadow-sm"
-        data-testid="info-release-notes"
-      >
-        <h2 class="flex flex-wrap items-center gap-2 text-lg font-semibold">
-          Novidades da versão v{info.app_version}
-          {#if info.released_at}
-            <span class="text-sm font-normal text-base-content/60" data-testid="info-released-at">
-              {info.released_at}
-            </span>
-          {/if}
-        </h2>
-        <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
-          {#each info.release_notes as note}
-            <li>{note}</li>
-          {/each}
-        </ul>
-      </section>
-    {/if}
   {/if}
 </main>

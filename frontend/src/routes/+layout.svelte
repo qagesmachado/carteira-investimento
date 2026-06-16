@@ -5,7 +5,6 @@
   import { hideMoneyValues } from '$lib/stores/hideMoneyValues';
   import { theme } from '$lib/stores/theme';
   import { applyThemeToDocument } from '$lib/theme/applyTheme';
-  import { FRONTEND_VERSION } from '$lib/version';
 
   import '../app.css';
 
@@ -28,7 +27,7 @@
     data-testid="app-footer"
   >
     <a href="/info" class="link link-hover" data-testid="footer-version-link">
-      Carteira de Investimentos • v{FRONTEND_VERSION}
+      Carteira de Investimentos • Informações do sistema
     </a>
   </footer>
 </div>

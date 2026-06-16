@@ -6,9 +6,6 @@ declare global {
     // interface PageState {}
     // interface Platform {}
   }
-
-  // Injetada no build via `define` em vite.config.ts.
-  const __FRONTEND_VERSION__: string;
 }
 
 export {};

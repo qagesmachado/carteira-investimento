@@ -55,8 +55,6 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "==> 3/4 Empacotando (PyInstaller onedir)" -ForegroundColor Cyan
 $AddData = "$FrontendBuild;frontend_build"
-$Changelog = Join-Path $RepoRoot "CHANGELOG.md"
-$ChangelogData = "$Changelog;."
 & $Python -m PyInstaller `
     --name CarteiraInvestimentos `
     --noconfirm `
@@ -66,7 +64,6 @@ $ChangelogData = "$Changelog;."
     --specpath $BackendDir `
     --paths $BackendDir `
     --add-data $AddData `
-    --add-data $ChangelogData `
     --collect-all yfinance `
     --collect-submodules uvicorn `
     (Join-Path $BackendDir "run_desktop.py")
