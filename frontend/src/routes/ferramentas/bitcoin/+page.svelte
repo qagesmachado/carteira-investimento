@@ -130,7 +130,7 @@
     <div>
       <h2 class="text-xl font-semibold">Bitcoin</h2>
       <p class="text-sm opacity-70">
-        Posição em BTC e histórico de taxas de compra e transferência (aba «Bitcoin taxas» da planilha).
+        Posição em BTC e histórico de taxas de compra e transferência.
       </p>
     </div>
     <PortfolioSelect

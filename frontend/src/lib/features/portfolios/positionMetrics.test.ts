@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, afterEach } from 'vitest';
 
 import type { Asset } from '$lib/api/assets';
 import type { Position } from '$lib/api/portfolios';
+import { HIDDEN_QUANTITY_MASK } from '$lib/moneyDisplay';
+import { setHideMoneyValues } from '$lib/stores/hideMoneyValues';
 
 import {
   computePortfolioSummary,
@@ -66,9 +68,19 @@ const manualPosition: Position = {
 };
 
 describe('positionMetrics', () => {
+  afterEach(() => {
+    setHideMoneyValues(false);
+  });
+
   it('formata quantidade fracionária em notação BR', () => {
     expect(formatQuantityForDisplay(1.88637)).toBe('1,88637');
     expect(formatQuantityForDisplay(90)).toBe('90');
+  });
+
+  it('mascara quantidade quando ocultar valores está ativo', () => {
+    setHideMoneyValues(true);
+    expect(formatQuantityForDisplay(90)).toBe(HIDDEN_QUANTITY_MASK);
+    expect(formatQuantityForDisplay(0.01491742)).toBe(HIDDEN_QUANTITY_MASK);
   });
 
   it('calcula valor aplicado e atual para ativos cotados', () => {

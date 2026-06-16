@@ -1,13 +1,18 @@
+import { HIDDEN_SCORE_MASK, isMoneyHidden } from '$lib/moneyDisplay';
+
 export function viabilityBadgeClass(color?: string | null): string {
+  if (isMoneyHidden()) {
+    return 'badge-ghost';
+  }
   switch (color) {
     case 'azulim':
-      return 'bg-sky-100 text-sky-900 border-sky-200';
+      return 'bg-info/15 text-info border-info/30';
     case 'viavel':
-      return 'bg-green-100 text-green-900 border-green-200';
+      return 'bg-success/15 text-success border-success/30';
     case 'atencao':
-      return 'bg-amber-100 text-amber-900 border-amber-200';
+      return 'bg-warning/15 text-warning border-warning/30';
     case 'bomba':
-      return 'bg-red-100 text-red-900 border-red-200';
+      return 'bg-error/15 text-error border-error/30';
     case 'success':
       return 'badge-success';
     case 'warning':
@@ -30,4 +35,28 @@ export function formatDiagramScore(score: number | null | undefined): string {
   if (score == null) return '—';
   const prefix = score > 0 ? '+' : '';
   return `${prefix}${formatBlockScore(score)}`;
+}
+
+export function formatDiagramScoreForDisplay(score: number | null | undefined): string {
+  if (score == null) return '—';
+  if (isMoneyHidden()) {
+    return HIDDEN_SCORE_MASK;
+  }
+  return formatDiagramScore(score);
+}
+
+export function formatTableSumForDisplay(total: number | null | undefined): string {
+  if (total == null) return '—';
+  if (isMoneyHidden()) {
+    return HIDDEN_SCORE_MASK;
+  }
+  return Number.isInteger(total) ? String(total) : total.toFixed(2);
+}
+
+export function formatViabilityLabelForDisplay(label: string | null | undefined): string {
+  if (!label?.trim()) return '—';
+  if (isMoneyHidden()) {
+    return HIDDEN_SCORE_MASK;
+  }
+  return label;
 }

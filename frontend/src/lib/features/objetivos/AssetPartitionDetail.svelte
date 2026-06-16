@@ -4,6 +4,7 @@
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
   import { formatProfitBrl } from './formatAllocationProfit';
+  import { formatSharesAllocation } from './formatSharesAllocation';
   import { isUserVisiblePartitionSlice } from './objectiveVisibility';
 
   export let partition: AssetPartition | null = null;
@@ -13,7 +14,7 @@
     if (partition.split_mode === 'amount') {
       return formatBrl(slice.amount);
     }
-    return `${slice.quantity?.toLocaleString('pt-BR') ?? '—'} cotas`;
+    return formatSharesAllocation(slice.quantity);
   }
 </script>
 
@@ -29,7 +30,7 @@
         <span class="opacity-70">Total:</span>
         {partition.split_mode === 'amount'
           ? formatBrl(partition.position_total)
-          : `${partition.position_total.toLocaleString('pt-BR')} cotas`}
+          : formatSharesAllocation(partition.position_total)}
       </p>
       <p><span class="opacity-70">Valor atual:</span> {formatBrl(partition.position_current_value_brl)}</p>
       <p><span class="opacity-70">Custo:</span> {formatBrl(partition.position_invested_value_brl)}</p>

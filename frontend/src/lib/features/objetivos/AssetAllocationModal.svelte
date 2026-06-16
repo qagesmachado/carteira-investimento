@@ -10,6 +10,7 @@
   import { explicitOthersForDraft } from './allocationCapacity';
   import { isAssetBlocked, totalForAsset } from './computeDivergence';
   import { formatProfitCell } from './formatAllocationProfit';
+  import { formatSharesAllocation } from './formatSharesAllocation';
   import { splitModeForAsset } from './splitMode';
   import { hasDuplicateSliceName } from './sliceNameValidation';
   import { buildAllocationPayload, validateAllocationDraft } from './validateAllocations';
@@ -226,7 +227,7 @@
           <div class="grid gap-2 rounded-lg border border-base-300 p-3 text-sm sm:grid-cols-2">
             <p>
               <span class="opacity-70">Total na carteira:</span>
-              {splitMode === 'amount' ? formatBrl(total) : `${total.toLocaleString('pt-BR')} cotas`}
+              {splitMode === 'amount' ? formatBrl(total) : formatSharesAllocation(total)}
             </p>
             {#if editingRow}
               <p>
@@ -279,9 +280,7 @@
           {#if freePreview != null}
             <p class="text-sm" data-testid="allocation-free-preview">
               Restante (Livre):
-              {splitMode === 'amount'
-                ? formatBrl(freePreview)
-                : `${freePreview.toLocaleString('pt-BR')} cotas`}
+              {splitMode === 'amount' ? formatBrl(freePreview) : formatSharesAllocation(freePreview)}
             </p>
           {/if}
         {/if}

@@ -6,6 +6,7 @@ import {
   formatMoneyAmount
 } from '$lib/assetLabels';
 import { formatBrDecimalDisplay } from '$lib/brDecimal';
+import { HIDDEN_QUANTITY_MASK, isMoneyHidden } from '$lib/moneyDisplay';
 
 const QUANTITY_FORMATTER = new Intl.NumberFormat('pt-BR', {
   minimumFractionDigits: 0,
@@ -36,6 +37,9 @@ export function positionCurrentValue(position: Position, asset: Asset | undefine
 export function formatQuantityForDisplay(quantity: number): string {
   if (!Number.isFinite(quantity)) {
     return '—';
+  }
+  if (isMoneyHidden()) {
+    return HIDDEN_QUANTITY_MASK;
   }
   return QUANTITY_FORMATTER.format(quantity);
 }

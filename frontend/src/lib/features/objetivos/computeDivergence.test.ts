@@ -45,6 +45,11 @@ describe('computeDivergence helpers', () => {
     expect(explicitAllocatedForAsset([divergence], 1)).toBe(60);
   });
 
+  it('mascara mensagem em modo cotas quando ocultar valores está ativo', () => {
+    setHideMoneyValues(true);
+    expect(formatDivergenceMessage(divergence)).toBe('••••••');
+  });
+
   it('mascara mensagem em modo valor quando ocultar valores está ativo', () => {
     const amountDivergence: AssetDivergence = {
       ...divergence,

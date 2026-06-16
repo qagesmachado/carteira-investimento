@@ -33,6 +33,7 @@ const ROUTES: SmokeRoute[] = [
   { route: '/ferramentas/bitcoin', heading: 'Bitcoin' },
   { route: '/ferramentas/financiamento-imovel', heading: 'Financiamento imóvel' },
   { route: '/ferramentas/calculo-preco-medio', heading: 'Cálculo de preço médio' },
+  { route: '/ferramentas/conferencia-ir', heading: 'Conferência anual de IR' },
   { route: '/info', heading: 'Informações do sistema' }
 ];
 

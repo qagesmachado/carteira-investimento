@@ -1,13 +1,18 @@
+import { HIDDEN_SCORE_MASK, isMoneyHidden } from '$lib/moneyDisplay';
+
 export function fundamentalScoreColorClass(value: number | null | undefined): string {
+  if (isMoneyHidden()) {
+    return 'bg-base-300 text-base-content/70';
+  }
   switch (value) {
     case 5:
-      return 'bg-green-500 text-white';
+      return 'bg-success text-success-content';
     case 3:
-      return 'bg-amber-400 text-amber-950';
+      return 'bg-warning text-warning-content';
     case 2:
-      return 'bg-red-500 text-white';
+      return 'bg-error text-error-content';
     case 1:
-      return 'bg-gray-400 text-white';
+      return 'bg-neutral text-neutral-content';
     default:
       return 'bg-base-300 text-base-content/70';
   }
@@ -15,5 +20,8 @@ export function fundamentalScoreColorClass(value: number | null | undefined): st
 
 export function formatFundamentalScoreValue(value: number | null | undefined): string {
   if (value == null) return '—';
+  if (isMoneyHidden()) {
+    return HIDDEN_SCORE_MASK;
+  }
   return String(value);
 }

@@ -1,5 +1,5 @@
 import type { AssetDivergence } from '$lib/api/objetivos';
-import { HIDDEN_MONEY_BRL, isMoneyHidden } from '$lib/moneyDisplay';
+import { HIDDEN_MONEY_BRL, HIDDEN_QUANTITY_MASK, isMoneyHidden } from '$lib/moneyDisplay';
 
 export function isAssetBlocked(divergences: AssetDivergence[], assetId: number): boolean {
   return divergences.some((d) => d.asset_id === assetId && d.status === 'over_total');
@@ -13,6 +13,9 @@ export function formatDivergenceMessage(divergence: AssetDivergence): string {
       return `${HIDDEN_MONEY_BRL} ${sign}`;
     }
     return `R$ ${absDelta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ${sign}`;
+  }
+  if (isMoneyHidden()) {
+    return HIDDEN_QUANTITY_MASK;
   }
   const sign = divergence.delta < 0 ? 'removidas' : 'adicionadas';
   const label = absDelta === 1 ? 'cota' : 'cotas';

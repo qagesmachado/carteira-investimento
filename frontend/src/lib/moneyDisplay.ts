@@ -6,6 +6,8 @@ export const HIDDEN_MONEY_MASK = '••••••';
 export const HIDDEN_MONEY_BRL = 'R$ ••••••';
 /** Quantidades de ativos (ex.: BTC) quando valores estão ocultos. */
 export const HIDDEN_QUANTITY_MASK = '••••••';
+/** Pontuações de análise fundamental quando valores estão ocultos. */
+export const HIDDEN_SCORE_MASK = '••••••';
 
 const HIDDEN_BY_CURRENCY: Record<string, string> = {
   BRL: HIDDEN_MONEY_BRL,

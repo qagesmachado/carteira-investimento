@@ -1,9 +1,19 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
   import AppNavbar from '$lib/components/AppNavbar.svelte';
   import { hideMoneyValues } from '$lib/stores/hideMoneyValues';
+  import { theme } from '$lib/stores/theme';
+  import { applyThemeToDocument } from '$lib/theme/applyTheme';
   import { FRONTEND_VERSION } from '$lib/version';
 
   import '../app.css';
+
+  $: applyThemeToDocument($theme);
+
+  onMount(() => {
+    applyThemeToDocument($theme);
+  });
 </script>
 
 <div class="flex min-h-screen w-full flex-col">

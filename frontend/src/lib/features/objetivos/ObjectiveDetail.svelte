@@ -6,6 +6,7 @@
 
   import { canAddMoreSlices } from './allocationCapacity';
   import { formatProfitCell } from './formatAllocationProfit';
+  import { formatSharesAllocation } from './formatSharesAllocation';
 
   export let objective: Objective | null = null;
   export let divergences: AssetDivergence[] = [];
@@ -23,7 +24,7 @@
     if (row.split_mode === 'amount') {
       return formatBrl(row.amount);
     }
-    return `${row.quantity?.toLocaleString('pt-BR') ?? '—'} cotas`;
+    return formatSharesAllocation(row.quantity);
   }
 
   $: modeLabel =

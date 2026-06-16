@@ -24,7 +24,13 @@ from app.schemas.portfolio import (
     QuoteRefreshResponse,
     SetActivePortfolioRequest,
 )
+from app.schemas.annual_ir_report import AnnualIrReportRead
 from app.schemas.rebalance import RebalanceSnapshotRead
+from app.schemas.year_snapshot import (
+    YearSnapshotCreate,
+    YearSnapshotDetailRead,
+    YearSnapshotSummary,
+)
 from app.services.asset_service import get_asset_by_id, list_assets
 from app.services.crypto_fee_service import build_bitcoin_snapshot
 from app.services.import_service import (
@@ -48,7 +54,17 @@ from app.services.portfolio_service import (
     update_portfolio,
     update_position,
 )
+from app.services.annual_ir_report_service import (
+    build_annual_ir_report,
+    export_annual_ir_report_csv,
+)
 from app.services.rebalance_service import build_rebalance_snapshot
+from app.services.year_snapshot_service import (
+    create_year_snapshot,
+    delete_year_snapshot,
+    get_year_snapshot_detail,
+    list_year_snapshots,
+)
 
 router = APIRouter(prefix="/portfolios", tags=["portfolios"])
 
@@ -187,6 +203,78 @@ def post_refresh_portfolio_quotes(
         session,
         portfolio_id,
         provider,
+    )
+
+
+@router.post(
+    "/{portfolio_id}/year-snapshots",
+    response_model=YearSnapshotDetailRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def post_year_snapshot(
+    portfolio_id: int,
+    payload: YearSnapshotCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> YearSnapshotDetailRead:
+    return create_year_snapshot(session, portfolio_id, payload)
+
+
+@router.get("/{portfolio_id}/year-snapshots", response_model=list[YearSnapshotSummary])
+def get_year_snapshots(
+    portfolio_id: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[YearSnapshotSummary]:
+    return list_year_snapshots(session, portfolio_id)
+
+
+@router.get("/{portfolio_id}/year-snapshots/{year}", response_model=YearSnapshotDetailRead)
+def get_year_snapshot_by_year(
+    portfolio_id: int,
+    year: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> YearSnapshotDetailRead:
+    return get_year_snapshot_detail(session, portfolio_id, year)
+
+
+@router.delete("/{portfolio_id}/year-snapshots/{year}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_year_snapshot(
+    portfolio_id: int,
+    year: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> Response:
+    delete_year_snapshot(session, portfolio_id, year)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{portfolio_id}/annual-ir-report", response_model=AnnualIrReportRead)
+def get_annual_ir_report(
+    portfolio_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    year: int = Query(..., ge=2000, le=2100),
+) -> AnnualIrReportRead:
+    return build_annual_ir_report(session, portfolio_id, year)
+
+
+@router.get("/{portfolio_id}/annual-ir-report/export")
+def export_annual_ir_report(
+    portfolio_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    year: int = Query(..., ge=2000, le=2100),
+    format: str = Query(default="csv"),
+) -> Response:
+    if format != "csv":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="only csv format is supported",
+        )
+    report = build_annual_ir_report(session, portfolio_id, year)
+    csv_content = export_annual_ir_report_csv(report)
+    return Response(
+        content=csv_content,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="conferencia-ir-{portfolio_id}-{year}.csv"',
+        },
     )
 
 

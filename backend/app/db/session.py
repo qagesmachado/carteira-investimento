@@ -29,6 +29,7 @@ from app.models.property_financing import (
 )
 from app.models.portfolio import AppPreference, Portfolio
 from app.models.position import Position
+from app.models.year_snapshot import PortfolioYearSnapshot, PositionSnapshot
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,8 @@ ASSET_TABLES = [
 PORTFOLIO_TABLES = [
     Portfolio.__table__,
     Position.__table__,
+    PortfolioYearSnapshot.__table__,
+    PositionSnapshot.__table__,
     AppPreference.__table__,
     Objective.__table__,
     ObjectiveAllocation.__table__,

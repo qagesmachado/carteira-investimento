@@ -5,6 +5,7 @@
   import { createEventDispatcher } from 'svelte';
 
   import { formatProfitBrl } from './formatAllocationProfit';
+  import { formatSharesAllocation } from './formatSharesAllocation';
   import {
     filterUserVisibleObjectives,
     isUserVisiblePartitionSlice
@@ -32,7 +33,7 @@
     if (partition.split_mode === 'amount') {
       return formatBrl(slice.amount);
     }
-    return `${slice.quantity?.toLocaleString('pt-BR') ?? '—'} cotas`;
+    return formatSharesAllocation(slice.quantity);
   }
 </script>
 
@@ -134,10 +135,10 @@
           <p class="text-sm opacity-70">
             Posição: {partition.split_mode === 'amount'
               ? formatBrl(partition.position_total)
-              : `${partition.position_total.toLocaleString('pt-BR')} cotas`}
+              : formatSharesAllocation(partition.position_total)}
             · Restante: {partition.split_mode === 'amount'
               ? formatBrl(partition.free)
-              : `${partition.free.toLocaleString('pt-BR')} cotas`}
+              : formatSharesAllocation(partition.free)}
             · Valor: {formatBrl(partition.position_current_value_brl)}
             · Custo: {formatBrl(partition.position_invested_value_brl)}
             · Lucro: {formatProfitBrl(partition.position_profit_brl)}

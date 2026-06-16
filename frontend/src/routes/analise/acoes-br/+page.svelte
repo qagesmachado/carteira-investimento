@@ -28,7 +28,12 @@
     type AnalysisSortKey,
     type SortDirection
   } from '$lib/features/analise/sortAnalysisRows';
-  import { formatDiagramScore, viabilityBadgeClass } from '$lib/features/analise/viabilityBadge';
+  import {
+    formatDiagramScoreForDisplay,
+    formatTableSumForDisplay,
+    formatViabilityLabelForDisplay,
+    viabilityBadgeClass
+  } from '$lib/features/analise/viabilityBadge';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { formatAssetTypeForDisplay } from '$lib/assetLabels';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
@@ -80,14 +85,13 @@
   function tableSum(row: AssetAnalysis): string {
     if (!sumColumn) return '—';
     const total = computeTableSumScore(row.scores, row.summary, sumColumn);
-    if (total == null) return '—';
-    return Number.isInteger(total) ? String(total) : total.toFixed(2);
+    return formatTableSumForDisplay(total);
   }
 
   function viabilityBadge(row: AssetAnalysis): { label: string; className: string } {
     const viability = row.summary.viabilidade;
     return {
-      label: viability?.label ?? '—',
+      label: formatViabilityLabelForDisplay(viability?.label),
       className: viabilityBadgeClass(viability?.color)
     };
   }
@@ -376,7 +380,7 @@
                   <td class="min-w-[8.5rem] px-3">
                     <span class="badge badge-sm whitespace-nowrap border {badge.className}">{badge.label}</span>
                   </td>
-                  <td class="text-center">{formatDiagramScore(row.summary.diagrama.score)}</td>
+                  <td class="text-center">{formatDiagramScoreForDisplay(row.summary.diagrama.score)}</td>
                   {#if showSumColumn}
                     <td class="text-center font-semibold">{tableSum(row)}</td>
                   {/if}

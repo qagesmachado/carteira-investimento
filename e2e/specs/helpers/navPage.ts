@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 export const HIDE_MONEY_STORAGE_KEY = 'carteira.hideMoneyValues';
+export const THEME_STORAGE_KEY = 'carteira.theme';
 
 export const TOP_LEVEL_MENU_ORDER = [
   'Dashboard',
@@ -59,4 +60,27 @@ export async function expectHideMoneyPreferenceStored(
 ): Promise<void> {
   const stored = await page.evaluate((key) => localStorage.getItem(key), HIDE_MONEY_STORAGE_KEY);
   expect(stored).toBe(JSON.stringify(hidden));
+}
+
+export function themeToggle(page: Page) {
+  return page.getByTestId('toggle-theme-btn');
+}
+
+export async function clickThemeToggle(page: Page): Promise<void> {
+  await themeToggle(page).click();
+}
+
+export async function expectDocumentTheme(page: Page, theme: 'light' | 'dim'): Promise<void> {
+  const applied = await page.evaluate(() =>
+    document.documentElement.getAttribute('data-theme')
+  );
+  expect(applied).toBe(theme);
+}
+
+export async function expectThemePreferenceStored(
+  page: Page,
+  theme: 'light' | 'dim'
+): Promise<void> {
+  const stored = await page.evaluate((key) => localStorage.getItem(key), THEME_STORAGE_KEY);
+  expect(stored).toBe(theme);
 }

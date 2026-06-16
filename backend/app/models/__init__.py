@@ -18,6 +18,7 @@ from app.models.property_financing import (
 )
 from app.models.portfolio import AppPreference, Portfolio
 from app.models.position import Position
+from app.models.year_snapshot import PortfolioYearSnapshot, PositionSnapshot
 
 __all__ = [
     "Asset",
@@ -38,5 +39,7 @@ __all__ = [
     "PropertyFinancingEventCategory",
     "PropertyType",
     "Portfolio",
+    "PortfolioYearSnapshot",
     "Position",
+    "PositionSnapshot",
 ]

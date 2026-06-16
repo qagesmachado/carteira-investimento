@@ -6,7 +6,7 @@ Permitir ocultar valores monetários em **todas as telas** da aplicação, útil
 
 ## Escopo
 
-- Toggle global no **canto superior direito** da navbar (ícone olho aberto / olho riscado).
+- Toggle global no **canto superior direito** da navbar (ícone olho aberto / olho riscado), ao lado do toggle de tema claro/escuro — ver [modo-dark.md](modo-dark.md).
 - Preferência persistida em **`localStorage`** (`carteira.hideMoneyValues`) — mantida ao trocar de página e recarregar o navegador.
 - Mascaramento via formatadores centrais (`formatBrl`, `formatMoneyAmount`): exibe prefixo de moeda + `••••••` (ex.: `R$ ••••••`, `US$ ••••••`).
 
@@ -18,6 +18,9 @@ Permitir ocultar valores monetários em **todas as telas** da aplicação, útil
 | Campos bloqueados (`BrDecimalInput` disabled) | Mascarados |
 | Campos em **modo edição** | Valor real visível |
 | Percentuais e cotas | Continuam visíveis |
+| Quantidades de ativos (Qtd) | Mascaradas (`••••••`) em consolidada, carteiras e demais telas que usam `formatQuantityForDisplay` |
+| Cotas em objetivos (alocação por fatia) | Mascaradas via `formatSharesAllocation` em tabelas e resumos de objetivos |
+| Pontuação de análise (fundamental, diagrama, soma, viabilidade) | Mascaradas nas tabelas de Análise; painel «Classificar» mantém valores reais em edição |
 | Quantidades BTC (Bitcoin) | Mascaradas (`••••••`) junto com R$/US$ na página `/ferramentas/bitcoin` |
 | Sincronização entre dispositivos | Fora de escopo (apenas localStorage) |
 

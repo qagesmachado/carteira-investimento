@@ -1,0 +1,58 @@
+import { expect, type Download, type Page } from '@playwright/test';
+import path from 'node:path';
+
+import { isApiPortfoliosListResponse } from './apiResponses';
+
+export async function gotoConferenciaIrPage(page: Page): Promise<void> {
+  const portfoliosResponse = page.waitForResponse(
+    (r) => isApiPortfoliosListResponse(r, 'GET') && r.ok()
+  );
+  await page.goto('/ferramentas/conferencia-ir');
+  await portfoliosResponse;
+  await expect(
+    page.getByRole('heading', { name: 'Conferência anual de IR', level: 1 })
+  ).toBeVisible();
+}
+
+export async function selectIrYear(page: Page, year: number): Promise<void> {
+  const reportResponse = page.waitForResponse(
+    (r) => r.url().includes('/annual-ir-report?') && r.request().method() === 'GET' && r.ok()
+  );
+  await page.getByTestId('ir-year-select').selectOption(String(year));
+  await reportResponse;
+}
+
+export async function clickIrTab(page: Page, tab: 'detalhado' | 'resumo' | 'posicoes'): Promise<void> {
+  await page.getByTestId(`ir-tab-${tab}`).click();
+}
+
+export async function freezeIrSnapshot(page: Page): Promise<void> {
+  const createResponse = page.waitForResponse(
+    (r) => r.url().includes('/year-snapshots') && r.request().method() === 'POST' && r.ok()
+  );
+  const reportResponse = page.waitForResponse(
+    (r) => r.url().includes('/annual-ir-report?') && r.request().method() === 'GET' && r.ok()
+  );
+  await page.getByTestId('ir-freeze-snapshot-btn').click();
+  await createResponse;
+  await reportResponse;
+}
+
+export async function clickExportIrExcel(page: Page): Promise<Download> {
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByTestId('ir-export-excel-btn').click();
+  return downloadPromise;
+}
+
+export async function readDownloadXlsxSheetNames(download: Download): Promise<string[]> {
+  const body = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of body!) {
+    chunks.push(Buffer.from(chunk));
+  }
+  const buffer = Buffer.concat(chunks);
+  const xlsxModulePath = path.resolve(process.cwd(), '../frontend/node_modules/xlsx/xlsx.mjs');
+  const XLSX = await import(xlsxModulePath);
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  return workbook.SheetNames;
+}
