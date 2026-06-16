@@ -1,0 +1,6 @@
+{
+  "permissions": {
+    "allow": ["Read(**)", "Write(CHANGELOG.md)"],
+    "deny": ["Write(**/.env*)", "Write(**/*.key)", "Write(**/*.pem)"]
+  }
+}

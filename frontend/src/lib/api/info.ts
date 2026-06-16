@@ -11,6 +11,8 @@ export type AppInfo = {
   python_version: string;
   database_path: string;
   lookup_mode: string;
+  released_at: string | null;
+  release_notes: string[];
 };
 
 export async function getAppInfo(fetcher: ApiFetcher = apiFetch): Promise<AppInfo> {

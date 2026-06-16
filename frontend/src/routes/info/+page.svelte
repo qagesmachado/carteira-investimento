@@ -84,5 +84,26 @@
         </tbody>
       </table>
     </section>
+
+    {#if info.release_notes.length > 0}
+      <section
+        class="rounded-box bg-base-100 p-4 shadow-sm"
+        data-testid="info-release-notes"
+      >
+        <h2 class="flex flex-wrap items-center gap-2 text-lg font-semibold">
+          Novidades da versão v{info.app_version}
+          {#if info.released_at}
+            <span class="text-sm font-normal text-base-content/60" data-testid="info-released-at">
+              {info.released_at}
+            </span>
+          {/if}
+        </h2>
+        <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
+          {#each info.release_notes as note}
+            <li>{note}</li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
   {/if}
 </main>

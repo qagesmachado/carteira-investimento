@@ -16,3 +16,5 @@ def test_info_returns_versions(client: TestClient) -> None:
     assert body["python_version"]
     assert "database_path" in body
     assert body["lookup_mode"] in {"fake", "yfinance"}
+    assert "released_at" in body
+    assert isinstance(body["release_notes"], list)

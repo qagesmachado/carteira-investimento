@@ -1,0 +1,57 @@
+---
+description: Estilo das release notes (CHANGELOG.md) — linguagem de negócio, foco no valor para o usuário
+globs: CHANGELOG.md
+alwaysApply: false
+---
+
+# Release notes — linguagem de negócio
+
+Estas regras valem ao escrever ou editar as notas de versão no `CHANGELOG.md`,
+especialmente quando geradas a partir do contexto em `.release/context.md`
+(commits, diff de código e diff de `docs/`).
+
+## Objetivo
+
+Descrever **o que mudou para quem usa o app**, não como foi feito. O leitor é o
+usuário/investidor, não um desenvolvedor.
+
+## Onde escrever
+
+- Escrever **somente** dentro da seção `## [Unreleased]` do `CHANGELOG.md`.
+- Não criar seções de versão com data nem mexer nos links do rodapé (o script de
+  release cuida disso).
+- Não alterar seções de versões já lançadas.
+
+## Formato
+
+- Idioma: **pt-BR**.
+- Estrutura Keep a Changelog, usando só as categorias que se aplicarem:
+  - `### Added` — novidades/funcionalidades novas
+  - `### Changed` — melhorias/mudanças de comportamento
+  - `### Fixed` — correções de problemas percebidos pelo usuário
+- Tópicos curtos (1 linha), começando com verbo no presente e foco no benefício.
+- Agrupar mudanças relacionadas em um único tópico; não listar um item por commit.
+- Omitir mudanças internas sem impacto para o usuário (refatorações, testes,
+  ajustes de build, formatação, bump de dependências).
+
+## Proibido nas notas
+
+- Nomes de arquivo, pasta ou caminho (ex.: `scripts/release.ps1`, `+page.svelte`).
+- Nomes de bibliotecas/ferramentas internas (ex.: PyInstaller, Vite, SvelteKit,
+  FastAPI, pytest, Playwright).
+- Hashes, IDs de commit, números de PR ou jargão técnico (endpoint, schema, regex…).
+- Copiar a mensagem de commit literal; sempre reescrever em linguagem de negócio.
+
+## Exemplos (ruim -> bom)
+
+- Ruim: "Adiciona endpoint `/info` lendo `CHANGELOG.md` via `release_notes.py`"
+  Bom: "A tela de informações agora mostra as novidades de cada versão"
+- Ruim: "Empacotamento desktop com PyInstaller servindo SPA + API"
+  Bom: "Aplicativo para desktop, com tudo funcionando em uma única janela"
+- Ruim: "Fix: corrige cálculo no `computeWeightedAveragePrice.ts`"
+  Bom: "Corrige o preço médio calculado na ferramenta de preço médio"
+
+## Quando não houver mudança relevante para o usuário
+
+- Se todas as mudanças do período forem internas, escrever um único tópico em
+  `### Changed` como "Melhorias internas de estabilidade e manutenção".
