@@ -16,7 +16,6 @@
   } from '$lib/api/analysis';
   import {
     createPortfolio,
-    createPosition,
     deletePortfolio,
     deletePosition,
     getActivePortfolioId,
@@ -26,8 +25,7 @@
     setActivePortfolioId,
     updatePortfolio,
     type Portfolio,
-    type Position,
-    type PositionCreate
+    type Position
   } from '$lib/api/portfolios';
   import { parseApiError } from '$lib/api/parseApiError';
   import {
@@ -35,9 +33,7 @@
     formatCurrencyCodeForDisplay,
     formatMoneyAmount
   } from '$lib/assetLabels';
-  import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
-  import AssetPicker from '$lib/features/portfolios/AssetPicker.svelte';
   import {
     computePortfolioSummary,
     formatPositionProfit,
@@ -55,6 +51,8 @@
   import AssetAnalysisPanel from '$lib/features/analise/AssetAnalysisPanel.svelte';
   import PositionDetailPanel from '$lib/features/portfolios/PositionDetailPanel.svelte';
   import PositionEditModal from '$lib/features/portfolios/PositionEditModal.svelte';
+  import FixedIncomePositionEditModal from '$lib/features/portfolios/FixedIncomePositionEditModal.svelte';
+  import PortfolioAddAssetModal from '$lib/features/portfolios/PortfolioAddAssetModal.svelte';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
   let portfolios: Portfolio[] = [];
@@ -62,24 +60,13 @@
   let positions: Position[] = [];
   let activeId: number | null = null;
   let newName = '';
-  let addAssetId: number | '' = '';
-  let addQuantity = 0;
-  let addAvgPrice = 0;
-  let addInvestedAmount = 0;
-  let addCurrentValue = 0;
-  let addContractedYield = '';
   let message = '';
   let error = '';
   let loading = false;
   let refreshingQuotes = false;
   let editingPosition: Position | null = null;
   let editModalOpen = false;
-  let addQuantityInput: BrDecimalInput;
-  let addAvgPriceInput: BrDecimalInput;
-  let addInvestedAmountInput: BrDecimalInput;
-  let addCurrentValueInput: BrDecimalInput;
-  /** Evita sobrescrever enquanto o mesmo ativo está selecionado; troca de ativo requisita novo prefill. */
-  let prevAddAssetIdForContractedYield: number | '' = '';
+  let addModalOpen = false;
   let editPortfolioName = '';
   let editingPortfolioName = false;
   let filterText = '';
@@ -108,35 +95,10 @@
     editPortfolioName.trim().length > 0 &&
     editPortfolioName.trim() !== activePortfolio.name;
   $: assetById = Object.fromEntries(assets.map((a) => [a.id, a]));
-  $: selectedAddAsset =
-    addAssetId !== '' ? (assetById[Number(addAssetId)] ?? null) : null;
-  $: selectedAddAssetUsesManualValues = selectedAddAsset
-    ? usesManualPositionValues(selectedAddAsset)
-    : false;
-
-  $: if (
-    addAssetId !== '' &&
-    selectedAddAssetUsesManualValues &&
-    selectedAddAsset &&
-    Number(addAssetId) !== prevAddAssetIdForContractedYield
-  ) {
-    prevAddAssetIdForContractedYield = Number(addAssetId);
-    addContractedYield = selectedAddAsset.fixed_income_yield_description?.trim() ?? '';
-  } else if (addAssetId === '' || !selectedAddAssetUsesManualValues) {
-    prevAddAssetIdForContractedYield = '';
-  }
-
-  $: addAveragePriceLabel = selectedAddAsset
-    ? `Preço médio (${selectedAddAsset.currency})`
-    : 'Preço médio';
-  $: addInvestedAmountLabel = selectedAddAsset
-    ? `Valor aplicado (${selectedAddAsset.currency})`
-    : 'Valor aplicado';
-  $: addCurrentValueLabel = selectedAddAsset
-    ? `Valor atual (${selectedAddAsset.currency})`
-    : 'Valor atual';
-  $: addQuantityLabel = 'Quantidade';
   $: editingAsset = editingPosition ? (assetById[editingPosition.asset_id] ?? null) : null;
+  $: editingPositionUsesManualValues = editingAsset
+    ? usesManualPositionValues(editingAsset)
+    : false;
   $: if (activeId !== prevActiveIdForFilter) {
     prevActiveIdForFilter = activeId;
     filterText = '';
@@ -261,85 +223,13 @@
     }
   }
 
-  function isValidPositionAmount(value: number): boolean {
-    return Number.isFinite(value) && value >= 0;
-  }
-
-  async function handleAddPosition() {
-    if (!activeId || addAssetId === '') {
-      error = 'Selecione carteira e ativo.';
+  function openAddAssetModal() {
+    if (!activeId) {
+      error = 'Selecione ou crie uma carteira.';
       return;
     }
-    const assetId = Number(addAssetId);
-    if (!Number.isInteger(assetId) || assetId <= 0) {
-      error = 'Selecione um ativo válido.';
-      return;
-    }
-    const selectedAsset = assetById[assetId];
-    const usesManualValues = selectedAsset ? usesManualPositionValues(selectedAsset) : false;
-    let payload: PositionCreate;
-    if (usesManualValues) {
-      const validManualInputs = addInvestedAmountInput?.flush() && addCurrentValueInput?.flush();
-      if (!validManualInputs) {
-        error = 'Valores manuais inválidos. Use vírgula para centavos (ex.: 1234,56).';
-        return;
-      }
-      if (
-        !isValidPositionAmount(addInvestedAmount) ||
-        !isValidPositionAmount(addCurrentValue)
-      ) {
-        error = 'Valor aplicado e valor atual não podem ser negativos.';
-        return;
-      }
-      if (addInvestedAmount <= 0) {
-        error = 'Informe um valor aplicado maior que zero.';
-        return;
-      }
-      if (!addContractedYield.trim()) {
-        error = 'Informe o rendimento contratado.';
-        return;
-      }
-      payload = {
-        asset_id: assetId,
-        invested_amount: addInvestedAmount,
-        current_value: addCurrentValue,
-        contracted_yield: addContractedYield.trim()
-      };
-    } else {
-      if (!isValidPositionAmount(addQuantity) || !isValidPositionAmount(addAvgPrice)) {
-        error = 'Quantidade e preço médio não podem ser negativos.';
-        return;
-      }
-      if (!addQuantityInput?.flush() || !addAvgPriceInput?.flush()) {
-        error = 'Quantidade ou preço médio inválidos. Use vírgula para decimais (ex.: 1,88637).';
-        return;
-      }
-      if (addQuantity <= 0) {
-        error = 'Informe uma quantidade maior que zero.';
-        return;
-      }
-      payload = {
-        asset_id: assetId,
-        quantity: addQuantity,
-        average_price: addAvgPrice
-      };
-    }
-    loading = true;
     error = '';
-    try {
-      await createPosition(activeId, payload);
-      positions = await listPositions(activeId);
-      message = 'Posição adicionada.';
-    } catch (err) {
-      try {
-        positions = await listPositions(activeId);
-      } catch {
-        /* ignore */
-      }
-      error = parseApiError(err, 'Não foi possível adicionar a posição.');
-    } finally {
-      loading = false;
-    }
+    addModalOpen = true;
   }
 
   function handleEditPosition(position: Position) {
@@ -595,76 +485,25 @@
         <div class="card-body">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="card-title mb-0">Posições</h2>
-            <button
-              class="btn btn-outline btn-sm"
-              type="button"
-              disabled={loading || refreshingQuotes}
-              on:click={handleRefreshQuotes}
-            >
-              {refreshingQuotes ? 'Atualizando…' : 'Atualizar cotações'}
-            </button>
-          </div>
-          <div class="flex flex-wrap items-end gap-2">
-            <div class="form-control min-w-[14rem] flex-1">
-              <span class="label-text mb-1">Ativo</span>
-              <AssetPicker bind:value={addAssetId} {assets} disabled={loading} />
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                class="btn btn-primary btn-sm"
+                type="button"
+                disabled={loading}
+                on:click={openAddAssetModal}
+              >
+                Adicionar ativo à carteira
+              </button>
+              <button
+                class="btn btn-outline btn-sm"
+                type="button"
+                disabled={loading || refreshingQuotes}
+                on:click={handleRefreshQuotes}
+              >
+                {refreshingQuotes ? 'Atualizando…' : 'Atualizar cotações'}
+              </button>
             </div>
-            {#if selectedAddAssetUsesManualValues}
-              <BrDecimalInput
-                bind:this={addInvestedAmountInput}
-                bind:value={addInvestedAmount}
-                label={addInvestedAmountLabel}
-                inputClass="input input-bordered w-40"
-                disabled={loading}
-              />
-              <BrDecimalInput
-                bind:this={addCurrentValueInput}
-                bind:value={addCurrentValue}
-                label={addCurrentValueLabel}
-                inputClass="input input-bordered w-40"
-                disabled={loading}
-              />
-              <label class="form-control min-w-[12rem]">
-                <span class="label-text">Rendimento contratado</span>
-                <input
-                  class="input input-bordered"
-                  placeholder="Ex.: 100% CDI"
-                  bind:value={addContractedYield}
-                  disabled={loading}
-                />
-              </label>
-            {:else}
-              <BrDecimalInput
-                bind:this={addQuantityInput}
-                bind:value={addQuantity}
-                label={addQuantityLabel}
-                inputClass="input input-bordered w-28"
-                disabled={loading}
-              />
-              <BrDecimalInput
-                bind:this={addAvgPriceInput}
-                bind:value={addAvgPrice}
-                label={addAveragePriceLabel}
-                disabled={loading}
-              />
-            {/if}
-            <button
-              class="btn btn-primary"
-              type="button"
-              disabled={loading ||
-                (selectedAddAssetUsesManualValues
-                  ? addInvestedAmount <= 0 || addCurrentValue < 0 || !addContractedYield.trim()
-                  : addQuantity <= 0 || addQuantity < 0 || addAvgPrice < 0)}
-              on:click={handleAddPosition}
-            >
-              Adicionar
-            </button>
           </div>
-          {#if selectedAddAsset}
-            <p class="mt-2 text-sm text-base-content/70">
-              Moeda do ativo: {formatCurrencyCodeForDisplay(selectedAddAsset.currency)}
-            </p>
-          {/if}
 
           {#if positions.length === 0}
             <p class="mt-4 text-sm text-base-content/60">Sem posições nesta carteira.</p>
@@ -873,19 +712,44 @@
     {/if}
   </div>
 
-  <PositionEditModal
-    bind:open={editModalOpen}
-    position={editingPosition}
-    asset={editingAsset}
+  <PortfolioAddAssetModal
+    bind:open={addModalOpen}
     portfolioId={activeId}
-    onClose={handleCloseEditModal}
+    {assets}
+    onClose={() => (addModalOpen = false)}
     onSaved={async () => {
-      if (activeId) {
-        positions = await listPositions(activeId);
-        message = 'Posição atualizada.';
-      }
+      await refresh();
+      message = 'Ativo adicionado à carteira.';
     }}
   />
+
+  {#if editingPositionUsesManualValues}
+    <FixedIncomePositionEditModal
+      bind:open={editModalOpen}
+      position={editingPosition}
+      asset={editingAsset}
+      portfolioId={activeId}
+      onClose={handleCloseEditModal}
+      onSaved={async () => {
+        await refresh();
+        message = 'Ativo atualizado.';
+      }}
+    />
+  {:else}
+    <PositionEditModal
+      bind:open={editModalOpen}
+      position={editingPosition}
+      asset={editingAsset}
+      portfolioId={activeId}
+      onClose={handleCloseEditModal}
+      onSaved={async () => {
+        if (activeId) {
+          positions = await listPositions(activeId);
+          message = 'Posição atualizada.';
+        }
+      }}
+    />
+  {/if}
 
   <AssetAnalysisPanel
     open={analysisPanelOpen}

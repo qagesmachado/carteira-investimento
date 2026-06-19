@@ -22,11 +22,20 @@ Cadastro na carteira:
 
 ## Fluxo principal
 
-1. Usuário seleciona a carteira.
-2. Usuário busca um ativo na base de dados.
-3. Se o ativo não existir, usuário pode iniciar o cadastro na base.
-4. Usuário informa dados da posição na carteira.
-5. Sistema passa a considerar o ativo nos cálculos daquela carteira.
+O botão **Adicionar ativo à carteira** abre um modal que pergunta o tipo:
+**Bolsa**, **Renda fixa** ou **Previdência** (Bolsa = tudo que não é renda fixa
+tradicional nem previdência).
+
+Para **bolsa** (ação, ETF, FII, cripto, etc.):
+
+1. Usuário seleciona a carteira ativa.
+2. Usuário busca um ativo já existente na base de dados.
+3. Usuário informa quantidade e preço médio.
+4. Sistema passa a considerar o ativo nos cálculos daquela carteira.
+
+Para **renda fixa tradicional e previdência**, o cadastro é unificado: o produto e
+a posição são criados na mesma tela, sem passar por `/assets`. Ver
+[Cadastro unificado de renda fixa e previdência na carteira](cadastro-rf-previdencia-na-carteira.md).
 
 ## Dados da posição
 
@@ -42,13 +51,13 @@ Campos sugeridos:
 - Observações pessoais.
 - Status da posição: ativa, encerrada ou acompanhada.
 
-Para ativos de renda fixa tradicional (CDB, LCI, LCA, Tesouro Selic etc.) e previdência privada, a posição deve usar campos manuais em vez do modelo de quantidade e preço médio:
+Para ativos de renda fixa tradicional (CDB, LCI, LCA, Tesouro Selic etc.) e previdência privada, a posição usa campos manuais em vez do modelo de quantidade e preço médio, informados junto do cadastro do produto:
 
 - Valor aplicado.
 - Valor atual, atualizado manualmente.
 - Rendimento contratado, inicialmente como texto livre.
 
-Esses campos pertencem à posição porque podem variar por carteira, aporte, vencimento ou contrato. O cadastro global do ativo continua responsável apenas por identificar e classificar o produto.
+Esses campos pertencem à posição porque podem variar por carteira, aporte, vencimento ou contrato.
 
 ## Cálculos derivados
 
@@ -136,10 +145,10 @@ Ver [Carteiras, posições e import/export](desenvolvido/carteiras-posicoes-impo
 ## Interface web (`/portfolios`)
 
 - **Renomear carteira ativa:** no card «Carteira ativa», clicar em **Editar**, alterar o campo Nome e clicar em **Salvar**; a confirmação é obrigatória e o campo volta a ficar bloqueado após salvar.
-- Adicionar posição: selecionar ativo da base com **busca por ticker ou nome**.
-- Para ações, ETFs, FIIs, cripto e outros ativos negociados por quantidade: informar **quantidade** (notação BR, ex.: `1,88637`) e preço médio (rótulo e tabela mostram a **moeda** do ativo: BRL, USD, etc.).
+- Adicionar posição: botão **Adicionar ativo à carteira** abre um modal com seletor de tipo (**Bolsa / Renda fixa / Previdência**).
+- **Bolsa:** selecionar ativo da base com **busca por ticker ou nome** e informar **quantidade** (notação BR, ex.: `1,88637`) e preço médio (rótulo e tabela mostram a **moeda** do ativo: BRL, USD, etc.). O seletor de ativos não lista renda fixa tradicional nem previdência.
 - **Quantidade fracionária (notação BR):** digitar `1,88637`; a interface exibe `1,88637`; a API grava `1.88637`.
-- Para renda fixa tradicional e previdência: informar **Valor aplicado**, **Valor atual** e **Rendimento contratado** na posição da carteira.
+- **Renda fixa / Previdência:** preencher os dados do produto (identificador, descrição, tipo de título, indexador, rentabilidade, datas, emissor) e os valores **Valor aplicado** e **Valor atual** na mesma tela; o sistema cria produto + posição numa única ação.
 - **Preço médio (notação BR):** digitar `1234,56`; a interface exibe `1.234,56`; a API grava `1234.56` (float com ponto).
 - **Valores manuais (notação BR):** digitar `1234,56`; a interface exibe `1.234,56`; a API grava `1234.56` (float com ponto).
 - Botão **Atualizar cotações** no card Posições: atualiza `current_quote` na base para ativos com mercado da carteira ativa; mensagem com quantidade atualizada, ignorada e falhas.
@@ -149,7 +158,7 @@ Ver [Carteiras, posições e import/export](desenvolvido/carteiras-posicoes-impo
 - **Detalhes** por posição: botão «Detalhes» abre uma segunda linha na tabela com painel expansível exibindo preço médio de compra, preço atual (cotação unitária), quantidade, totais aplicado/atual/lucro e metadados da posição (custódia, data de entrada, objetivo, notas, setor) quando preenchidos. Para renda fixa e previdência, o painel mostra valores manuais e indica que preço unitário não se aplica. **Proventos** (dividendos recebidos) aparecem como funcionalidade futura («Em breve»).
 - **Lucro** (todos os tipos com valores conhecidos): `valor atual − valor aplicado` e percentual sobre o aplicado; exibe `—` se faltar cotação (ativos negociados) ou valores manuais incompletos.
 - **Resumo** abaixo da tabela: contagem por tipo de ativo (ex.: `Ação: 7 · ETF: 4`) e totais por moeda (aplicado, atual e lucro), sem conversão cambial entre moedas. O resumo reflete **apenas as linhas visíveis** após busca ou filtro.
-- **Editar** posição via `PATCH`; para renda fixa/previdência edita os valores manuais, para os demais edita quantidade e preço médio. **Remover** posição.
+- **Editar** posição: para renda fixa/previdência reabre o formulário completo (produto + valores) e salva produto e posição juntos; para os demais edita quantidade e preço médio. **Remover** posição.
 - Uma posição por par (carteira, ativo).
 - Menu **Cadastro** no cabeçalho: Ativos e Carteiras.
 

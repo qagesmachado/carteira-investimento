@@ -29,6 +29,18 @@
   export let cancelLabel = 'Cancelar edição';
   /** Exibe botão de cancelar (ex.: modal de revisão do lote). */
   export let showCancelButton = false;
+  /** Desabilita o seletor de tipo (ex.: cadastro de RF/previdência na carteira). */
+  export let lockType = false;
+  /** Torna o identificador somente leitura (ex.: edição de RF na carteira). */
+  export let readonlySymbol = false;
+  /** Restringe os tipos disponíveis no seletor. `null` = todos. */
+  export let availableTypes: AssetType[] | null = null;
+  /** Exibe o alerta «vá em Carteiras para informar os valores». */
+  export let showInfoAlert = true;
+  /** Título do cabeçalho do formulário. */
+  export let headerTitle = 'Dados do ativo';
+  /** Classe do elemento `<form>` (permite embutir sem card/shadow). */
+  export let formClass = 'card bg-base-100 shadow-xl';
 
   $: resolvedSubmitLabel =
     submitLabel || (mode === 'edit' ? 'Atualizar ativo' : 'Salvar ativo');
@@ -42,6 +54,10 @@
     { value: 'pension', label: 'Previdência' },
     { value: 'other', label: 'Outro' }
   ];
+
+  $: typeOptions = availableTypes
+    ? assetTypes.filter((t) => availableTypes!.includes(t.value))
+    : assetTypes;
 
   const markets: { value: AssetMarket; label: string }[] = [
     { value: 'national', label: 'Nacional' },
@@ -306,11 +322,11 @@
   }
 </script>
 
-<form class="card bg-base-100 shadow-xl" on:submit|preventDefault={submit}>
+<form class={formClass} on:submit|preventDefault={submit}>
   <div class="card-body gap-4">
     <div>
       <p class="text-sm font-semibold uppercase tracking-wide text-primary">Revisão</p>
-      <h2 class="card-title">Dados do ativo</h2>
+      <h2 class="card-title">{headerTitle}</h2>
       <p class="text-sm text-base-content/70">
         {#if isManualProduct}
           Cadastro manual do produto. Valor aplicado, valor atual e rendimento contratado são informados na
@@ -321,7 +337,7 @@
       </p>
     </div>
 
-    {#if isManualProduct}
+    {#if isManualProduct && showInfoAlert}
       <div class="alert alert-info text-sm shadow-none">
         <span>
           Use um identificador único por contrato (ex.: «CDB BTG IPCA+ 2028»). Depois de salvar, vá em
@@ -334,7 +350,7 @@
       <label class="form-control">
         <span class="label justify-between gap-2">
           <span class="label-text">{symbolLabel}</span>
-          {#if isFixedIncome}
+          {#if isFixedIncome && !readonlySymbol}
             <button
               type="button"
               class="btn btn-outline btn-xs shrink-0"
@@ -348,6 +364,7 @@
           bind:value={symbol}
           class="input input-bordered"
           placeholder={symbolPlaceholder}
+          readonly={readonlySymbol}
           required
         />
         {#if isFixedIncome && identifierGenHint}
@@ -367,8 +384,8 @@
 
       <label class="form-control">
         <span class="label"><span class="label-text">Tipo</span></span>
-        <select bind:value={asset_type} class="select select-bordered">
-          {#each assetTypes as option}
+        <select bind:value={asset_type} class="select select-bordered" disabled={lockType}>
+          {#each typeOptions as option}
             <option value={option.value}>{option.label}</option>
           {/each}
         </select>
@@ -586,6 +603,8 @@
           : ''}
       />
     </label>
+
+    <slot name="portfolio-values" />
 
     <div class="card-actions justify-between gap-2">
       {#if showCancelButton && onCancel}

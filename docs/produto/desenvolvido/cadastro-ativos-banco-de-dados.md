@@ -6,6 +6,12 @@ Manter uma base única de ativos conhecidos pela aplicação, independentemente 
 
 Essa base deve concentrar informações públicas, fiscais e classificatórias dos ativos. Sempre que possível, os dados devem ser preenchidos por APIs de terceiros para reduzir trabalho manual e evitar erro de digitação.
 
+> **Renda fixa tradicional e previdência ficam fora desta base.** CDB, LCI, LCA,
+> Tesouro Selic e previdência privada têm cadastro unificado na carteira
+> (`/portfolios`), não em `/assets`. ETFs de renda fixa (ex.: `AUPO11`) seguem aqui,
+> pois são ativos de mercado com cotação. Ver
+> [Cadastro unificado de renda fixa e previdência na carteira](cadastro-rf-previdencia-na-carteira.md).
+
 ## Diferença para carteira
 
 Cadastro no banco de dados não significa que o usuário possui o ativo.
@@ -135,7 +141,8 @@ Estratégias possíveis:
 
 ## Interface web (`/assets`)
 
-- Formulário de revisão com **todos** os campos do cadastro (classificação, fiscais, cotação, observações), editáveis após lookup yfinance ou ao editar ativo salvo.
+- Formulário de revisão com **todos** os campos do cadastro (classificação, fiscais, cotação, observações), editáveis após lookup yfinance ou ao editar ativo salvo. O tipo do ativo não oferece mais «Renda fixa» nem «Previdência» (cadastrados na carteira).
+- A tabela “Base local” **não exibe** renda fixa tradicional nem previdência (geridas na carteira); exibe ações, ETFs, FIIs, cripto e demais ativos de mercado.
 - **Filtro** na tabela “Base local” por ticker ou nome (client-side).
 - **Paginação** client-side (20 itens por página, opções 10/20/50/100), igual à listagem de proventos.
 - **Importação em lote:** colar tickers (vírgula, ponto-e-vírgula ou linha), arquivo `.csv` (coluna `symbol`/`ticker`/`codigo`) ou `.txt` (um ticker por linha); pré-visualização via `/assets/bulk/preview`; salvar selecionados via `/assets/bulk`. ETFs nacionais sem subtipo devem ser ajustados antes do save (botão Editar na linha).

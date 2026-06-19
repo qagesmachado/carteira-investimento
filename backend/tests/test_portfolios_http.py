@@ -102,6 +102,155 @@ def test_fixed_income_position_accepts_manual_values(client: TestClient) -> None
     assert patched.json()["current_value"] == 1080.5
 
 
+def _fixed_income_asset_payload(symbol: str = "E2E-CDB-2028", asset_type: str = "fixed_income") -> dict:
+    return {
+        "symbol": symbol,
+        "name": "CDB BTG IPCA+ 2028",
+        "asset_type": asset_type,
+        "market": "national",
+        "currency": "BRL",
+        "fixed_income_indexer": "ipca_plus",
+        "fixed_income_yield_description": "IPCA + 8,40% a.a.",
+        "fixed_income_title_type": "cdb",
+    }
+
+
+def test_create_fixed_income_position_creates_asset_and_position(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "RF unificada"}).json()["id"]
+
+    response = client.post(
+        f"/portfolios/{portfolio_id}/fixed-income-positions",
+        json={
+            "asset": _fixed_income_asset_payload(),
+            "invested_amount": 1000,
+            "current_value": 1069.02,
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["invested_amount"] == 1000
+    assert body["current_value"] == 1069.02
+    # Rentabilidade do produto reaproveitada como rendimento contratado da posição.
+    assert body["contracted_yield"] == "IPCA + 8,40% a.a."
+
+    # Asset foi criado na base e a posição o referencia.
+    assets = client.get("/assets").json()
+    symbols = [a["symbol"] for a in assets]
+    assert "E2E-CDB-2028" in symbols
+    positions = client.get(f"/portfolios/{portfolio_id}/positions").json()
+    assert len(positions) == 1
+    assert positions[0]["asset_id"] == body["asset_id"]
+
+
+def test_create_fixed_income_position_accepts_pension(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "Previdência"}).json()["id"]
+
+    response = client.post(
+        f"/portfolios/{portfolio_id}/fixed-income-positions",
+        json={
+            "asset": {
+                "symbol": "E2E-PREV-PGBL",
+                "name": "PGBL Itaú",
+                "asset_type": "pension",
+                "market": "national",
+                "currency": "BRL",
+            },
+            "invested_amount": 5000,
+            "current_value": 5200,
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["invested_amount"] == 5000
+
+
+def test_create_fixed_income_position_rejects_non_fixed_income_type(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "Tipo inválido"}).json()["id"]
+
+    response = client.post(
+        f"/portfolios/{portfolio_id}/fixed-income-positions",
+        json={
+            "asset": _fixed_income_asset_payload("E2E-STK", asset_type="stock"),
+            "invested_amount": 1000,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_fixed_income_position_duplicate_symbol_is_atomic(client: TestClient) -> None:
+    """Symbol duplicado retorna 409 e não cria asset nem posição órfãos."""
+    portfolio_id = client.post("/portfolios", json={"name": "Duplicado"}).json()["id"]
+    # Cria um ativo de RF com o mesmo symbol previamente.
+    client.post("/assets", json=_fixed_income_asset_payload("E2E-DUP-RF"))
+    positions_before = client.get(f"/portfolios/{portfolio_id}/positions").json()
+
+    response = client.post(
+        f"/portfolios/{portfolio_id}/fixed-income-positions",
+        json={
+            "asset": _fixed_income_asset_payload("E2E-DUP-RF"),
+            "invested_amount": 1000,
+        },
+    )
+
+    assert response.status_code == 409
+    # Nenhuma posição criada.
+    positions_after = client.get(f"/portfolios/{portfolio_id}/positions").json()
+    assert len(positions_after) == len(positions_before)
+
+
+def test_update_fixed_income_position_updates_asset_and_position(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "Edição RF"}).json()["id"]
+    created = client.post(
+        f"/portfolios/{portfolio_id}/fixed-income-positions",
+        json={"asset": _fixed_income_asset_payload(), "invested_amount": 1000, "current_value": 1000},
+    ).json()
+    position_id = created["id"]
+    asset_id = created["asset_id"]
+
+    response = client.patch(
+        f"/portfolios/{portfolio_id}/positions/{position_id}/fixed-income",
+        json={
+            "asset": {
+                "name": "CDB BTG IPCA+ 2028 (revisado)",
+                "fixed_income_yield_description": "IPCA + 9,00% a.a.",
+            },
+            "invested_amount": 1000,
+            "current_value": 1150.75,
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["current_value"] == 1150.75
+    assert body["contracted_yield"] == "IPCA + 9,00% a.a."
+
+    asset = next(a for a in client.get("/assets").json() if a["id"] == asset_id)
+    assert asset["name"] == "CDB BTG IPCA+ 2028 (revisado)"
+    assert asset["fixed_income_yield_description"] == "IPCA + 9,00% a.a."
+
+
+def test_update_fixed_income_position_ignores_symbol_change(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "Symbol fixo"}).json()["id"]
+    created = client.post(
+        f"/portfolios/{portfolio_id}/fixed-income-positions",
+        json={"asset": _fixed_income_asset_payload("E2E-FIX-SYM"), "invested_amount": 1000},
+    ).json()
+
+    response = client.patch(
+        f"/portfolios/{portfolio_id}/positions/{created['id']}/fixed-income",
+        json={
+            "asset": {"symbol": "OUTRO-SYMBOL"},
+            "invested_amount": 2000,
+        },
+    )
+
+    assert response.status_code == 200
+    asset = next(a for a in client.get("/assets").json() if a["id"] == created["asset_id"])
+    assert asset["symbol"] == "E2E-FIX-SYM"
+
+
 def test_post_position_rejects_negative_manual_value(client: TestClient) -> None:
     asset_id = _create_asset(client, "LCI1", "fixed_income")
     portfolio_id = client.post("/portfolios", json={"name": "RF inválida"}).json()["id"]

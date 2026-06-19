@@ -5,10 +5,13 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
+from app.models.asset import Asset, AssetType
 from app.models.dividend_payment import DividendPayment
 from app.models.portfolio import AppPreference, Portfolio
 from app.models.position import Position
 from app.schemas.portfolio import (
+    FixedIncomePositionCreate,
+    FixedIncomePositionUpdate,
     PortfolioCreate,
     PortfolioRead,
     PortfolioUpdate,
@@ -16,7 +19,10 @@ from app.schemas.portfolio import (
     PositionRead,
     PositionUpdate,
 )
+from app.services.asset_service import apply_asset_update, build_asset
 from app.services.rebalance_engine import validate_allocation_targets_json
+
+_UNIFIED_ASSET_TYPES = frozenset({AssetType.FIXED_INCOME, AssetType.PENSION})
 
 ACTIVE_PORTFOLIO_KEY = "active_portfolio_id"
 logger = logging.getLogger(__name__)
@@ -196,6 +202,84 @@ def create_position(
     position = Position(portfolio_id=portfolio_id, **payload.model_dump())
     session.add(position)
     session.commit()
+    session.refresh(position)
+    return position
+
+
+def create_fixed_income_position(
+    session: Session,
+    portfolio_id: int,
+    payload: FixedIncomePositionCreate,
+) -> Position:
+    """Cria produto + posição de renda fixa/previdência numa transação única."""
+    get_portfolio(session, portfolio_id)
+    if payload.asset.asset_type not in _UNIFIED_ASSET_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="fixed-income position requires asset_type fixed_income or pension",
+        )
+
+    asset = build_asset(session, payload.asset)
+    session.flush()
+
+    position = Position(
+        portfolio_id=portfolio_id,
+        asset_id=asset.id,
+        invested_amount=payload.invested_amount,
+        current_value=payload.current_value,
+        contracted_yield=asset.fixed_income_yield_description,
+        entry_date=payload.entry_date,
+    )
+    session.add(position)
+
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="could not create fixed-income position",
+        ) from exc
+
+    session.refresh(position)
+    return position
+
+
+def update_fixed_income_position(
+    session: Session,
+    portfolio_id: int,
+    position_id: int,
+    payload: FixedIncomePositionUpdate,
+) -> Position:
+    """Atualiza produto + posição de renda fixa/previdência numa transação única."""
+    position = _get_position(session, portfolio_id, position_id)
+    asset = session.get(Asset, position.asset_id)
+    if asset is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="asset not found")
+
+    apply_asset_update(session, asset, payload.asset, allow_symbol_change=False)
+    if asset.asset_type not in _UNIFIED_ASSET_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="fixed-income position requires asset_type fixed_income or pension",
+        )
+
+    position.invested_amount = payload.invested_amount
+    position.current_value = payload.current_value
+    position.contracted_yield = asset.fixed_income_yield_description
+    position.entry_date = payload.entry_date
+    position.updated_at = datetime.utcnow()
+    session.add(position)
+
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="could not update fixed-income position",
+        ) from exc
+
     session.refresh(position)
     return position
 

@@ -57,6 +57,7 @@ Detalhamento:
 - [Cadastro de ativos no banco de dados](cadastro-ativos-banco-de-dados.md)
 - [Criação de carteira](criacao-de-carteira.md)
 - [Cadastro de ativos na carteira](cadastro-ativos-na-carteira.md)
+- [Cadastro unificado de renda fixa e previdência na carteira](desenvolvido/cadastro-rf-previdencia-na-carteira.md)
 
 Origem na planilha:
 
@@ -311,6 +312,10 @@ Origem na planilha:
 - `AUPO11AREA11`
 
 Objetivo: acompanhar aplicações de renda fixa, vencimentos, liquidez e rentabilidade.
+
+> Renda fixa tradicional (CDB, LCI, LCA, Tesouro etc.) e previdência têm cadastro
+> **unificado** na carteira (`/portfolios`): produto e posição numa única ação, sem
+> passar por `/assets`. Ver [Cadastro unificado de renda fixa e previdência na carteira](desenvolvido/cadastro-rf-previdencia-na-carteira.md).
 
 Funcionalidades:
 

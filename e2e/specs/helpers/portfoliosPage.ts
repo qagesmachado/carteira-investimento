@@ -98,9 +98,29 @@ export async function expectPositionRowHidden(page: Page, ticker: string): Promi
   await expect(positionDataRows(page).filter({ hasText: ticker })).toHaveCount(0);
 }
 
+export function addAssetModal(page: Page): Locator {
+  return page
+    .locator('.modal-box')
+    .filter({ has: page.getByRole('heading', { name: 'Adicionar ativo à carteira' }) });
+}
+
+export async function openAddAssetModal(page: Page): Promise<void> {
+  await positionsSection(page)
+    .getByRole('button', { name: 'Adicionar ativo à carteira' })
+    .click();
+  await expect(addAssetModal(page)).toBeVisible();
+}
+
+export async function selectAddKind(
+  page: Page,
+  name: 'Bolsa' | 'Renda fixa' | 'Previdência'
+): Promise<void> {
+  await addAssetModal(page).getByRole('tab', { name }).click();
+}
+
 export async function pickAssetInAddForm(page: Page, ticker: string): Promise<void> {
-  const section = positionsSection(page);
-  const picker = section.locator('.asset-picker');
+  await openAddAssetModal(page);
+  const picker = addAssetModal(page).locator('.asset-picker');
   await pickAssetViaTrigger(page, picker.locator('button.input'), ticker);
 }
 
@@ -125,26 +145,16 @@ export async function fillMarketPosition(
   page: Page,
   options: { quantity: string; avgPrice: string }
 ): Promise<void> {
-  const section = positionsSection(page);
-  await fillBrDecimalByLabel(page, 'Quantidade', options.quantity, section);
-  await fillBrDecimalByLabel(page, /Preço médio/, options.avgPrice, section);
-}
-
-export async function fillManualPosition(
-  page: Page,
-  options: { invested: string; current: string; yield: string }
-): Promise<void> {
-  const section = positionsSection(page);
-  await fillBrDecimalByLabel(page, /Valor aplicado/, options.invested, section);
-  await fillBrDecimalByLabel(page, /Valor atual/, options.current, section);
-  await section.getByPlaceholder('Ex.: 100% CDI').fill(options.yield);
+  const modal = addAssetModal(page);
+  await fillBrDecimalByLabel(page, 'Quantidade', options.quantity, modal);
+  await fillBrDecimalByLabel(page, /Preço médio/, options.avgPrice, modal);
 }
 
 export async function clickAddPosition(page: Page): Promise<void> {
   const createResponse = page.waitForResponse(
     (r) => isApiPositionsResponse(r, 'POST') && r.ok()
   );
-  await positionsSection(page).getByRole('button', { name: 'Adicionar' }).click();
+  await addAssetModal(page).getByRole('button', { name: 'Adicionar' }).click();
   await createResponse;
 }
 

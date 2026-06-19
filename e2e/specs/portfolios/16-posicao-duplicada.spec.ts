@@ -3,10 +3,10 @@ import { expect, test } from '../fixtures/test';
 
 import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
 import {
+  addAssetModal,
   fillMarketPosition,
   gotoPortfoliosPage,
   pickAssetInAddForm,
-  positionsSection,
   positionsTable
 } from '../helpers/portfoliosPage';
 import { seedPortfoliosPrincipalWithBbse3 } from '../helpers/seedPortfolios';
@@ -27,9 +27,9 @@ test.describe('UI-PRT-016', () => {
     await gotoPortfoliosPage(page);
     await pickAssetInAddForm(page, TICKER_BBSE3);
     await fillMarketPosition(page, { quantity: '10', avgPrice: '30' });
-    await positionsSection(page).getByRole('button', { name: 'Adicionar' }).click();
+    await addAssetModal(page).getByRole('button', { name: 'Adicionar' }).click();
     await expect(
-      page.getByRole('alert').filter({ hasText: /Este ativo já está nesta carteira/i })
+      addAssetModal(page).getByText(/já está nesta carteira/i)
     ).toBeVisible();
     await expect(positionsTable(page).locator('tr').filter({ hasText: TICKER_BBSE3 })).toHaveCount(1);
   });

@@ -5,6 +5,12 @@ Esta área foi desmembrada em três funcionalidades distintas:
 - [Cadastro de ativos no banco de dados](cadastro-ativos-banco-de-dados.md)
 - [Criação de carteira](criacao-de-carteira.md)
 - [Cadastro de ativos na carteira](cadastro-ativos-na-carteira.md)
+- [Cadastro unificado de renda fixa e previdência na carteira](cadastro-rf-previdencia-na-carteira.md)
+
+> Renda fixa tradicional (CDB, LCI, LCA, Tesouro Selic etc.) e previdência privada
+> têm cadastro **unificado** direto na carteira: produto e posição são criados numa
+> única ação. Esses produtos **não** ficam na base global (`/assets`). ETFs de renda
+> fixa (ex.: `AUPO11`) seguem como ativos de mercado em `/assets`. Ver doc acima.
 
 ## Visão geral
 
@@ -103,12 +109,14 @@ Centralizar os ativos acompanhados pela aplicação, estejam ou não em carteira
 
 O cadastro não deve copiar a estrutura da planilha. A planilha serve como referência para identificar os dados existentes, mas a aplicação deve organizar o cadastro por fluxo guiado e campos específicos conforme o tipo de ativo.
 
-Há dois cadastros conceituais diferentes:
+Há dois cadastros conceituais para ativos de **bolsa** (ação, ETF, FII, cripto etc.):
 
-- Cadastro na base de dados: registra ou importa as informações gerais do ativo.
-- Cadastro na carteira: registra que o usuário possui aquele ativo e informa dados da posição, como quantidade, preço médio, custódia e objetivos.
+- Cadastro na base de dados (`/assets`): registra ou importa as informações gerais do ativo.
+- Cadastro na carteira (`/portfolios`): registra que o usuário possui aquele ativo e informa dados da posição, como quantidade, preço médio, custódia e objetivos.
 
-Um ativo pode existir na base de dados sem estar na carteira.
+Um ativo de bolsa pode existir na base de dados sem estar na carteira.
+
+Para **renda fixa tradicional** (CDB, LCI, LCA, Tesouro Selic etc.) e **previdência privada**, o produto e a posição são cadastrados **juntos** na carteira, numa única ação — não passam por `/assets`. Ver [Cadastro unificado de renda fixa e previdência na carteira](cadastro-rf-previdencia-na-carteira.md).
 
 ## Referências na planilha
 
@@ -197,7 +205,7 @@ Exemplos:
 - Criptoativo: símbolo, nome, rede ou corretora/custódia quando aplicável.
 - Previdência: instituição, plano, tipo e informações gerais de acompanhamento.
 
-Para renda fixa tradicional (CDB, LCI, LCA, Tesouro Selic etc.) e previdência privada, o cadastro global do ativo não deve receber `Valor aplicado`, `Valor atual` ou `Rendimento contratado` como se fossem dados fixos do produto. Esses campos representam a aplicação específica do usuário dentro de uma carteira e pertencem ao cadastro da posição.
+Para renda fixa tradicional (CDB, LCI, LCA, Tesouro Selic etc.) e previdência privada, o cadastro do produto e o cadastro da posição acontecem **juntos**, numa única tela na carteira (`/portfolios`). Os campos `Valor aplicado` e `Valor atual` pertencem à posição (variam por aplicação do usuário), enquanto identificador, descrição, tipo de título, indexador e datas descrevem o produto. Ver [Cadastro unificado de renda fixa e previdência na carteira](cadastro-rf-previdencia-na-carteira.md). Esses produtos não são cadastrados nem listados na base global `/assets`.
 
 ### 5. Definir subtipo de ETF nacional
 
@@ -220,7 +228,7 @@ Exemplo: ativos hoje controlados em `AUPO11AREA11` devem ser cadastrados como ET
 
 ### 6. Adicionar ou não à carteira
 
-Depois de existir na base de dados, o ativo pode ser adicionado à carteira.
+Depois de existir na base de dados, o ativo de **bolsa** pode ser adicionado à carteira.
 
 Se o usuário adicionar à carteira, devem ser solicitados dados da posição:
 
@@ -231,13 +239,18 @@ Se o usuário adicionar à carteira, devem ser solicitados dados da posição:
 - Observações pessoais.
 - Objetivo vinculado, quando aplicável.
 
-Para renda fixa tradicional e previdência privada, o formulário da posição deve substituir quantidade/preço médio por campos manuais adequados:
+Para **renda fixa tradicional e previdência privada** o fluxo é diferente: o produto
+e a posição são cadastrados **juntos** na carteira, numa única tela (modal
+**Adicionar ativo à carteira** em `/portfolios`). Nesse caso, além dos dados do
+produto, informam-se os campos manuais da posição:
 
 - Valor aplicado.
 - Valor atual, atualizado manualmente quando não houver cotação automática.
-- Rendimento contratado, em texto livre inicialmente (ex.: `100% CDI`, `IPCA + 8,40% a.a.`, `Selic`).
+- Rendimento contratado: para renda fixa vem do campo único **Rentabilidade**; texto livre (ex.: `100% CDI`, `IPCA + 8,40% a.a.`, `Selic`).
 
-Se o usuário não adicionar à carteira, o ativo permanece disponível na base para análise, acompanhamento, simulações ou uso futuro.
+Ver [Cadastro unificado de renda fixa e previdência na carteira](cadastro-rf-previdencia-na-carteira.md).
+
+Se o usuário não adicionar à carteira, o ativo de bolsa permanece disponível na base para análise, acompanhamento, simulações ou uso futuro.
 
 ## Dados principais
 

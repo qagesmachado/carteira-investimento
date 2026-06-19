@@ -10,6 +10,8 @@ from app.providers.yfinance_asset_provider import AssetLookupProvider
 from app.schemas.crypto_fee import BitcoinSnapshotRead
 from app.schemas.portfolio import (
     ActivePortfolioRead,
+    FixedIncomePositionCreate,
+    FixedIncomePositionUpdate,
     ImportConfirmRequest,
     ImportConfirmResponse,
     ImportPreviewRequest,
@@ -40,6 +42,7 @@ from app.services.import_service import (
 )
 from app.services.quote_refresh_service import refresh_portfolio_quotes
 from app.services.portfolio_service import (
+    create_fixed_income_position,
     create_portfolio,
     create_position,
     delete_portfolio,
@@ -51,6 +54,7 @@ from app.services.portfolio_service import (
     set_active_portfolio_id,
     to_portfolio_read,
     to_position_read,
+    update_fixed_income_position,
     update_portfolio,
     update_position,
 )
@@ -167,6 +171,34 @@ def post_position(
     if get_asset_by_id(session, payload.asset_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="asset not found")
     return to_position_read(create_position(session, portfolio_id, payload))
+
+
+@router.post(
+    "/{portfolio_id}/fixed-income-positions",
+    response_model=PositionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def post_fixed_income_position(
+    portfolio_id: int,
+    payload: FixedIncomePositionCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> PositionRead:
+    return to_position_read(create_fixed_income_position(session, portfolio_id, payload))
+
+
+@router.patch(
+    "/{portfolio_id}/positions/{position_id}/fixed-income",
+    response_model=PositionRead,
+)
+def patch_fixed_income_position(
+    portfolio_id: int,
+    position_id: int,
+    payload: FixedIncomePositionUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> PositionRead:
+    return to_position_read(
+        update_fixed_income_position(session, portfolio_id, position_id, payload)
+    )
 
 
 @router.patch("/{portfolio_id}/positions/{position_id}", response_model=PositionRead)

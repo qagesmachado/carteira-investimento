@@ -8,6 +8,7 @@ import {
   fillMarketPosition,
   gotoPortfoliosPage,
   pickAssetInAddForm,
+  positionsTable,
   expectPositionRow
 } from '../helpers/portfoliosPage';
 import { seedPortfoliosPrincipalOnly } from '../helpers/seedPortfolios';
@@ -31,6 +32,8 @@ test.describe('UI-PRT-015', () => {
     await fillMarketPosition(page, { quantity: '5', avgPrice: '400' });
     await clickAddPosition(page);
     await expectPositionRow(page, TICKER_VOO);
-    await expect(page.getByText('Moeda do ativo: Dólar (USD)')).toBeVisible();
+    await expect(
+      positionsTable(page).locator('tr').filter({ hasText: TICKER_VOO }).filter({ hasText: 'USD' })
+    ).toBeVisible();
   });
 });

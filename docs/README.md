@@ -30,7 +30,8 @@ Neste momento não há decisão de stack, banco de dados, framework ou arquitetu
 
 **Cadastro**
 
-- [Cadastro de ativos](produto/desenvolvido/cadastro-de-ativos.md): catálogo e posições por carteira (implementado).
+- [Cadastro de ativos](produto/desenvolvido/cadastro-de-ativos.md): catálogo de mercado e posições por carteira (implementado).
+- [Cadastro unificado de renda fixa e previdência na carteira](produto/desenvolvido/cadastro-rf-previdencia-na-carteira.md): CDB, LCI, LCA, Tesouro, previdência — produto + posição numa ação (implementado).
 - [Cadastro de proventos](produto/desenvolvido/cadastro-proventos.md): lançamentos de dividendos e proventos por ativo (implementado).
 - [Página Dados](produto/desenvolvido/pagina-dados.md): export/import centralizado em `/dados` (implementado).
 - [Persistência — banco único](produto/desenvolvido/persistencia-banco-unico.md): SQLite unificado, FKs e migração legado (implementado).

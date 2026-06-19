@@ -1,9 +1,14 @@
 # Cadastro manual de renda fixa
 
+> **DEPRECADO.** O cadastro de renda fixa tradicional saiu de `/assets`. Agora é
+> feito no modal **Adicionar ativo à carteira** em `/portfolios` (produto + posição
+> numa ação). Ver [`UI-PRT-006`](../portfolios/06-adicionar-posicao-rf-manual.md) e
+> [Cadastro unificado de renda fixa e previdência na carteira](../../../../docs/produto/desenvolvido/cadastro-rf-previdencia-na-carteira.md).
+
 ## Metadados
 
 - **ID:** `UI-AST-003`
-- **Status:** implementado
+- **Status:** removido (migrado para `UI-PRT-006`)
 - **Nível:** `ambos`
 - **Página:** `/assets`
 - **Funcionalidade:** cadastrar ativo de renda fixa manualmente

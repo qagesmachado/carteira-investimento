@@ -210,4 +210,60 @@ describe('AssetForm', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Atualizar ativo' }));
     expect(onUpdate).toHaveBeenCalled();
   });
+
+  it('restringe os tipos do seletor via availableTypes (sem RF/previdência)', () => {
+    render(AssetForm, {
+      asset: {
+        symbol: 'PETR4',
+        name: 'Petrobras',
+        asset_type: 'stock',
+        market: 'national',
+        country: 'BR',
+        currency: 'BRL'
+      },
+      availableTypes: ['stock', 'etf', 'fii', 'crypto', 'other']
+    });
+
+    expect(screen.queryByRole('option', { name: 'Renda fixa' })).toBeNull();
+    expect(screen.queryByRole('option', { name: 'Previdência' })).toBeNull();
+    expect(screen.getByRole('option', { name: 'Ação' })).toBeTruthy();
+  });
+
+  it('trava o seletor de tipo e o identificador quando configurado para a carteira', () => {
+    render(AssetForm, {
+      asset: {
+        symbol: 'CDB BTG IPCA+ 2028',
+        name: 'CDB Banco BTG',
+        asset_type: 'fixed_income',
+        market: 'national',
+        country: 'BR',
+        currency: 'BRL'
+      },
+      lockType: true,
+      readonlySymbol: true,
+      availableTypes: ['fixed_income']
+    });
+
+    const typeSelect = screen.getByDisplayValue('Renda fixa') as HTMLSelectElement;
+    expect(typeSelect.disabled).toBe(true);
+
+    const symbolInput = screen.getByDisplayValue('CDB BTG IPCA+ 2028') as HTMLInputElement;
+    expect(symbolInput.readOnly).toBe(true);
+  });
+
+  it('não exibe o alerta «vá em Carteiras» quando showInfoAlert é false', () => {
+    render(AssetForm, {
+      asset: {
+        symbol: 'CDB',
+        name: 'CDB',
+        asset_type: 'fixed_income',
+        market: 'national',
+        country: 'BR',
+        currency: 'BRL'
+      },
+      showInfoAlert: false
+    });
+
+    expect(screen.queryByText(/vá em/i)).toBeNull();
+  });
 });

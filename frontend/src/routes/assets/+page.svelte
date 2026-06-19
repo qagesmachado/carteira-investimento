@@ -10,6 +10,7 @@
     type Asset,
     type AssetCreate,
     type AssetLookup,
+    type AssetType,
     type AssetUpdate
   } from '$lib/api/assets';
   import { parseApiError } from '$lib/api/parseApiError';
@@ -19,6 +20,9 @@
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
+  /** Renda fixa tradicional e previdência são cadastradas na carteira, não aqui. */
+  const MARKET_ASSET_TYPES: AssetType[] = ['stock', 'etf', 'fii', 'crypto', 'other'];
+
   let assets: Asset[] = [];
   let lookupResult: AssetLookup | null = null;
   let editingAsset: Asset | null = null;
@@ -26,10 +30,13 @@
   let error = '';
   let loadingLookup = false;
   let loadingSave = false;
-  let manualFormKey = 0;
 
   $: formAsset = editingAsset ?? lookupResult;
   $: formMode = editingAsset ? 'edit' : 'create';
+  /** Oculta renda fixa/previdência da base local (geridas na carteira). */
+  $: marketAssets = assets.filter(
+    (a) => a.asset_type !== 'fixed_income' && a.asset_type !== 'pension'
+  );
 
   async function refreshAssets() {
     assets = await listAssets();
@@ -101,24 +108,6 @@
     editingAsset = null;
   }
 
-  function startManualAsset(assetType: 'fixed_income' | 'pension') {
-    editingAsset = null;
-    manualFormKey += 1;
-    lookupResult = {
-      symbol: '',
-      name: '',
-      asset_type: assetType,
-      market: 'national',
-      country: 'BR',
-      currency: 'BRL'
-    };
-    error = '';
-    message =
-      assetType === 'fixed_income'
-        ? 'Cadastro manual de renda fixa. Preencha identificador e descrição do produto.'
-        : 'Cadastro manual de previdência. Preencha identificador e descrição do plano.';
-  }
-
   async function handleDelete(asset: Asset) {
     const label = formatTickerForDisplay(asset.symbol);
     if (!confirm(`Excluir ${label} da base local?`)) {
@@ -168,43 +157,26 @@
         <AssetLookupForm onLookup={handleLookup} loading={loadingLookup} />
         <div class="card bg-base-100 shadow">
           <div class="card-body gap-3">
-            <h2 class="card-title text-base">Cadastro manual</h2>
+            <h2 class="card-title text-base">Renda fixa e previdência</h2>
             <p class="text-sm text-base-content/70">
-              Para CDB, LCI, LCA, Tesouro, previdência e similares — sem busca no yfinance.
+              CDB, LCI, LCA, Tesouro, previdência e similares são cadastrados direto na
+              carteira, em <a class="link link-primary" href="/portfolios">Carteiras</a>, pelo
+              botão «Adicionar ativo à carteira».
             </p>
-            <div class="flex flex-wrap gap-2">
-              <button
-                class="btn btn-outline btn-sm"
-                type="button"
-                disabled={loadingSave || loadingLookup}
-                on:click={() => startManualAsset('fixed_income')}
-              >
-                Nova renda fixa
-              </button>
-              <button
-                class="btn btn-outline btn-sm"
-                type="button"
-                disabled={loadingSave || loadingLookup}
-                on:click={() => startManualAsset('pension')}
-              >
-                Nova previdência
-              </button>
-            </div>
           </div>
         </div>
       </div>
-      {#key manualFormKey}
-        <AssetForm
-          asset={formAsset}
-          mode={formMode}
-          onSave={handleSave}
-          onUpdate={handleUpdate}
-          onCancel={formMode === 'edit' ? cancelEdit : undefined}
-          loading={loadingSave}
-        />
-      {/key}
+      <AssetForm
+        asset={formAsset}
+        mode={formMode}
+        availableTypes={MARKET_ASSET_TYPES}
+        onSave={handleSave}
+        onUpdate={handleUpdate}
+        onCancel={formMode === 'edit' ? cancelEdit : undefined}
+        loading={loadingSave}
+      />
     </div>
 
-    <AssetList {assets} onEdit={handleEdit} onDelete={handleDelete} />
+    <AssetList assets={marketAssets} onEdit={handleEdit} onDelete={handleDelete} />
   </div>
 </main>

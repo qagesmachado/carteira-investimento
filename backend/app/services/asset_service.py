@@ -67,7 +67,12 @@ def validate_asset(payload: AssetCreate) -> None:
         )
 
 
-def create_asset(session: Session, payload: AssetCreate) -> Asset:
+def build_asset(session: Session, payload: AssetCreate) -> Asset:
+    """Valida e adiciona o ativo à sessão **sem** commit.
+
+    Permite criar ativo e posição numa única transação (cadastro unificado de
+    renda fixa/previdência). O chamador é responsável pelo commit.
+    """
     validate_asset(payload)
 
     normalized_symbol = normalize_symbol(payload.symbol)
@@ -83,8 +88,12 @@ def create_asset(session: Session, payload: AssetCreate) -> Asset:
         payload.etf_subtype,
     )
     asset = Asset(**data)
-
     session.add(asset)
+    return asset
+
+
+def create_asset(session: Session, payload: AssetCreate) -> Asset:
+    asset = build_asset(session, payload)
 
     try:
         session.commit()
@@ -283,18 +292,24 @@ def get_asset_by_symbol(session: Session, symbol: str) -> Asset | None:
     return None
 
 
-def update_asset(session: Session, asset_id: int, payload: AssetUpdate) -> Asset:
-    asset = get_asset_by_id(session, asset_id)
-    if asset is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="asset not found",
-        )
+def apply_asset_update(
+    session: Session,
+    asset: Asset,
+    payload: AssetUpdate,
+    *,
+    allow_symbol_change: bool = True,
+) -> Asset:
+    """Aplica um ``AssetUpdate`` ao ativo e adiciona à sessão **sem** commit.
 
+    Reutilizável pelo cadastro unificado de renda fixa/previdência, onde o symbol
+    não pode ser trocado na edição. O chamador é responsável pelo commit.
+    """
     updates = payload.model_dump(exclude_unset=True)
+    if not allow_symbol_change:
+        updates.pop("symbol", None)
     if "symbol" in updates:
         new_symbol = normalize_symbol(str(updates["symbol"]))
-        if symbol_exists_in_db(session, new_symbol, exclude_asset_id=asset_id):
+        if symbol_exists_in_db(session, new_symbol, exclude_asset_id=asset.id):
             _raise_duplicate_symbol(new_symbol)
         updates["symbol"] = new_symbol
 
@@ -315,8 +330,21 @@ def update_asset(session: Session, asset_id: int, payload: AssetUpdate) -> Asset
     )
     validate_asset(merged)
 
+    session.add(asset)
+    return asset
+
+
+def update_asset(session: Session, asset_id: int, payload: AssetUpdate) -> Asset:
+    asset = get_asset_by_id(session, asset_id)
+    if asset is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="asset not found",
+        )
+
+    apply_asset_update(session, asset, payload)
+
     try:
-        session.add(asset)
         session.commit()
     except IntegrityError as exc:
         session.rollback()

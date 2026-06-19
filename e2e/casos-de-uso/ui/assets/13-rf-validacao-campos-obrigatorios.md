@@ -1,9 +1,13 @@
 # Validação de campos obrigatórios na RF manual
 
+> **DEPRECADO.** A validação de renda fixa saiu de `/assets`. Agora ocorre no modal
+> **Adicionar ativo à carteira** em `/portfolios`. Ver
+> [`UI-PRT-024`](../portfolios/24-validacao-rf-modal-unificado.md).
+
 ## Metadados
 
 - **ID:** `UI-AST-013`
-- **Status:** implementado
+- **Status:** removido (migrado para `UI-PRT-024`)
 - **Nível:** `ambos`
 - **Página:** `/assets`
 - **Funcionalidade:** impedir salvar renda fixa manual incompleta

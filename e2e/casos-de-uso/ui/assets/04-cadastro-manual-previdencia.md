@@ -1,9 +1,14 @@
 # Cadastro manual de previdência
 
+> **DEPRECADO.** O cadastro de previdência saiu de `/assets`. Agora é feito no modal
+> **Adicionar ativo à carteira** em `/portfolios` (produto + posição numa ação). Ver
+> [`UI-PRT-017`](../portfolios/17-adicionar-posicao-previdencia.md) e
+> [Cadastro unificado de renda fixa e previdência na carteira](../../../../docs/produto/desenvolvido/cadastro-rf-previdencia-na-carteira.md).
+
 ## Metadados
 
 - **ID:** `UI-AST-004`
-- **Status:** implementado
+- **Status:** removido (migrado para `UI-PRT-017`)
 - **Nível:** `ambos`
 - **Página:** `/assets`
 - **Funcionalidade:** cadastrar ativo de previdência manualmente

@@ -32,5 +32,9 @@ test.describe('UI-AST-001', () => {
     await expect(page.getByLabel('Ticker ou símbolo')).toBeVisible();
     await expect(page.locator('table tbody tr')).toHaveCount(0);
     await expect(page.locator('[role="alert"].alert-error')).toHaveCount(0);
+
+    // Renda fixa/previdência saíram de /assets (cadastro unificado na carteira).
+    await expect(page.getByRole('button', { name: 'Nova renda fixa' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Nova previdência' })).toHaveCount(0);
   });
 });

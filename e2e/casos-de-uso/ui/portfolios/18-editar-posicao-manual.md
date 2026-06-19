@@ -5,32 +5,32 @@
 - **ID:** `UI-PRT-018`
 - **Status:** implementado
 - **Página:** `/portfolios`
-- **Funcionalidade:** editar valores de posição RF manual
+- **Funcionalidade:** editar renda fixa na carteira (produto + valores numa ação)
 - **Depende de:** `UI-PRT-006`
 - **Arquivo de teste:** `e2e/specs/portfolios/18-editar-posicao-manual.spec.ts`
+- **Referência:** [Cadastro unificado de renda fixa e previdência na carteira](../../../../docs/produto/desenvolvido/cadastro-rf-previdencia-na-carteira.md)
 
 ## Ambiente de teste
 
-- **Base de ativos:** `backend/data/test/carteira.db`
-- **Base de carteiras:** `backend/data/test/portfolios.db`
+- **Base:** `backend/data/test/carteira-{N}.db`
 - **Lookup:** yfinance
 - **URLs:** frontend `http://127.0.0.1:5174` · API `http://127.0.0.1:8001`
 
-## Cenário — Atualizar valor atual da RF
+## Cenário — Atualizar uma renda fixa na carteira
 
-**Como** investidor  
-**Quero** atualizar valor atual da RF  
-**Para** refletir o saldo do dia
+**Como** investidor
+**Quero** atualizar dados do produto e o valor atual da RF
+**Para** refletir o saldo e os dados do contrato
 
 ### Passo a passo
 
-1. Existe posição manual de RF na carteira ativa.
-2. Abro edição da posição manual.
-3. Altero valor atual e rendimento.
-4. Salvo o modal.
+1. Existe posição de RF na carteira ativa (`UI-PRT-006`).
+2. Abro **Editar**; o formulário completo (produto + valores) reabre.
+3. Altero valor atual (e, se quiser, dados do produto). O identificador é somente leitura.
+4. Salvo (`PATCH /portfolios/{id}/positions/{position_id}/fixed-income`).
 5. A linha exibe os novos valores.
 6. Campos específicos de manual permanecem (sem preço de mercado).
 
-## Notas para automação (fase 2)
+## Notas para automação
 
-- Diferenciar modal de mercado (`UI-PRT-007`) vs manual neste spec.
+- Diferenciar o modal de mercado (`UI-PRT-007`) do formulário unificado de RF.

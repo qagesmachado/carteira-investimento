@@ -1,4 +1,4 @@
-import type { Asset, AssetCreate } from './assets';
+import type { Asset, AssetCreate, AssetUpdate } from './assets';
 import { API_BASE_URL } from './config';
 
 export type PortfolioStatus = 'active' | 'archived' | 'simulation';
@@ -64,6 +64,21 @@ export type PositionCreate = {
 };
 
 export type PositionUpdate = Partial<Omit<PositionCreate, 'asset_id'>>;
+
+/** Cadastro unificado de renda fixa/previdência: produto + posição numa ação. */
+export type FixedIncomePositionCreate = {
+  asset: AssetCreate;
+  invested_amount: number;
+  current_value?: number | null;
+  entry_date?: string | null;
+};
+
+export type FixedIncomePositionUpdate = {
+  asset: AssetUpdate;
+  invested_amount: number;
+  current_value?: number | null;
+  entry_date?: string | null;
+};
 
 export type PortfolioExportDocument = {
   version: number;
@@ -243,6 +258,39 @@ export async function updatePosition(
 ): Promise<Position> {
   const response = await fetcher(
     `${API_BASE_URL}/portfolios/${portfolioId}/positions/${positionId}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }
+  );
+  return parseResponse<Position>(response);
+}
+
+export async function createFixedIncomePosition(
+  portfolioId: number,
+  payload: FixedIncomePositionCreate,
+  fetcher: typeof fetch = fetch
+): Promise<Position> {
+  const response = await fetcher(
+    `${API_BASE_URL}/portfolios/${portfolioId}/fixed-income-positions`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }
+  );
+  return parseResponse<Position>(response);
+}
+
+export async function updateFixedIncomePosition(
+  portfolioId: number,
+  positionId: number,
+  payload: FixedIncomePositionUpdate,
+  fetcher: typeof fetch = fetch
+): Promise<Position> {
+  const response = await fetcher(
+    `${API_BASE_URL}/portfolios/${portfolioId}/positions/${positionId}/fixed-income`,
     {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

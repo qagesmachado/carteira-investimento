@@ -6,7 +6,7 @@ from sqlmodel import SQLModel
 from app.models.dividend_payment import DividendPaymentType
 from app.models.portfolio import PortfolioStatus
 from app.models.position import PositionStatus
-from app.schemas.asset import AssetCreate, AssetRead
+from app.schemas.asset import AssetCreate, AssetRead, AssetUpdate
 
 
 class PortfolioBase(SQLModel):
@@ -66,6 +66,24 @@ class PositionUpdate(SQLModel):
     linked_objective: str | None = None
     notes: str | None = None
     status: PositionStatus | None = None
+
+
+class FixedIncomePositionCreate(SQLModel):
+    """Cadastro unificado de renda fixa/previdência: produto + posição numa ação."""
+
+    asset: AssetCreate
+    invested_amount: float = Field(ge=0)
+    current_value: float | None = Field(default=None, ge=0)
+    entry_date: date | None = None
+
+
+class FixedIncomePositionUpdate(SQLModel):
+    """Atualização unificada de renda fixa/previdência: produto + posição numa ação."""
+
+    asset: AssetUpdate
+    invested_amount: float = Field(ge=0)
+    current_value: float | None = Field(default=None, ge=0)
+    entry_date: date | None = None
 
 
 class PositionRead(SQLModel):

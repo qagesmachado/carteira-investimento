@@ -40,8 +40,8 @@ flowchart LR
 
 | Etapa | Rota | O que fica pronto para a próxima | Dados mínimos sugeridos |
 | ----- | ---- | -------------------------------- | ------------------------ |
-| **1 — Assets** | `/assets` | Catálogo de ativos em `carteira.db` de teste | BRL: `BBSE3`, FII, ETF RF `AUVP11`, RF manual, previdência; USD: `VOO`, `BTC-USD` |
-| **2 — Portfolios** | `/portfolios` | Carteira ativa com posições no banco único | Carteira «E2E Principal»; posições mercado e manuais ligadas aos ativos da etapa 1 |
+| **1 — Assets** | `/assets` | Catálogo de ativos de **mercado** em `carteira.db` de teste | BRL: `BBSE3`, FII, ETF RF `AUVP11`; USD: `VOO`, `BTC-USD` (renda fixa tradicional e previdência **não** ficam aqui) |
+| **2 — Portfolios** | `/portfolios` | Carteira ativa com posições no banco único | Carteira «E2E Principal»; posições de mercado ligadas aos ativos da etapa 1; renda fixa/previdência cadastradas direto no modal **Adicionar ativo à carteira** (produto + posição numa ação) |
 | **3 — Consolidada** | `/portfolios/consolidada` | Mesma carteira ativa, cotações e FX | Filtros, cartões BRL/USD, ícone `$` em USD, consolidado em reais |
 
 ## Estado compartilhado entre casos
