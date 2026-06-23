@@ -16,7 +16,7 @@ Comparar alocação **atual** vs. **desejada** da carteira ativa, calcular **FAL
 
 ## Fora do escopo
 
-- Sugestão por ativo em **crypto** (sem módulo de análise).
+- Sugestão por ativo em **crypto** via perfil `crypto` em `/analise/criptomoedas` (alocação manual, soma 100%).
 - Card de aderência no dashboard (Tier 3).
 - Preço teto e recomendação compra/venda.
 
@@ -28,7 +28,7 @@ Comparar alocação **atual** vs. **desejada** da carteira ativa, calcular **FAL
 | Fundos | `funds` | 5 |
 | Internacional | `international` | 20 |
 | Renda fixa | `fixed_income` | 40 |
-| Bitcoin | `crypto` | 5 |
+| Criptomoeda | `crypto` | 5 |
 
 Relação ETF/Ação dentro de `stocks`: **70% / 30%**.
 

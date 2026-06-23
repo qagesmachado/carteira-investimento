@@ -5,21 +5,25 @@
   import {
     createCryptoFee,
     deleteCryptoFee,
-    getBitcoinSnapshot,
+    getCryptoSnapshot,
     listCryptoFees,
     updateCryptoFee,
-    type BitcoinSnapshot,
     type CryptoFee,
-    type CryptoFeeCreate
+    type CryptoFeeCreate,
+    type CryptoSnapshot
   } from '$lib/api/cryptoFees';
   import { parseApiError } from '$lib/api/parseApiError';
   import {
     getActivePortfolioId,
     listPortfolios,
+    setActivePortfolioId,
     type Portfolio
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import PageHeader from '$lib/components/PageHeader.svelte';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
+  import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
+  import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
   import BitcoinSummaryCards from '$lib/features/bitcoin/BitcoinSummaryCards.svelte';
   import CryptoFeeForm from '$lib/features/bitcoin/CryptoFeeForm.svelte';
   import CryptoFeeList from '$lib/features/bitcoin/CryptoFeeList.svelte';
@@ -28,7 +32,7 @@
   let portfolios: Portfolio[] = [];
   let activePortfolioId: number | null = null;
   let fees: CryptoFee[] = [];
-  let snapshot: BitcoinSnapshot | null = null;
+  let snapshot: CryptoSnapshot | null = null;
   let editingFee: CryptoFee | null = null;
   let loading = false;
   let error = '';
@@ -42,7 +46,7 @@
     }
     const [feeList, snap] = await Promise.all([
       listCryptoFees({ portfolio_id: activePortfolioId }),
-      getBitcoinSnapshot(activePortfolioId)
+      getCryptoSnapshot(activePortfolioId)
     ]);
     fees = feeList;
     snapshot = snap;
@@ -58,20 +62,24 @@
       ]);
       assets = assetsResult;
       portfolios = portfoliosResult;
-      activePortfolioId = activeResult;
+      activePortfolioId = resolveActivePortfolioId(activeResult, portfoliosResult);
       await refreshData();
     } catch (err) {
-      error = parseApiError(err, 'Não foi possível carregar a página Bitcoin.');
+      error = parseApiError(err, 'Não foi possível carregar a página Criptomoedas.');
     }
   }
 
   onMount(loadInitial);
 
-  async function handlePortfolioChange(id: number | null) {
+  async function handlePortfolioChange(id: number) {
+    if (id === activePortfolioId) {
+      return;
+    }
     activePortfolioId = id;
     editingFee = null;
     message = '';
     try {
+      await setActivePortfolioId(id);
       await refreshData();
     } catch (err) {
       error = parseApiError(err, 'Não foi possível atualizar os dados.');
@@ -122,23 +130,23 @@
 </script>
 
 <svelte:head>
-  <title>Bitcoin — Carteira de Investimentos</title>
+  <title>Criptomoedas — Carteira de Investimentos</title>
 </svelte:head>
 
 <div class="space-y-6">
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <h2 class="text-xl font-semibold">Bitcoin</h2>
-      <p class="text-sm opacity-70">
-        Posição em BTC e histórico de taxas de compra e transferência.
-      </p>
+  <PageHeader
+    title="Criptomoedas"
+    subtitle="Taxas de compra e transferência para criptoativos nativos (ex.: BTC-USD). ETFs de cripto usam a alocação em Análise → Criptomoedas."
+  >
+    <div slot="actions">
+      <PortfolioSelect
+        testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
+        {portfolios}
+        activeId={activePortfolioId}
+        on:select={(event) => handlePortfolioChange(event.detail)}
+      />
     </div>
-    <PortfolioSelect
-      {portfolios}
-      activeId={activePortfolioId}
-      on:select={(event) => handlePortfolioChange(event.detail)}
-    />
-  </div>
+  </PageHeader>
 
   {#if error}
     <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />

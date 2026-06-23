@@ -22,12 +22,13 @@
   import AssetRebalanceTable from '$lib/features/rebalance/AssetRebalanceTable.svelte';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
 
-  type AssetGroupTab = 'stocks' | 'international' | 'funds';
+  type AssetGroupTab = 'stocks' | 'international' | 'funds' | 'crypto';
 
   const ASSET_GROUP_TABS: { id: AssetGroupTab; label: string }[] = [
     { id: 'stocks', label: 'Ações/ETF BR' },
     { id: 'international', label: 'ETF internacional' },
-    { id: 'funds', label: 'FII' }
+    { id: 'funds', label: 'FII' },
+    { id: 'crypto', label: 'Criptomoedas' }
   ];
 
   let portfolios: Portfolio[] = [];
@@ -44,13 +45,17 @@
       ? (snapshot?.stock_assets ?? [])
       : assetGroupTab === 'international'
         ? (snapshot?.international_assets ?? [])
-        : (snapshot?.fund_assets ?? []);
+        : assetGroupTab === 'crypto'
+          ? (snapshot?.crypto_assets ?? [])
+          : (snapshot?.fund_assets ?? []);
   $: activeAssetEmptyMessage =
     assetGroupTab === 'stocks'
       ? 'Nenhuma posição em Ações/ETF BR nesta carteira.'
       : assetGroupTab === 'international'
         ? 'Nenhuma posição em ETF internacional nesta carteira.'
-        : 'Nenhuma posição em FII nesta carteira.';
+        : assetGroupTab === 'crypto'
+          ? 'Nenhuma posição na estratégia Criptomoeda nesta carteira.'
+          : 'Nenhuma posição em FII nesta carteira.';
 
   $: projectedTotalGap =
     snapshot != null && finalPatrimonyInput > 0
@@ -261,6 +266,12 @@
         <DismissibleAlert
           variant="warning"
           text="Há {snapshot.fund_assets_without_score_count} FII(s) sem pontuação (Soma). Classifique em Análise de ativos (aba FIIs) para calcular % desejada."
+        />
+      {/if}
+      {#if assetGroupTab === 'crypto' && snapshot.crypto_assets_without_allocation_count > 0}
+        <DismissibleAlert
+          variant="warning"
+          text="Há {snapshot.crypto_assets_without_allocation_count} ativo(s) sem alocação definida. Configure em Análise → Criptomoedas."
         />
       {/if}
       {#if assetGroupTab === 'international' && snapshot.usd_brl_rate == null}

@@ -13,6 +13,7 @@ from app.services.analysis_engine import (
 PROFILE_STOCK_BR = "stock_br"
 PROFILE_FII_BR = "fii_br"
 PROFILE_ETF_INTL = "etf_intl"
+PROFILE_CRYPTO = "crypto"
 
 TARGET_PERCENT_CODE = "target_percent"
 ANALYSIS_LINK_CODE = "analysis_link"
@@ -415,6 +416,37 @@ def default_etf_intl_criteria() -> list[CriterionDefinition]:
 
 
 def default_etf_intl_table_display() -> TableDisplaySettings:
+    settings = TableDisplaySettings()
+    settings.sum_column.enabled = False
+    return settings
+
+
+def default_crypto_criteria() -> list[CriterionDefinition]:
+    return [
+        CriterionDefinition(
+            code=TARGET_PERCENT_CODE,
+            block=AnalysisBlock.ALLOCATION,
+            label="% desejado",
+            help_text="Percentual desejado dentro da estratégia Criptomoeda (soma 100%).",
+            weight=1.0,
+            sort_order=1,
+            input_type="percent",
+            score_options=[],
+        ),
+        CriterionDefinition(
+            code=ANALYSIS_LINK_CODE,
+            block=AnalysisBlock.ALLOCATION,
+            label="Link de análise",
+            help_text="Referência externa para análise do ativo.",
+            weight=1.0,
+            sort_order=2,
+            input_type="url",
+            score_options=[],
+        ),
+    ]
+
+
+def default_crypto_table_display() -> TableDisplaySettings:
     settings = TableDisplaySettings()
     settings.sum_column.enabled = False
     return settings

@@ -11,6 +11,7 @@ export const TICKER_AUPO11 = 'AUPO11';
 export const TICKER_AUVP11 = 'AUVP11';
 export const TICKER_VOO = 'VOO';
 export const TICKER_BTC_USD = 'BTC-USD';
+export const TICKER_ABTC11 = 'ABTC11';
 export const TICKER_ITSA4 = 'ITSA4';
 export const TICKER_FLRY3 = 'FLRY3';
 export const TICKER_FESA4 = 'FESA4';

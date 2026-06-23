@@ -76,6 +76,17 @@ export async function saveEtfWithSubtypeRf(page: Page, ticker: string): Promise<
   await expect(row).toContainText('ETF');
 }
 
+export async function saveEtfWithSubtypeCrypto(page: Page, ticker: string): Promise<void> {
+  const form = reviewForm(page);
+  const subtype = form.getByLabel('Tipo do ETF nacional');
+  await expect(subtype).toBeVisible();
+  await subtype.selectOption('crypto');
+  await saveReviewForm(page);
+  const table = registeredAssetsTable(page);
+  const row = table.locator('tbody tr').filter({ hasText: ticker });
+  await expect(row).toContainText('ETF');
+}
+
 export async function dismissAlert(page: Page): Promise<void> {
   const alert = page.locator('[role="alert"]').first();
   await expect(alert).toBeVisible();

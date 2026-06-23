@@ -13,6 +13,7 @@ from app.schemas.analysis import (
     AssetScoresUpdate,
     BlockSummaryRead,
     CriterionDefinitionRead,
+    CryptoAllocationsBulkUpdate,
     EtfIntlAllocationsBulkUpdate,
     ScoreOptionRead,
     SegmentCatalogEntryRead,
@@ -23,7 +24,7 @@ from app.schemas.analysis import (
     ViabilityRuleRead,
     ViabilityResultRead,
 )
-from app.services.analysis_defaults import PROFILE_ETF_INTL, PROFILE_FII_BR, PROFILE_STOCK_BR
+from app.services.analysis_defaults import PROFILE_CRYPTO, PROFILE_ETF_INTL, PROFILE_FII_BR, PROFILE_STOCK_BR
 from app.services.analysis_service import (
     build_asset_analysis_read,
     get_profile_config,
@@ -34,11 +35,12 @@ from app.services.analysis_service import (
     reset_fii_br_segments,
     reset_stock_br_config,
     save_asset_scores,
+    save_crypto_allocations,
     save_etf_intl_allocations,
     save_profile_config,
     save_profile_segments,
 )
-from app.services.analysis_service import EtfIntlAllocationError
+from app.services.analysis_service import CryptoAllocationError, EtfIntlAllocationError
 from app.services.asset_service import infer_display_class
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
@@ -214,6 +216,41 @@ def post_fii_br_segments_reset(
     return [SegmentCatalogEntryRead(**s.model_dump()) for s in segments]
 
 
+_ANALYSIS_PROFILES = (PROFILE_STOCK_BR, PROFILE_FII_BR, PROFILE_ETF_INTL, PROFILE_CRYPTO)
+
+
+@router.get("/profiles/crypto/config", response_model=AnalysisConfigRead)
+def get_crypto_config(session: Annotated[Session, Depends(get_session)]) -> AnalysisConfigRead:
+    criteria, rules = get_profile_config(session, PROFILE_CRYPTO)
+    table_display = get_profile_table_display(session, PROFILE_CRYPTO)
+    return _config_to_read(PROFILE_CRYPTO, criteria, rules, table_display)
+
+
+@router.put("/profiles/crypto/allocations", response_model=list[AssetAnalysisRead])
+def put_crypto_allocations(
+    payload: CryptoAllocationsBulkUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[AssetAnalysisRead]:
+    try:
+        save_crypto_allocations(
+            session,
+            [a.model_dump() for a in payload.allocations],
+        )
+    except CryptoAllocationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    asset_ids = {a.asset_id for a in payload.allocations}
+    rows = list_assets_with_analysis(session, PROFILE_CRYPTO)
+    return [
+        _asset_analysis_to_read(asset, scores, score_refs, summary)
+        for asset, scores, score_refs, summary in rows
+        if asset.id in asset_ids
+    ]
+
+
 @router.get("/profiles/etf-intl/config", response_model=AnalysisConfigRead)
 def get_etf_intl_config(session: Annotated[Session, Depends(get_session)]) -> AnalysisConfigRead:
     criteria, rules = get_profile_config(session, PROFILE_ETF_INTL)
@@ -251,7 +288,7 @@ def get_analysis_assets(
     session: Annotated[Session, Depends(get_session)],
     profile: str = Query(default=PROFILE_STOCK_BR),
 ) -> list[AssetAnalysisRead]:
-    if profile not in (PROFILE_STOCK_BR, PROFILE_FII_BR, PROFILE_ETF_INTL):
+    if profile not in _ANALYSIS_PROFILES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile")
     rows = list_assets_with_analysis(session, profile)
     return [
@@ -266,7 +303,7 @@ def get_analysis_asset(
     session: Annotated[Session, Depends(get_session)],
     profile: str = Query(default=PROFILE_STOCK_BR),
 ) -> AssetAnalysisRead:
-    if profile not in (PROFILE_STOCK_BR, PROFILE_FII_BR, PROFILE_ETF_INTL):
+    if profile not in _ANALYSIS_PROFILES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile")
     asset = session.get(Asset, asset_id)
     if not asset:
@@ -283,7 +320,7 @@ def put_analysis_asset_scores(
     session: Annotated[Session, Depends(get_session)],
     profile: str = Query(default=PROFILE_STOCK_BR),
 ) -> AssetAnalysisRead:
-    if profile not in (PROFILE_STOCK_BR, PROFILE_FII_BR, PROFILE_ETF_INTL):
+    if profile not in _ANALYSIS_PROFILES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile")
     asset = session.get(Asset, asset_id)
     if not asset:

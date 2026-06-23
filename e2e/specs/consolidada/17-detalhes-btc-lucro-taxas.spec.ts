@@ -23,7 +23,8 @@ test.describe('UI-CNS-018', () => {
 
   test('exibe Lucro − taxas no painel de detalhes do BTC', async ({ page }) => {
     const snapshotResponse = page.waitForResponse(
-      (r) => r.url().includes('/bitcoin-snapshot') && r.ok()
+      (r) =>
+        (r.url().includes('/crypto-snapshot') || r.url().includes('/bitcoin-snapshot')) && r.ok()
     );
     await gotoConsolidadaPage(page);
     await snapshotResponse;

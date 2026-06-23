@@ -10,6 +10,7 @@
   export let selectClass = 'select select-bordered select-sm w-full max-w-xs';
   export let ariaLabel = 'Selecionar carteira';
   export let emptyOptionLabel = 'Nenhuma carteira';
+  export let testId: string | undefined = undefined;
 
   const dispatch = createEventDispatcher<{ select: number }>();
 
@@ -28,6 +29,7 @@
   class={selectClass}
   {disabled}
   value={selectValue}
+  data-testid={testId}
   on:change={handleChange}
   aria-label={ariaLabel}
 >

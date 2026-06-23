@@ -111,6 +111,10 @@ class EtfIntlAllocationsBulkUpdate(BaseModel):
     allocations: list[EtfIntlAllocationUpdate] = Field(min_length=1)
 
 
+class CryptoAllocationsBulkUpdate(BaseModel):
+    allocations: list[EtfIntlAllocationUpdate] = Field(min_length=1)
+
+
 class SegmentCatalogEntryRead(BaseModel):
     slug: str
     name: str

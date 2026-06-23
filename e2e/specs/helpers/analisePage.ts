@@ -5,6 +5,7 @@ import {
   isApiAnalysisConfigGetResponse,
   isApiAnalysisConfigPutResponse,
   isApiAnalysisScoresPutResponse,
+  isApiCryptoAllocationsPutResponse,
   isApiEtfIntlAllocationsPutResponse,
   isApiFiiSegmentsGetResponse
 } from './apiResponses';
@@ -24,6 +25,33 @@ export async function gotoInternacionalPage(page: Page): Promise<void> {
   );
   await page.goto('/analise/internacional');
   await assetsResponse;
+}
+
+export async function gotoCriptomoedasPage(page: Page): Promise<void> {
+  const assetsResponse = page.waitForResponse(
+    (r) => isApiAnalysisAssetsListResponse(r) && r.url().includes('profile=crypto') && r.ok()
+  );
+  await page.goto('/analise/criptomoedas');
+  await assetsResponse;
+}
+
+export function cryptoAnalysisTableSection(page: Page): Locator {
+  return page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Criptomoedas' }) });
+}
+
+export function cryptoAnalysisTable(page: Page): Locator {
+  return cryptoAnalysisTableSection(page).locator('table tbody');
+}
+
+export function cryptoAnalysisRow(page: Page, ticker: string): Locator {
+  return cryptoAnalysisTable(page).locator('tr').filter({ hasText: ticker }).first();
+}
+
+export async function saveCryptoAllocation(page: Page): Promise<void> {
+  const saveResponse = page.waitForResponse((r) => isApiCryptoAllocationsPutResponse(r) && r.ok());
+  await page.getByRole('button', { name: 'Salvar alocação' }).click();
+  await saveResponse;
+  await expect(page.getByText('Alocação salva com sucesso.')).toBeVisible();
 }
 
 export async function gotoFiisPage(page: Page): Promise<void> {

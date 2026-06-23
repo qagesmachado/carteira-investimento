@@ -2,7 +2,7 @@ import { test as base, expect } from '@playwright/test';
 
 import { setWorkerEnv, type WorkerEnv } from '../helpers/workerContext';
 
-const { getWorkerEnv } = require('../../worker-env');
+const { getWorkerEnv, E2E_WORKER_COUNT } = require('../../worker-env');
 
 type WorkerFixtures = {
   workerEnv: WorkerEnv;
@@ -12,7 +12,9 @@ type WorkerFixtures = {
 export const test = base.extend<WorkerFixtures>({
   workerEnv: [
     async ({}, use, workerInfo) => {
-      const env = getWorkerEnv(workerInfo.workerIndex) as WorkerEnv;
+      // workerIndex cresce quando o Playwright recicla processos; mapear para slots de servidor.
+      const slot = workerInfo.workerIndex % E2E_WORKER_COUNT;
+      const env = getWorkerEnv(slot) as WorkerEnv;
       setWorkerEnv(env);
       await use(env);
     },

@@ -151,14 +151,24 @@ export async function deleteCryptoFee(id: number, fetcher: ApiFetcher = apiFetch
   }
 }
 
+export type CryptoSnapshot = BitcoinSnapshot;
+
 export async function getBitcoinSnapshot(
   portfolioId: number,
   assetId?: number,
   fetcher: ApiFetcher = apiFetch
 ): Promise<BitcoinSnapshot> {
+  return getCryptoSnapshot(portfolioId, assetId, fetcher);
+}
+
+export async function getCryptoSnapshot(
+  portfolioId: number,
+  assetId?: number,
+  fetcher: ApiFetcher = apiFetch
+): Promise<CryptoSnapshot> {
   const search = assetId != null ? `?asset_id=${assetId}` : '';
   const response = await fetcher(
-    `${API_BASE_URL}/portfolios/${portfolioId}/bitcoin-snapshot${search}`
+    `${API_BASE_URL}/portfolios/${portfolioId}/crypto-snapshot${search}`
   );
   return parseResponse(response);
 }

@@ -14,11 +14,14 @@ from app.models.analysis import (
 from app.models.asset import Asset, DisplayClass
 from app.services.analysis_defaults import (
     ANALYSIS_LINK_CODE,
+    PROFILE_CRYPTO,
     PROFILE_ETF_INTL,
     PROFILE_FII_BR,
     PROFILE_STOCK_BR,
     TARGET_PERCENT_CODE,
     SegmentCatalogEntry,
+    default_crypto_criteria,
+    default_crypto_table_display,
     default_etf_intl_criteria,
     default_etf_intl_table_display,
     default_fii_br_criteria,
@@ -291,6 +294,22 @@ def seed_etf_intl_config(session: Session) -> None:
             session.rollback()
 
 
+def seed_crypto_config(session: Session) -> None:
+    rows = session.exec(
+        select(AnalysisCriterionDefinition).where(
+            AnalysisCriterionDefinition.profile == PROFILE_CRYPTO
+        )
+    ).all()
+    if not rows:
+        for c in default_crypto_criteria():
+            session.add(_criterion_to_db(c, PROFILE_CRYPTO))
+        _ensure_profile_table_display(session, PROFILE_CRYPTO, default_crypto_table_display)
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+
+
 def seed_fii_br_config(session: Session) -> None:
     rows = session.exec(
         select(AnalysisCriterionDefinition).where(AnalysisCriterionDefinition.profile == PROFILE_FII_BR)
@@ -448,6 +467,8 @@ def _table_display_defaults_for_profile(profile: str):
         return default_fii_br_table_display
     if profile == PROFILE_ETF_INTL:
         return default_etf_intl_table_display
+    if profile == PROFILE_CRYPTO:
+        return default_crypto_table_display
     return default_stock_br_table_display
 
 
@@ -483,6 +504,8 @@ def get_profile_table_display(session: Session, profile: str) -> TableDisplaySet
         seed_fii_br_config(session)
     elif profile == PROFILE_ETF_INTL:
         seed_etf_intl_config(session)
+    elif profile == PROFILE_CRYPTO:
+        seed_crypto_config(session)
 
     row = session.get(AnalysisProfileSettings, profile)
     if not row:
@@ -523,6 +546,8 @@ def get_profile_config(session: Session, profile: str) -> tuple[list[CriterionDe
         seed_fii_br_config(session)
     elif profile == PROFILE_ETF_INTL:
         seed_etf_intl_config(session)
+    elif profile == PROFILE_CRYPTO:
+        seed_crypto_config(session)
 
     criteria_rows = session.exec(
         select(AnalysisCriterionDefinition)
@@ -591,6 +616,13 @@ def list_eligible_assets(session: Session, profile: str) -> list[Asset]:
             for a in assets
             if infer_display_class(a.asset_type, a.market, a.etf_subtype)
             == DisplayClass.INTERNATIONAL
+        ]
+    if profile == PROFILE_CRYPTO:
+        return [
+            a
+            for a in assets
+            if infer_display_class(a.asset_type, a.market, a.etf_subtype)
+            == DisplayClass.CRYPTO
         ]
     return list(assets)
 
@@ -682,6 +714,48 @@ def _upsert_score_ref(
                 value_text=value_text,
             )
         )
+
+
+class CryptoAllocationError(ValueError):
+    pass
+
+
+def save_crypto_allocations(
+    session: Session,
+    allocations: list[dict],
+) -> None:
+    if not allocations:
+        raise CryptoAllocationError("At least one allocation is required")
+
+    total = sum(float(item["target_percent"]) for item in allocations)
+    if abs(total - 100.0) > 0.01:
+        raise CryptoAllocationError("target_percent allocations must sum to 100")
+
+    for item in allocations:
+        asset_id = int(item["asset_id"])
+        asset = session.get(Asset, asset_id)
+        if asset is None:
+            raise CryptoAllocationError(f"Asset not found: {asset_id}")
+        display_class = infer_display_class(asset.asset_type, asset.market, asset.etf_subtype)
+        if display_class != DisplayClass.CRYPTO:
+            raise CryptoAllocationError(f"Asset {asset_id} is not in the crypto strategy")
+
+        target_pct = float(item["target_percent"])
+        if target_pct < 0 or target_pct > 100:
+            raise CryptoAllocationError(f"Invalid target_percent for asset {asset_id}")
+
+        link = item.get("analysis_link")
+        link_text = link.strip() if isinstance(link, str) and link.strip() else None
+
+        _upsert_score_ref(
+            session,
+            asset_id,
+            TARGET_PERCENT_CODE,
+            f"{target_pct:.4f}".rstrip("0").rstrip("."),
+        )
+        _upsert_score_ref(session, asset_id, ANALYSIS_LINK_CODE, link_text)
+
+    session.commit()
 
 
 def save_etf_intl_allocations(

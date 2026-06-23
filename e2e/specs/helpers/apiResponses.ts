@@ -194,6 +194,15 @@ export function isApiDataExportFullResponse(response: Response): boolean {
   );
 }
 
+export function isApiCryptoAllocationsPutResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === apiOrigin() &&
+    url.pathname === '/analysis/profiles/crypto/allocations' &&
+    response.request().method() === 'PUT'
+  );
+}
+
 export function isApiEtfIntlAllocationsPutResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (
@@ -209,7 +218,8 @@ export function isApiAnalysisConfigGetResponse(response: Response): boolean {
     url.origin === apiOrigin() &&
     (url.pathname === '/analysis/profiles/stock-br/config' ||
       url.pathname === '/analysis/profiles/fii-br/config' ||
-      url.pathname === '/analysis/profiles/etf-intl/config') &&
+      url.pathname === '/analysis/profiles/etf-intl/config' ||
+      url.pathname === '/analysis/profiles/crypto/config') &&
     response.request().method() === 'GET'
   );
 }

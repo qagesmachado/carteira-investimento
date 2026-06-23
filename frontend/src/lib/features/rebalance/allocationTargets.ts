@@ -35,7 +35,7 @@ export const CLASS_TARGET_FIELDS: { key: keyof ClassTargets; label: string }[] =
   { key: 'funds', label: 'Fundos' },
   { key: 'international', label: 'Internacional' },
   { key: 'fixed_income', label: 'Renda fixa' },
-  { key: 'crypto', label: 'Bitcoin' }
+  { key: 'crypto', label: 'Criptomoeda' }
 ];
 
 export function defaultAllocationTargets(): AllocationTargets {

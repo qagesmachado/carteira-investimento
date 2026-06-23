@@ -26,7 +26,7 @@ Neste momento não há decisão de stack, banco de dados, framework ou arquitetu
 - [Rebalanceamento](produto/desenvolvido/rebalanceamento.md): metas por classe, ETF/Ação e score por ativo (implementado).
 - [Classificação de ativos — Ações/ETF BR](produto/desenvolvido/classificacao-ativos-acoes-br.md): análise fundamentalista e diagrama (implementado).
 - [Classificação de ativos — FIIs](produto/desenvolvido/classificacao-ativos-fiis.md): viabilidade, diagrama FIIs e catálogo de segmentos (implementado).
-- [Classificação de ativos — ETF internacional](produto/desenvolvido/classificacao-ativos-etf-intl.md): alocação percentual manual e link externo (implementado).
+- [Análise — Criptomoedas](produto/desenvolvido/analise-criptomoedas.md): alocação percentual por ativo na classe Criptomoeda (implementado).
 
 **Cadastro**
 
@@ -40,9 +40,10 @@ Neste momento não há decisão de stack, banco de dados, framework ou arquitetu
 
 - [Objetivos financeiros](produto/desenvolvido/objetivos-financeiros.md): alocação parcial por objetivo em `/ferramentas/objetivos` (implementado).
 - [Controle de aporte previdenciário](produto/desenvolvido/controle-aporte-previdencia.md): meta anual PGBL na modalidade de objetivo (implementado).
-- [Bitcoin e taxas](produto/desenvolvido/bitcoin-taxas.md): posição BTC e histórico de taxas em `/ferramentas/bitcoin` (implementado).
+- [Criptomoedas — estratégia e taxas](produto/desenvolvido/criptomoedas.md): classificação, taxas e snapshot em `/ferramentas/criptomoedas` (implementado).
 - [Controle de financiamento imóvel](produto/desenvolvido/controle-financiamento-imovel.md): ferramenta por carteira para bolso vs aluguel (implementado).
 - [Cálculo de preço médio](produto/desenvolvido/calculo-preco-medio.md): calculadora ponderada em Ferramentas (implementado).
+- [Controle de patrimônio](produto/desenvolvido/controle-patrimonio.md): patrimônio investido + reserva/espécie manual por carteira (implementado).
 
 **Transversal**
 

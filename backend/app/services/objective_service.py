@@ -21,6 +21,7 @@ from app.schemas.objective import (
     AssetDivergenceRead,
     AssetPartitionRead,
     ObjectiveAllocationItem,
+    ObjectiveAllocationPurposeUpdate,
     ObjectiveAllocationRead,
     ObjectiveCreate,
     ObjectiveRead,
@@ -32,10 +33,12 @@ from app.schemas.objective import (
     PensionYearCreate,
     PensionYearUpdate,
 )
+from app.services.allocation_purpose import apply_allocation_purpose_flags
 from app.services.pension_contribution_engine import compute_pension_contribution_metrics
 from app.services.asset_service import get_asset_by_id
 from app.services.fx_service import get_usd_brl_state
 from app.services.objective_divergence import compute_divergence
+from app.services.portfolio_patrimony import compute_portfolio_patrimony_brl
 from app.services.portfolio_service import get_portfolio, list_positions
 from app.services.position_metrics import (
     position_current_value,
@@ -593,6 +596,11 @@ def replace_objective_allocations(
             amount=item.amount if split_mode == "amount" else None,
             updated_at=now,
         )
+        apply_allocation_purpose_flags(
+            allocation,
+            exclude_from_rebalance=item.exclude_from_rebalance,
+            is_emergency_reserve=item.is_emergency_reserve,
+        )
         session.add(allocation)
 
     objective.updated_at = now
@@ -600,6 +608,36 @@ def replace_objective_allocations(
     session.commit()
     session.refresh(objective)
     return objective
+
+
+def update_allocation_purpose(
+    session: Session,
+    portfolio_id: int,
+    objective_id: int,
+    allocation_id: int,
+    payload: ObjectiveAllocationPurposeUpdate,
+) -> ObjectiveAllocation:
+    objective = get_objective(session, portfolio_id, objective_id)
+    if objective.is_default:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="default objective allocations cannot be edited",
+        )
+    allocation = session.get(ObjectiveAllocation, allocation_id)
+    if allocation is None or allocation.objective_id != objective_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="allocation not found")
+    apply_allocation_purpose_flags(
+        allocation,
+        exclude_from_rebalance=payload.exclude_from_rebalance,
+        is_emergency_reserve=payload.is_emergency_reserve,
+    )
+    allocation.updated_at = datetime.utcnow()
+    objective.updated_at = datetime.utcnow()
+    session.add(allocation)
+    session.add(objective)
+    session.commit()
+    session.refresh(allocation)
+    return allocation
 
 
 def _allocation_fraction(
@@ -683,6 +721,8 @@ def _build_allocation_read(
     amount: float | None,
     position: Position | None,
     usd_brl_rate: float | None,
+    exclude_from_rebalance: bool = False,
+    is_emergency_reserve: bool = False,
 ) -> ObjectiveAllocationRead:
     split_mode = split_mode_for_asset_type(asset.asset_type)
     current_value_brl, invested_value_brl, profit_brl, profit_percent = _allocation_financial_metrics(
@@ -708,6 +748,8 @@ def _build_allocation_read(
         invested_value_brl=invested_value_brl,
         profit_brl=profit_brl,
         profit_percent=profit_percent,
+        exclude_from_rebalance=exclude_from_rebalance,
+        is_emergency_reserve=is_emergency_reserve,
     )
 
 
@@ -756,6 +798,8 @@ def _build_asset_partitions(
                         objective_name=objective.name,
                         slice_name=row.slice_name,
                         is_default=objective.is_default,
+                        exclude_from_rebalance=row.exclude_from_rebalance,
+                        is_emergency_reserve=row.is_emergency_reserve,
                         quantity=row.quantity,
                         amount=row.amount,
                         current_value_brl=row.current_value_brl,
@@ -821,6 +865,8 @@ def build_objectives_snapshot(session: Session, portfolio_id: int) -> Objectives
                     amount=allocation.amount,
                     position=position,
                     usd_brl_rate=usd_brl_rate,
+                    exclude_from_rebalance=allocation.exclude_from_rebalance,
+                    is_emergency_reserve=allocation.is_emergency_reserve,
                 ),
             )
 
@@ -828,14 +874,10 @@ def build_objectives_snapshot(session: Session, portfolio_id: int) -> Objectives
     default_objective = next(obj for obj in objectives if obj.is_default)
     default_rows: list[ObjectiveAllocationRead] = []
 
-    patrimony_brl = 0.0
+    patrimony_brl = compute_portfolio_patrimony_brl(session, portfolio_id)
+
     for position in positions:
         asset = get_asset_by_id(session, position.asset_id)
-        full_value = position_current_value(position, asset)
-        brl = value_in_brl(full_value, asset.currency, usd_brl_rate)
-        if brl is not None:
-            patrimony_brl += brl
-
         total = position_allocation_total(position, asset)
         if total is None:
             continue

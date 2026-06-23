@@ -140,14 +140,23 @@ def get_portfolio_rebalance(
     return build_rebalance_snapshot(session, session, portfolio_id)
 
 
-@router.get("/{portfolio_id}/bitcoin-snapshot", response_model=BitcoinSnapshotRead)
-def get_portfolio_bitcoin_snapshot(
+@router.get("/{portfolio_id}/crypto-snapshot", response_model=BitcoinSnapshotRead)
+def get_portfolio_crypto_snapshot(
     portfolio_id: int,
     session: Annotated[Session, Depends(get_session)],
     asset_id: int | None = Query(default=None),
 ) -> BitcoinSnapshotRead:
     get_portfolio(session, portfolio_id)
     return build_bitcoin_snapshot(session, session, portfolio_id, asset_id=asset_id)
+
+
+@router.get("/{portfolio_id}/bitcoin-snapshot", response_model=BitcoinSnapshotRead)
+def get_portfolio_bitcoin_snapshot(
+    portfolio_id: int,
+    session: Annotated[Session, Depends(get_session)],
+    asset_id: int | None = Query(default=None),
+) -> BitcoinSnapshotRead:
+    return get_portfolio_crypto_snapshot(portfolio_id, session, asset_id=asset_id)
 
 
 @router.get("/{portfolio_id}/positions", response_model=list[PositionRead])

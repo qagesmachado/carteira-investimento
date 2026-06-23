@@ -50,6 +50,8 @@
   } from '$lib/features/portfolios/positionTableView';
   import AssetAnalysisPanel from '$lib/features/analise/AssetAnalysisPanel.svelte';
   import PositionDetailPanel from '$lib/features/portfolios/PositionDetailPanel.svelte';
+  import { findAssetPartition } from '$lib/features/portfolios/positionPurpose';
+  import { getObjectivesSnapshot, type ObjectivesSnapshot } from '$lib/api/objetivos';
   import PositionEditModal from '$lib/features/portfolios/PositionEditModal.svelte';
   import FixedIncomePositionEditModal from '$lib/features/portfolios/FixedIncomePositionEditModal.svelte';
   import PortfolioAddAssetModal from '$lib/features/portfolios/PortfolioAddAssetModal.svelte';
@@ -81,6 +83,7 @@
   let analysisPanelOpen = false;
   let analysisSaving = false;
   let analysisAsset: AssetAnalysis | null = null;
+  let objectivesSnapshot: ObjectivesSnapshot | null = null;
 
   $: activePortfolio = portfolios.find((p) => p.id === activeId) ?? null;
   $: if (activePortfolio && !editingPortfolioName) {
@@ -143,6 +146,14 @@
     return formatMoneyAmount(value, currency);
   }
 
+  async function loadObjectivesSnapshot(portfolioId: number) {
+    try {
+      objectivesSnapshot = await getObjectivesSnapshot(portfolioId);
+    } catch {
+      objectivesSnapshot = null;
+    }
+  }
+
   async function syncActiveAndPositions() {
     let serverActiveId = await getActivePortfolioId();
     if (serverActiveId != null && !portfolios.some((p) => p.id === serverActiveId)) {
@@ -155,9 +166,15 @@
     }
     if (activeId != null) {
       positions = await listPositions(activeId);
+      await loadObjectivesSnapshot(activeId);
     } else {
       positions = [];
+      objectivesSnapshot = null;
     }
+  }
+
+  function assetPartitionFor(assetId: number) {
+    return findAssetPartition(objectivesSnapshot?.asset_partitions ?? [], assetId) ?? null;
   }
 
   async function refresh() {
@@ -678,6 +695,7 @@
                           <PositionDetailPanel
                             {position}
                             {asset}
+                            assetPartition={assetPartitionFor(asset.id)}
                             panelId={positionDetailPanelId(position.id)}
                           />
                         </td>

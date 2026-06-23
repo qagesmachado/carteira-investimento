@@ -10,9 +10,9 @@ A barra de navegação organiza as áreas implementadas nesta ordem e hierarquia
 | ----- | ---- | ----- | ----- |
 | 1 | Dashboard | — | `/dashboard` |
 | 2 | Visão consolidada | — | `/portfolios/consolidada` |
-| 3 | Alocação | Rebalanceamento · Análise de ativos | `/rebalanceamento` · `/analise` |
+| 3 | Alocação | Rebalanceamento · Análise de ativos (Ações, FII, ETF intl., **Criptomoedas**) | `/rebalanceamento` · `/analise` · `/analise/criptomoedas` |
 | 4 | Cadastro | Ativos · Carteiras · Proventos · Dados | `/assets` · `/portfolios` · `/proventos` · `/dados` |
-| 5 | Ferramentas | Gerenciamento de objetivos · Taxas bitcoin · Financiamento imóvel · Cálculo de preço médio | `/ferramentas/objetivos` · `/ferramentas/bitcoin` · `/ferramentas/financiamento-imovel` · `/ferramentas/calculo-preco-medio` |
+| 5 | Ferramentas | Gerenciamento de objetivos · Taxas cripto · Financiamento imóvel · Cálculo de preço médio · Controle de patrimônio | `/ferramentas/objetivos` · `/ferramentas/criptomoedas` · `/ferramentas/financiamento-imovel` · `/ferramentas/calculo-preco-medio` · `/ferramentas/controle-patrimonio` |
 
 As seções numeradas a seguir descrevem os módulos por domínio (origem na planilha) e podem ser lidas independentemente da posição no menu.
 
@@ -345,7 +345,7 @@ Origem na planilha:
 - `Bitcoin`
 - `Bitcoin taxas`
 
-**Status:** parcial — `/ferramentas/bitcoin` com posição, taxas CRUD e snapshot; ver [bitcoin-taxas.md](desenvolvido/bitcoin-taxas.md).
+**Status:** parcial — `/ferramentas/criptomoedas` com posição, taxas CRUD e snapshot multi-ativo; ver [criptomoedas.md](desenvolvido/criptomoedas.md) e [analise-criptomoedas.md](desenvolvido/analise-criptomoedas.md).
 
 Objetivo: acompanhar posição em BTC e custos de movimentação.
 
@@ -452,6 +452,18 @@ Funcionalidades:
 - Informar dois lotes (quantidade + preço médio) e ver quantidade total, preço médio e valor investido.
 - Pré-preencher Lote 1 a partir de posição de mercado da carteira ativa.
 - Sem persistência — resultado para uso manual na edição de posição.
+
+## 16. Ferramentas — controle de patrimônio
+
+Detalhamento: **[desenvolvido/controle-patrimonio.md](desenvolvido/controle-patrimonio.md)** (implementado).
+
+**Status:** implementado — `/ferramentas/controle-patrimonio` com patrimônio investido automático e cadastro manual de reserva de emergência (banco, corretora ou dinheiro em espécie) por carteira.
+
+Funcionalidades:
+
+- Exibir patrimônio investido (todas as posições) e total geral (investido + manual).
+- CRUD de reserva de emergência com localização (Banco, Dinheiro em espécie, Corretora).
+- Cards de resumo por categoria.
 
 ## Priorização inicial sugerida
 

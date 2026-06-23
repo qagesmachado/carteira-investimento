@@ -26,7 +26,7 @@ test.describe('UI-NAV-002', () => {
     await expect(header.getByRole('link', { name: 'Rebalanceamento' })).toBeVisible();
     await expect(header.getByRole('link', { name: 'Análise de ativos' })).toBeVisible();
     await expect(header.getByRole('link', { name: 'Gerenciamento de objetivos' })).toHaveCount(0);
-    await expect(header.getByRole('link', { name: 'Taxas bitcoin' })).toHaveCount(0);
+    await expect(header.getByRole('link', { name: 'Taxas cripto' })).toHaveCount(0);
   });
 
   test('Ferramentas abre Gerenciamento de objetivos em /ferramentas/objetivos', async ({ page }) => {
@@ -37,11 +37,11 @@ test.describe('UI-NAV-002', () => {
     await expect(page.getByRole('heading', { name: 'Objetivos financeiros' })).toBeVisible();
   });
 
-  test('Ferramentas abre Taxas bitcoin em /ferramentas/bitcoin', async ({ page }) => {
+  test('Ferramentas abre Taxas cripto em /ferramentas/criptomoedas', async ({ page }) => {
     await gotoDashboardPage(page);
     await openNavMenu(page, 'Ferramentas');
-    await page.locator('header').getByRole('link', { name: 'Taxas bitcoin' }).click();
-    await expect(page).toHaveURL(/\/ferramentas\/bitcoin$/);
-    await expect(page.getByRole('heading', { name: 'Bitcoin' })).toBeVisible();
+    await page.locator('header').getByRole('link', { name: 'Taxas cripto' }).click();
+    await expect(page).toHaveURL(/\/ferramentas\/criptomoedas$/);
+    await expect(page.getByRole('heading', { name: 'Criptomoedas', level: 2 })).toBeVisible();
   });
 });

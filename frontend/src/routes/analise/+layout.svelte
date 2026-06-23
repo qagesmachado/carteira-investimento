@@ -7,14 +7,17 @@
   $: isFiisTab =
     pathname.startsWith('/analise/fiis') && !pathname.startsWith('/analise/fiis/internacional');
   $: isInternacionalTab = pathname.startsWith('/analise/internacional');
+  $: isCriptoTab = pathname.startsWith('/analise/criptomoedas');
   $: isConfigTab = pathname.startsWith('/analise/configuracao');
   $: subtitle = isConfigTab
     ? 'Configuração da coluna Soma para ações/ETF BR e FIIs.'
     : isFiisTab
       ? 'Classificação de viabilidade e diagrama para fundos imobiliários.'
-      : isInternacionalTab
-        ? 'Alocação percentual de ETFs internacionais.'
-        : 'Classificação fundamental e diagrama para ações/ETF BR.';
+      : isCriptoTab
+        ? 'Alocação percentual na estratégia Criptomoeda.'
+        : isInternacionalTab
+          ? 'Alocação percentual de ETFs internacionais.'
+          : 'Classificação fundamental e diagrama para ações/ETF BR.';
 
   function goToConfig() {
     const perfil = isFiisTab ? '?perfil=fiis' : '';
@@ -52,6 +55,14 @@
         class:tab-active={isInternacionalTab}
         aria-selected={isInternacionalTab}
         on:click={() => goto('/analise/internacional')}>Internacional</button
+      >
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        class:tab-active={isCriptoTab}
+        aria-selected={isCriptoTab}
+        on:click={() => goto('/analise/criptomoedas')}>Criptomoedas</button
       >
       <button
         type="button"

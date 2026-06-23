@@ -32,5 +32,7 @@ class Objective(SQLModel, table=True):
     annual_gross_income_brl: float | None = None
     contributed_ytd_brl: float = 0.0
     status: ObjectiveStatus = ObjectiveStatus.ACTIVE
+    exclude_from_rebalance: bool = False
+    is_emergency_reserve: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

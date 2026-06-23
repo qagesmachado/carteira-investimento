@@ -10,7 +10,7 @@ from app.schemas.rebalance import (
     RebalanceSnapshotRead,
     StocksSubTypeRebalanceRowRead,
 )
-from app.services.analysis_defaults import PROFILE_ETF_INTL, PROFILE_FII_BR, PROFILE_STOCK_BR
+from app.services.analysis_defaults import PROFILE_CRYPTO, PROFILE_ETF_INTL, PROFILE_FII_BR, PROFILE_STOCK_BR
 from app.services.analysis_engine import compute_table_sum_score
 from app.services.analysis_service import (
     build_asset_analysis_read,
@@ -19,10 +19,15 @@ from app.services.analysis_service import (
 )
 from app.services.asset_service import get_asset_by_id, infer_display_class
 from app.services.fx_service import get_usd_brl_state
+from app.services.objective_investment import (
+    compute_excluded_rebalance_by_asset,
+    compute_rebalance_value_brl,
+)
 from app.services.portfolio_service import get_portfolio, list_positions
 from app.services.position_metrics import position_current_value, value_in_brl
 from app.services.rebalance_engine import (
     compute_class_rows,
+    compute_crypto_asset_rows,
     compute_fund_asset_rows,
     compute_international_asset_rows,
     compute_stock_asset_rows,
@@ -51,6 +56,11 @@ def build_rebalance_snapshot(
     targets = parse_allocation_targets(portfolio.allocation_targets_json)
     usd_brl_rate, _ = get_usd_brl_state(portfolios_session)
     positions = list_positions(portfolios_session, portfolio_id)
+    excluded_by_asset = compute_excluded_rebalance_by_asset(
+        portfolios_session,
+        portfolio_id,
+        usd_brl_rate=usd_brl_rate,
+    )
 
     current_by_class: dict[str, float] = {}
     current_by_sub: dict[str, float] = {"etf": 0.0, "stock": 0.0}
@@ -58,6 +68,7 @@ def build_rebalance_snapshot(
     stock_assets_input: list[dict] = []
     international_assets_input: list[dict] = []
     fund_assets_input: list[dict] = []
+    crypto_assets_input: list[dict] = []
 
     table_display = get_profile_table_display(assets_session, PROFILE_STOCK_BR)
     sum_settings = table_display.sum_column
@@ -70,6 +81,14 @@ def build_rebalance_snapshot(
             continue
         brl = _position_value_brl(position, asset, usd_brl_rate)
         if brl is None:
+            continue
+        brl = compute_rebalance_value_brl(
+            position,
+            asset,
+            usd_brl_rate=usd_brl_rate,
+            excluded_brl=excluded_by_asset.get(position.asset_id, 0.0),
+        )
+        if brl is None or brl <= 1e-9:
             continue
         display_class = infer_display_class(
             asset.asset_type, asset.market, asset.etf_subtype
@@ -133,6 +152,21 @@ def build_rebalance_snapshot(
                     "sum_score": sum_score,
                 }
             )
+        elif display_class == DisplayClass.CRYPTO.value:
+            scores, score_refs, _, _, _ = build_asset_analysis_read(
+                assets_session, asset, PROFILE_CRYPTO
+            )
+            target_percent = parse_target_percent_from_refs(score_refs)
+            crypto_assets_input.append(
+                {
+                    "asset_id": asset.id,
+                    "symbol": asset.symbol,
+                    "name": asset.name,
+                    "asset_type": asset.asset_type.value,
+                    "current_brl": brl,
+                    "target_percent": target_percent,
+                }
+            )
 
     class_rows = compute_class_rows(patrimony_brl, current_by_class, targets)
     stocks_current = current_by_class.get(DisplayClass.STOCKS.value, 0.0)
@@ -144,9 +178,11 @@ def build_rebalance_snapshot(
         patrimony_brl, international_assets_input, targets
     )
     fund_rows = compute_fund_asset_rows(patrimony_brl, fund_assets_input, targets)
+    crypto_rows = compute_crypto_asset_rows(patrimony_brl, crypto_assets_input, targets)
     total_gap = sum(r.gap_brl for r in class_rows)
     without_score = sum(1 for r in asset_rows if not r.score_included)
     fund_without_score = sum(1 for r in fund_rows if not r.score_included)
+    crypto_without_allocation = sum(1 for r in crypto_rows if not r.score_included)
 
     return RebalanceSnapshotRead(
         portfolio_id=portfolio_id,
@@ -224,7 +260,24 @@ def build_rebalance_snapshot(
             )
             for r in fund_rows
         ],
+        crypto_assets=[
+            AssetRebalanceRowRead(
+                asset_id=r.asset_id,
+                symbol=r.symbol,
+                name=r.name,
+                asset_type=r.asset_type,
+                current_value_brl=r.current_value_brl,
+                current_percent=r.current_percent,
+                target_percent=r.target_percent,
+                target_value_brl=r.target_value_brl,
+                gap_brl=r.gap_brl,
+                sum_score=r.sum_score,
+                score_included=r.score_included,
+            )
+            for r in crypto_rows
+        ],
         total_gap_brl=round(total_gap, 2),
         assets_without_score_count=without_score,
         fund_assets_without_score_count=fund_without_score,
+        crypto_assets_without_allocation_count=crypto_without_allocation,
     )

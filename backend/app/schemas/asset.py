@@ -76,6 +76,7 @@ class AssetLookupRead(SQLModel):
     market: AssetMarket
     country: str | None = None
     currency: str
+    etf_subtype: EtfSubtype | None = None
     sector: str | None = None
     subsector: str | None = None
     segment: str | None = None

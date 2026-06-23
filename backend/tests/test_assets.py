@@ -96,6 +96,7 @@ def test_lookup_asset_with_yfinance_provider(client: TestClient) -> None:
         "market": "national",
         "country": "BR",
         "currency": "BRL",
+        "etf_subtype": None,
         "sector": "Energia",
         "subsector": None,
         "segment": None,

@@ -12,4 +12,6 @@ class ObjectiveAllocation(SQLModel, table=True):
     slice_name: str = Field(index=True)
     quantity: float | None = None
     amount: float | None = None
+    exclude_from_rebalance: bool = False
+    is_emergency_reserve: bool = False
     updated_at: datetime = Field(default_factory=datetime.utcnow)

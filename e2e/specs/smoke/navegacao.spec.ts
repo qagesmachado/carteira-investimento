@@ -28,12 +28,14 @@ const ROUTES: SmokeRoute[] = [
   { route: '/analise/fiis', heading: 'Análise de ativos' },
   { route: '/analise/fiis/segmentos', heading: 'Análise de ativos' },
   { route: '/analise/internacional', heading: 'Análise de ativos' },
+  { route: '/analise/criptomoedas', heading: 'Análise de ativos' },
   { route: '/analise/configuracao', heading: 'Análise de ativos' },
   { route: '/ferramentas/objetivos', heading: 'Objetivos financeiros' },
-  { route: '/ferramentas/bitcoin', heading: 'Bitcoin' },
+  { route: '/ferramentas/criptomoedas', heading: 'Criptomoedas' },
   { route: '/ferramentas/financiamento-imovel', heading: 'Financiamento imóvel' },
   { route: '/ferramentas/calculo-preco-medio', heading: 'Cálculo de preço médio' },
   { route: '/ferramentas/conferencia-ir', heading: 'Conferência anual de IR' },
+  { route: '/ferramentas/controle-patrimonio', heading: 'Controle de patrimônio' },
   { route: '/info', heading: 'Informações do sistema' }
 ];
 

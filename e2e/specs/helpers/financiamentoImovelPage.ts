@@ -10,7 +10,6 @@ async function fillBrDecimalTestInput(page: Page, testId: string, value: string)
 
 export async function gotoFinanciamentoImovelPage(page: Page): Promise<void> {
   await page.goto('/ferramentas/financiamento-imovel');
-  await expect(page.getByRole('heading', { name: 'Ferramentas' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Financiamento imóvel' })).toBeVisible();
 }
 
@@ -84,5 +83,5 @@ export async function addFinancingEntryUi(
 }
 
 export async function selectPortfolioByName(page: Page, name: string): Promise<void> {
-  await page.getByLabel('Selecionar carteira').selectOption({ label: name });
+  await page.getByTestId('portfolio-select-header').selectOption({ label: name });
 }

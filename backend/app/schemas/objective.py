@@ -48,6 +48,13 @@ class ObjectiveAllocationItem(BaseModel):
     asset_id: int
     quantity: float | None = None
     amount: float | None = None
+    exclude_from_rebalance: bool = False
+    is_emergency_reserve: bool = False
+
+
+class ObjectiveAllocationPurposeUpdate(BaseModel):
+    exclude_from_rebalance: bool | None = None
+    is_emergency_reserve: bool | None = None
 
 
 class ObjectiveAllocationsReplace(BaseModel):
@@ -68,6 +75,8 @@ class ObjectiveAllocationRead(BaseModel):
     invested_value_brl: float | None = None
     profit_brl: float | None = None
     profit_percent: float | None = None
+    exclude_from_rebalance: bool
+    is_emergency_reserve: bool
 
 
 class PartitionSliceRead(BaseModel):
@@ -75,6 +84,8 @@ class PartitionSliceRead(BaseModel):
     objective_name: str
     slice_name: str
     is_default: bool
+    exclude_from_rebalance: bool
+    is_emergency_reserve: bool
     quantity: float | None
     amount: float | None
     current_value_brl: float | None

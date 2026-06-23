@@ -25,7 +25,10 @@
     type Portfolio
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import PageHeader from '$lib/components/PageHeader.svelte';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
+  import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
+  import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
   import AssetAllocationModal from '$lib/features/objetivos/AssetAllocationModal.svelte';
   import AssetPartitionDetail from '$lib/features/objetivos/AssetPartitionDetail.svelte';
   import DivergenceBanner from '$lib/features/objetivos/DivergenceBanner.svelte';
@@ -125,11 +128,10 @@
     error = '';
     try {
       portfolios = await listPortfolios();
-      activeId = await getActivePortfolioId();
-      const id = activeId ?? portfolios[0]?.id ?? null;
-      if (id != null) {
-        activeId = id;
-        await loadSnapshot(id);
+      const storedActiveId = await getActivePortfolioId();
+      activeId = resolveActivePortfolioId(storedActiveId, portfolios);
+      if (activeId != null) {
+        await loadSnapshot(activeId);
       } else {
         snapshot = null;
         loading = false;
@@ -327,7 +329,12 @@
   }
 
   function toAllocationItem(row: Objective['allocations'][number]) {
-    const base = { slice_name: row.slice_name, asset_id: row.asset_id };
+    const base = {
+      slice_name: row.slice_name,
+      asset_id: row.asset_id,
+      exclude_from_rebalance: row.exclude_from_rebalance,
+      is_emergency_reserve: row.is_emergency_reserve
+    };
     if (row.split_mode === 'amount') {
       return { ...base, amount: row.amount };
     }
@@ -397,22 +404,20 @@
 </svelte:head>
 
 <div class="flex w-full flex-col gap-4">
-  <header class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <h2 class="text-xl font-semibold">Objetivos financeiros</h2>
-      <p class="text-sm opacity-70">
-        Divida posições da carteira ativa entre finalidades diferentes.
-      </p>
-    </div>
-    {#if portfolios.length > 0}
+  <PageHeader
+    title="Objetivos financeiros"
+    subtitle="Divida posições da carteira ativa entre finalidades diferentes."
+  >
+    <div slot="actions">
       <PortfolioSelect
+        testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
         {portfolios}
         activeId={activeId}
         disabled={loading || saving}
         on:select={(e) => void handlePortfolioSelect(e.detail)}
       />
-    {/if}
-  </header>
+    </div>
+  </PageHeader>
 
   <DismissibleAlert message={error} />
 
@@ -478,12 +483,14 @@
       <ObjectiveDetail
         objective={selectedObjective}
         {divergences}
+        portfolioId={activeId}
         canEdit={true}
         on:addAsset={() => openAllocationModal(null)}
         on:editAllocation={(e) => openAllocationModal(e.detail)}
         on:removeAllocation={(e) => void handleRemoveAllocation(e.detail)}
         on:edit={openRenameModal}
         on:deleteObjective={() => void handleDeleteObjective()}
+        on:purposeUpdated={() => activeId != null && void loadSnapshot(activeId)}
       />
     {/if}
   {:else}

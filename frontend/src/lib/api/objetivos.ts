@@ -36,6 +36,8 @@ export type ObjectiveAllocation = {
   invested_value_brl: number | null;
   profit_brl: number | null;
   profit_percent: number | null;
+  exclude_from_rebalance: boolean;
+  is_emergency_reserve: boolean;
 };
 
 export type PartitionSlice = {
@@ -43,6 +45,8 @@ export type PartitionSlice = {
   objective_name: string;
   slice_name: string;
   is_default: boolean;
+  exclude_from_rebalance: boolean;
+  is_emergency_reserve: boolean;
   quantity: number | null;
   amount: number | null;
   current_value_brl: number | null;
@@ -110,6 +114,11 @@ export type ObjectiveUpdatePayload = {
   description?: string | null;
 };
 
+export type AllocationPurposeUpdatePayload = {
+  exclude_from_rebalance?: boolean;
+  is_emergency_reserve?: boolean;
+};
+
 export type PensionYearCreatePayload = {
   plan_year: number;
   annual_gross_income_brl?: number | null;
@@ -126,6 +135,8 @@ export type ObjectiveAllocationItem = {
   asset_id: number;
   quantity?: number | null;
   amount?: number | null;
+  exclude_from_rebalance?: boolean;
+  is_emergency_reserve?: boolean;
 };
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -189,6 +200,23 @@ export async function replaceObjectiveAllocations(
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ allocations })
+    }
+  );
+  return parseResponse<Objective>(response);
+}
+
+export async function updateAllocationPurpose(
+  portfolioId: number,
+  objectiveId: number,
+  allocationId: number,
+  payload: AllocationPurposeUpdatePayload
+): Promise<Objective> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/portfolios/${portfolioId}/objectives/${objectiveId}/allocations/${allocationId}/purpose`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     }
   );
   return parseResponse<Objective>(response);

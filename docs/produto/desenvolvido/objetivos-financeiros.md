@@ -13,6 +13,9 @@ Origem na planilha: aba `AUPO11AREA11` (ETFs de renda fixa por caixinha). Na apl
 - Objetivo **«Livre»** continua na API (resto não alocado), mas **não aparece** nas abas, no resumo nem nas tabelas de partição.
 - Objetivos **por carteira** (`Objective.portfolio_id`).
 - Objetivo automático **«Livre»** (`is_default=true`) recebe o restante não alocado explicitamente.
+- **Flags de finalidade** por objetivo (não-default):
+  - `exclude_from_rebalance` — «Não é investimento»: valor alocado não entra no patrimônio de rebalanceamento.
+  - `is_emergency_reserve` — «É reserva de emergência»: valor aparece no controle de patrimônio (local Corretora) e implica exclusão do rebalanceamento.
 - **Modalidades de objetivo:**
   - `multi_asset` — vários ativos no mesmo objetivo (padrão).
   - `single_asset` — vinculado a um `partition_asset_id`; só aloca fatias desse ativo (partição entre objetivos).
@@ -28,7 +31,7 @@ Origem na planilha: aba `AUPO11AREA11` (ETFs de renda fixa por caixinha). Na apl
 
 - Meta de valor alvo por objetivo (barra de progresso).
 - Objetivos globais cross-carteira.
-- Objetivos no cálculo de rebalanceamento (continua agregando por `display_class`).
+- Objetivos no cálculo de rebalanceamento (continua agregando por `display_class`, **exceto** fatias em objetivos com `exclude_from_rebalance`).
 - Patrimônio por objetivo no dashboard.
 - Auto-ajuste proporcional após venda externa.
 - Migração de `Position.linked_objective` (string legada) para alocações.
@@ -37,7 +40,7 @@ Origem na planilha: aba `AUPO11AREA11` (ETFs de renda fixa por caixinha). Na apl
 
 | Entidade | Campos principais |
 | -------- | ----------------- |
-| `Objective` | `portfolio_id`, `name`, `description`, `is_default`, `mode`, `partition_asset_id`, `plan_year`, `annual_gross_income_brl`, `contributed_ytd_brl`, `status` |
+| `Objective` | `portfolio_id`, `name`, `description`, `is_default`, `mode`, `partition_asset_id`, `exclude_from_rebalance`, `is_emergency_reserve`, `plan_year`, … |
 | `ObjectiveAllocation` | `objective_id`, `asset_id`, `slice_name`, `quantity` **ou** `amount` |
 
 Regras:

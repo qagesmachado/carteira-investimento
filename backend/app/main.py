@@ -14,6 +14,7 @@ from app.api.portfolios import router as portfolios_router
 from app.api.health import router as health_router
 from app.api.info import router as info_router
 from app.api.objectives import router as objectives_router
+from app.api.patrimony_control import router as patrimony_control_router
 from app.api.property_financings import router as property_financings_router
 from app.core.config import settings
 from app.core.logging_config import configure_logging
@@ -57,6 +58,7 @@ def create_app() -> FastAPI:
     app.include_router(portfolios_router)
     app.include_router(objectives_router)
     app.include_router(property_financings_router)
+    app.include_router(patrimony_control_router)
     app.include_router(fx_router)
     app.include_router(data_router)
     app.include_router(health_router)

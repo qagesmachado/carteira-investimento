@@ -11,10 +11,13 @@
     type YearSnapshotSummary
   } from '$lib/api/annualIrReport';
   import { parseApiError } from '$lib/api/parseApiError';
-  import { getActivePortfolioId, listPortfolios, type Portfolio } from '$lib/api/portfolios';
+  import { getActivePortfolioId, listPortfolios, setActivePortfolioId, type Portfolio } from '$lib/api/portfolios';
   import { formatAssetTypeForDisplay } from '$lib/assetLabels';
   import { formatMoneyAmount } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import PageHeader from '$lib/components/PageHeader.svelte';
+  import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
+  import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
   import { buildAnnualIrYearOptions } from '$lib/features/ir/annualIrYears';
   import {
     annualIrPositionInvestedAmount,
@@ -214,8 +217,17 @@
   }
 
   async function handlePortfolioSelect(event: CustomEvent<number>) {
-    activePortfolioId = event.detail;
-    await loadReport();
+    const id = event.detail;
+    if (id === activePortfolioId) {
+      return;
+    }
+    activePortfolioId = id;
+    try {
+      await setActivePortfolioId(id);
+      await loadReport();
+    } catch (err) {
+      error = parseApiError(err);
+    }
   }
 
   async function handleYearChange(event: Event) {
@@ -275,7 +287,7 @@
         getActivePortfolioId()
       ]);
       portfolios = portfoliosResult;
-      activePortfolioId = activeResult ?? portfoliosResult[0]?.id ?? null;
+      activePortfolioId = resolveActivePortfolioId(activeResult, portfoliosResult);
       await loadReport();
     } catch (err) {
       error = parseApiError(err);
@@ -287,13 +299,20 @@
   <title>Conferência anual de IR</title>
 </svelte:head>
 
-<div class="mx-auto max-w-6xl space-y-6 p-4">
-  <div>
-    <h1 class="text-2xl font-bold">Conferência anual de IR</h1>
-    <p class="text-sm text-base-content/70">
-      Proventos discriminados por ativo e tipo, resumo anual e posições congeladas em 31/12.
-    </p>
-  </div>
+<div class="space-y-6">
+  <PageHeader
+    title="Conferência anual de IR"
+    subtitle="Proventos discriminados por ativo e tipo, resumo anual e posições congeladas em 31/12."
+  >
+    <div slot="actions">
+      <PortfolioSelect
+        testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
+        {portfolios}
+        activeId={activePortfolioId}
+        on:select={handlePortfolioSelect}
+      />
+    </div>
+  </PageHeader>
 
   {#if error}
     <DismissibleAlert variant="error" on:dismiss={() => (error = '')}>{error}</DismissibleAlert>
@@ -305,15 +324,6 @@
   <div class="card bg-base-100 shadow-sm">
     <div class="card-body gap-4">
       <div class="flex flex-wrap items-end gap-4">
-        <label class="form-control w-full max-w-xs">
-          <span class="label-text">Carteira</span>
-          <PortfolioSelect
-            {portfolios}
-            activeId={activePortfolioId}
-            on:select={handlePortfolioSelect}
-          />
-        </label>
-
         <label class="form-control w-full max-w-[10rem]">
           <span class="label-text">Ano</span>
           <select

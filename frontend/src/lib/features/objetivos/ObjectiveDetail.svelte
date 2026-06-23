@@ -4,6 +4,7 @@
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
   import { createEventDispatcher } from 'svelte';
 
+  import AllocationPurposeFlags from './AllocationPurposeFlags.svelte';
   import { canAddMoreSlices } from './allocationCapacity';
   import { formatProfitCell } from './formatAllocationProfit';
   import { formatSharesAllocation } from './formatSharesAllocation';
@@ -11,6 +12,7 @@
   export let objective: Objective | null = null;
   export let divergences: AssetDivergence[] = [];
   export let canEdit = true;
+  export let portfolioId: number | null = null;
 
   const dispatch = createEventDispatcher<{
     addAsset: void;
@@ -18,6 +20,7 @@
     removeAllocation: number;
     edit: void;
     deleteObjective: void;
+    purposeUpdated: void;
   }>();
 
   function formatAllocation(row: Objective['allocations'][number]): string {
@@ -97,6 +100,7 @@
               <th>Valor atual (R$)</th>
               <th>Lucro (R$)</th>
               {#if canEdit && !objective.is_default}
+                <th class="min-w-[11rem]">Finalidade</th>
                 <th class="w-32">Ações</th>
               {/if}
             </tr>
@@ -116,7 +120,18 @@
                 <td data-testid={`allocation-profit-${row.id}`}>
                   {formatProfitCell(row.profit_brl, row.profit_percent)}
                 </td>
-                {#if canEdit && !objective.is_default}
+                {#if canEdit && !objective.is_default && portfolioId != null && row.id > 0}
+                  <td>
+                    <AllocationPurposeFlags
+                      portfolioId={portfolioId}
+                      objectiveId={objective.id}
+                      allocationId={row.id}
+                      excludeFromRebalance={row.exclude_from_rebalance}
+                      isEmergencyReserve={row.is_emergency_reserve}
+                      compact
+                      on:updated={() => dispatch('purposeUpdated')}
+                    />
+                  </td>
                   <td>
                     <div class="flex gap-1">
                       <button
@@ -137,6 +152,9 @@
                       </button>
                     </div>
                   </td>
+                {:else if canEdit && !objective.is_default}
+                  <td></td>
+                  <td></td>
                 {/if}
               </tr>
             {/each}

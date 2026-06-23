@@ -8,6 +8,13 @@ import yfinance as yf
 logger = logging.getLogger(__name__)
 logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 
+# ETFs de cripto listados na B3 (ticker base, sem .SA)
+CRYPTO_ETF_B3_TICKERS: frozenset[str] = frozenset(
+    {"ABTC11", "HASH11", "QBTC11", "BITH11"}
+)
+
+_CRYPTO_NAME_HINTS = ("bitcoin", "cripto", "crypto", "blockchain")
+
 
 def resolve_yahoo_symbol(symbol: str) -> str:
     """Converte ticker digitado pelo usuário no formato esperado pelo Yahoo Finance.
@@ -37,6 +44,7 @@ class AssetLookupResult:
     market: str
     country: str | None
     currency: str
+    etf_subtype: str | None = None
     sector: str | None = None
     subsector: str | None = None
     segment: str | None = None
@@ -72,13 +80,16 @@ class YFinanceAssetProvider:
             currency = "BRL" if is_b3 else "USD"
 
         name = str(info.get("longName") or info.get("shortName") or yahoo_symbol)
+        asset_type = self._asset_type_from_quote_type(quote_type, yahoo_symbol, name)
+        etf_subtype = self._infer_etf_subtype(yahoo_symbol, name, asset_type, is_b3)
         return AssetLookupResult(
             symbol=yahoo_symbol,
             name=name,
-            asset_type=self._asset_type_from_quote_type(quote_type, yahoo_symbol, name),
+            asset_type=asset_type,
             market="national" if is_b3 else "international",
             country="BR" if is_b3 else str(info.get("country") or "US"),
             currency=currency,
+            etf_subtype=etf_subtype,
             sector=info.get("sector"),
             quote_source="yfinance",
             current_quote=self._quote_from_info_static(info),
@@ -112,6 +123,9 @@ class YFinanceAssetProvider:
         raise ValueError(f"quote not found for {yahoo_symbol}")
 
     def _asset_type_from_quote_type(self, quote_type: str, symbol: str, name: str = "") -> str:
+        base_ticker = symbol.removesuffix(".SA").upper()
+        if base_ticker in CRYPTO_ETF_B3_TICKERS:
+            return "etf"
         if quote_type == "ETF":
             return "etf"
         if quote_type in {"CRYPTOCURRENCY", "CRYPTO"}:
@@ -119,11 +133,36 @@ class YFinanceAssetProvider:
         normalized_name = name.lower()
         if "fundo de indice" in normalized_name or "fundo de índice" in normalized_name:
             return "etf"
+        if self._is_crypto_etf_b3(symbol, name):
+            return "etf"
         if symbol.endswith("11.SA"):
             return "fii"
         if quote_type in {"EQUITY", ""}:
             return "stock"
         return "other"
+
+    @staticmethod
+    def _is_crypto_etf_b3(symbol: str, name: str) -> bool:
+        base = symbol.removesuffix(".SA").upper()
+        if base in CRYPTO_ETF_B3_TICKERS:
+            return True
+        if not symbol.endswith("11.SA"):
+            return False
+        normalized = name.lower()
+        return any(hint in normalized for hint in _CRYPTO_NAME_HINTS)
+
+    @staticmethod
+    def _infer_etf_subtype(
+        symbol: str,
+        name: str,
+        asset_type: str,
+        is_b3: bool,
+    ) -> str | None:
+        if asset_type != "etf" or not is_b3:
+            return None
+        if YFinanceAssetProvider._is_crypto_etf_b3(symbol, name):
+            return "crypto"
+        return "variable_income"
 
     @staticmethod
     def _quote_from_info_static(info: dict) -> float | None:

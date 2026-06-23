@@ -13,12 +13,13 @@ test.describe('UI-REB-006', () => {
     await seedRebalanceWithMix(request);
   });
 
-  test('alterna abas Ações/ETF BR, ETF internacional e FII', async ({ page }) => {
+  test('alterna abas Ações/ETF BR, ETF internacional, FII e Criptomoedas', async ({ page }) => {
     await gotoRebalancePage(page);
     const section = page.locator('section').filter({ hasText: 'Por ativo' });
     await expect(section.getByRole('tab', { name: 'Ações/ETF BR' })).toBeVisible();
     await expect(section.getByRole('tab', { name: 'ETF internacional' })).toBeVisible();
     await expect(section.getByRole('tab', { name: 'FII' })).toBeVisible();
+    await expect(section.getByRole('tab', { name: 'Criptomoedas' })).toBeVisible();
 
     await section.getByRole('tab', { name: 'ETF internacional' }).click();
     await expect(section.getByRole('tab', { name: 'ETF internacional' })).toHaveAttribute(

@@ -1,5 +1,7 @@
 # Bitcoin e taxas de movimentação
 
+> **Documento legado.** Conteúdo atualizado em [criptomoedas.md](criptomoedas.md) e [analise-criptomoedas.md](analise-criptomoedas.md). Rota `/ferramentas/bitcoin` redireciona para `/ferramentas/criptomoedas`.
+
 ## Objetivo
 
 Controlar a posição em BTC e registrar **taxas de compra e transferência**, equivalente às abas `Bitcoin` e `Bitcoin taxas` da planilha `Investimento_controle.xlsx`.

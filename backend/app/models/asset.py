@@ -22,6 +22,7 @@ class AssetMarket(StrEnum):
 class EtfSubtype(StrEnum):
     VARIABLE_INCOME = "variable_income"
     FIXED_INCOME = "fixed_income"
+    CRYPTO = "crypto"
 
 
 class DisplayClass(StrEnum):

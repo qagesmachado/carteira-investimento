@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { setHideMoneyValues } from '$lib/stores/hideMoneyValues';
 
 import {
+  CLASS_TARGET_FIELDS,
   defaultAllocationTargets,
   formatBrl,
   parseAllocationTargets,
@@ -41,6 +42,11 @@ describe('allocationTargets', () => {
     const parsed = parseAllocationTargets(raw);
     expect(parsed.classes.fixed_income).toBe(45);
     expect(parsed.stocks_split.stock).toBe(40);
+  });
+
+  it('uses Criptomoeda label for crypto class field', () => {
+    const label = CLASS_TARGET_FIELDS.find((f) => f.key === 'crypto')?.label;
+    expect(label).toBe('Criptomoeda');
   });
 
   it('validates class sum', () => {

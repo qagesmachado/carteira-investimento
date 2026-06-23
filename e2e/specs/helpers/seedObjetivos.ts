@@ -72,6 +72,36 @@ export async function seedObjetivosWithRf(
   return { portfolioId: portfolio.id, assetId };
 }
 
+export async function patchAllocationPurposeViaApi(
+  request: APIRequestContext,
+  portfolioId: number,
+  objectiveId: number,
+  allocationId: number,
+  payload: { exclude_from_rebalance?: boolean; is_emergency_reserve?: boolean }
+): Promise<void> {
+  const response = await request.patch(
+    `${getWorkerApiBaseUrl()}/portfolios/${portfolioId}/objectives/${objectiveId}/allocations/${allocationId}/purpose`,
+    { data: payload }
+  );
+  expect(response.ok()).toBeTruthy();
+}
+
+export async function getAllocationIdBySliceName(
+  request: APIRequestContext,
+  portfolioId: number,
+  objectiveId: number,
+  sliceName: string
+): Promise<number> {
+  const snapshot = await getObjectivesSnapshot(request, portfolioId);
+  const objective = snapshot.objectives.find((o: { id: number }) => o.id === objectiveId);
+  expect(objective).toBeTruthy();
+  const row = objective.allocations.find(
+    (a: { slice_name: string }) => a.slice_name === sliceName
+  );
+  expect(row).toBeTruthy();
+  return row.id as number;
+}
+
 export async function createObjectiveViaApi(
   request: APIRequestContext,
   portfolioId: number,
@@ -81,6 +111,8 @@ export async function createObjectiveViaApi(
     partition_asset_id?: number;
     plan_year?: number;
     annual_gross_income_brl?: number;
+    exclude_from_rebalance?: boolean;
+    is_emergency_reserve?: boolean;
   }
 ): Promise<number> {
   const response = await request.post(`${getWorkerApiBaseUrl()}/portfolios/${portfolioId}/objectives`, {

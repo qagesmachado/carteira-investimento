@@ -425,6 +425,7 @@
             <option value="" disabled>Selecione</option>
             <option value="variable_income">Renda variável</option>
             <option value="fixed_income">Renda fixa</option>
+            <option value="crypto">Criptomoeda</option>
           </select>
         </label>
       {/if}

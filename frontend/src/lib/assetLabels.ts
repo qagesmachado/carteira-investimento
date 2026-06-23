@@ -56,7 +56,7 @@ const DISPLAY_CLASS_LABELS: Record<DisplayClass, string> = {
   funds: 'Fundos imobiliários',
   fixed_income: 'Renda fixa',
   international: 'Internacional',
-  crypto: 'Criptoativos',
+  crypto: 'Criptomoeda',
   pension: 'Previdência',
   other: 'Outros'
 };

@@ -12,7 +12,6 @@ async function fillBrDecimalTestInput(page: Page, testId: string, value: string)
 
 export async function gotoCalculoPrecoMedioPage(page: Page): Promise<void> {
   await page.goto('/ferramentas/calculo-preco-medio');
-  await expect(page.getByRole('heading', { name: 'Ferramentas' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Cálculo de preço médio' })).toBeVisible();
   await expect(page.getByTestId('average-price-calculator')).toBeVisible();
 }

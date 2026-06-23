@@ -5,6 +5,7 @@ from sqlmodel import Session
 
 from app.db.session import get_session
 from app.schemas.objective import (
+    ObjectiveAllocationPurposeUpdate,
     ObjectiveAllocationsReplace,
     ObjectiveCreate,
     ObjectivesSnapshotRead,
@@ -20,6 +21,7 @@ from app.services.objective_service import (
     delete_objective,
     delete_pension_year,
     replace_objective_allocations,
+    update_allocation_purpose,
     update_objective,
     upsert_pension_year,
 )
@@ -88,6 +90,22 @@ def put_objective_allocations(
     session: Annotated[Session, Depends(get_session)],
 ) -> ObjectiveRead:
     replace_objective_allocations(session, portfolio_id, objective_id, payload.allocations)
+    snapshot = build_objectives_snapshot(session, portfolio_id)
+    return _to_objective_read_from_snapshot(snapshot, objective_id)
+
+
+@router.patch(
+    "/{objective_id}/allocations/{allocation_id}/purpose",
+    response_model=ObjectiveRead,
+)
+def patch_allocation_purpose(
+    portfolio_id: int,
+    objective_id: int,
+    allocation_id: int,
+    payload: ObjectiveAllocationPurposeUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> ObjectiveRead:
+    update_allocation_purpose(session, portfolio_id, objective_id, allocation_id, payload)
     snapshot = build_objectives_snapshot(session, portfolio_id)
     return _to_objective_read_from_snapshot(snapshot, objective_id)
 

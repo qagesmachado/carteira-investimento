@@ -42,7 +42,12 @@
 
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
 
+  import PageHeader from '$lib/components/PageHeader.svelte';
+
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
+
+  import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
+  import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
 
   import { FINANCING_SUMMARY_TAB_ID } from '$lib/features/ferramentas/financiamento-imovel/constants';
 
@@ -144,15 +149,13 @@
 
       portfolios = await listPortfolios();
 
-      activeId = await getActivePortfolioId();
+      const storedActiveId = await getActivePortfolioId();
 
-      const id = activeId ?? portfolios[0]?.id ?? null;
+      activeId = resolveActivePortfolioId(storedActiveId, portfolios);
 
-      if (id != null) {
+      if (activeId != null) {
 
-        activeId = id;
-
-        await loadSnapshot(id);
+        await loadSnapshot(activeId);
 
       } else {
 
@@ -408,35 +411,19 @@
 
 
 
-<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
-
-    <div>
-
-      <h2 class="text-xl font-semibold">Financiamento imóvel</h2>
-
-      <p class="text-sm text-base-content/70">
-
-        Registre receitas e despesas por imóvel e acompanhe lucro e capital investido.
-
-      </p>
-
-    </div>
-
-    {#if portfolios.length > 0}
-
-      <PortfolioSelect
-
-        {portfolios}
-
-        {activeId}
-
-        on:select={(e) => void handlePortfolioSelect(e.detail)}
-
-      />
-
-    {/if}
-
+<PageHeader
+  title="Financiamento imóvel"
+  subtitle="Registre receitas e despesas por imóvel e acompanhe lucro e capital investido."
+>
+  <div slot="actions">
+    <PortfolioSelect
+      testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
+      {portfolios}
+      {activeId}
+      on:select={(e) => void handlePortfolioSelect(e.detail)}
+    />
   </div>
+</PageHeader>
 
 
 

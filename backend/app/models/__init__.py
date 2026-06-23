@@ -7,6 +7,7 @@ from app.models.analysis import (
 from app.models.asset import Asset
 from app.models.crypto_fee import CryptoFee, CryptoFeeType
 from app.models.dividend_payment import DividendPayment, DividendPaymentType
+from app.models.manual_patrimony_item import ManualPatrimonyCategory, ManualPatrimonyItem
 from app.models.objective import Objective
 from app.models.objective_allocation import ObjectiveAllocation
 from app.models.property_financing import (
@@ -31,6 +32,8 @@ __all__ = [
     "CryptoFeeType",
     "DividendPayment",
     "DividendPaymentType",
+    "ManualPatrimonyCategory",
+    "ManualPatrimonyItem",
     "Objective",
     "ObjectiveAllocation",
     "PropertyFinancing",

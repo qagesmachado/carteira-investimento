@@ -20,6 +20,7 @@ from app.models.analysis import (
 from app.models.asset import Asset
 from app.models.crypto_fee import CryptoFee, CryptoFeeType
 from app.models.dividend_payment import DividendPayment
+from app.models.manual_patrimony_item import ManualPatrimonyItem
 from app.models.objective import Objective
 from app.models.objective_allocation import ObjectiveAllocation
 from app.models.pension_contribution_year import PensionContributionYear
@@ -65,6 +66,7 @@ PORTFOLIO_TABLES = [
     PensionContributionYear.__table__,
     PropertyFinancing.__table__,
     PropertyFinancingEntry.__table__,
+    ManualPatrimonyItem.__table__,
 ]
 ALL_TABLES = ASSET_TABLES + PORTFOLIO_TABLES
 
@@ -92,7 +94,91 @@ OBJECTIVE_OPTIONAL_COLUMNS = {
     "plan_year": "INTEGER",
     "annual_gross_income_brl": "FLOAT",
     "contributed_ytd_brl": "FLOAT DEFAULT 0",
+    "exclude_from_rebalance": "BOOLEAN DEFAULT 0",
+    "is_emergency_reserve": "BOOLEAN DEFAULT 0",
 }
+
+
+OBJECTIVE_ALLOCATION_OPTIONAL_COLUMNS = {
+    "exclude_from_rebalance": "BOOLEAN DEFAULT 0",
+    "is_emergency_reserve": "BOOLEAN DEFAULT 0",
+}
+
+
+def _ensure_objective_allocation_columns(engine_param: Engine) -> None:
+    with engine_param.begin() as connection:
+        tables = {
+            row[0]
+            for row in connection.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        if "objectiveallocation" not in tables:
+            return
+        existing = {
+            row[1]
+            for row in connection.exec_driver_sql(
+                "PRAGMA table_info(objectiveallocation)"
+            ).fetchall()
+        }
+        for column, sql_type in OBJECTIVE_ALLOCATION_OPTIONAL_COLUMNS.items():
+            if column not in existing:
+                connection.exec_driver_sql(
+                    f"ALTER TABLE objectiveallocation ADD COLUMN {column} {sql_type}",
+                )
+
+
+def _migrate_objective_flags_to_allocations(engine_param: Engine) -> None:
+    """Copia flags legadas do objetivo para todas as suas fatias (uma vez)."""
+    with engine_param.begin() as connection:
+        tables = {
+            row[0]
+            for row in connection.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        if "objective" not in tables or "objectiveallocation" not in tables:
+            return
+        obj_cols = {
+            row[1]
+            for row in connection.exec_driver_sql("PRAGMA table_info(objective)").fetchall()
+        }
+        alloc_cols = {
+            row[1]
+            for row in connection.exec_driver_sql(
+                "PRAGMA table_info(objectiveallocation)"
+            ).fetchall()
+        }
+        if "exclude_from_rebalance" not in alloc_cols:
+            return
+        if "exclude_from_rebalance" not in obj_cols:
+            return
+        connection.exec_driver_sql(
+            """
+            UPDATE objectiveallocation
+            SET exclude_from_rebalance = 1
+            WHERE objective_id IN (
+                SELECT id FROM objective WHERE exclude_from_rebalance = 1
+            )
+            """
+        )
+        connection.exec_driver_sql(
+            """
+            UPDATE objectiveallocation
+            SET is_emergency_reserve = 1,
+                exclude_from_rebalance = 1
+            WHERE objective_id IN (
+                SELECT id FROM objective WHERE is_emergency_reserve = 1
+            )
+            """
+        )
+        connection.exec_driver_sql(
+            """
+            UPDATE objective
+            SET exclude_from_rebalance = 0,
+                is_emergency_reserve = 0
+            """
+        )
 
 
 def _ensure_position_columns(engine_param: Engine) -> None:
@@ -293,6 +379,27 @@ def _backup_database(path: Path, current_version: int) -> Path | None:
     return backup_path
 
 
+def _migrate_manual_patrimony_cash_to_emergency_reserve(engine_param: Engine) -> None:
+    """Converte itens legados category=cash para reserva com localização espécie."""
+    with engine_param.begin() as connection:
+        tables = {
+            row[0]
+            for row in connection.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        if "manualpatrimonyitem" not in tables:
+            return
+        connection.exec_driver_sql(
+            """
+            UPDATE manualpatrimonyitem
+            SET category = 'emergency_reserve',
+                location = 'dinheiro_especie'
+            WHERE category = 'cash'
+            """
+        )
+
+
 def init_db() -> None:
     db_path = _database_file_path(engine)
     pre_existing = bool(db_path and db_path.exists() and db_path.stat().st_size > 0)
@@ -310,9 +417,12 @@ def init_db() -> None:
     _ensure_position_columns(engine)
     _ensure_objective_columns(engine)
     _migrate_objective_allocation_slices(engine)
+    _ensure_objective_allocation_columns(engine)
+    _migrate_objective_flags_to_allocations(engine)
     _ensure_dividend_payment_portfolio_column(engine)
     _migrate_property_financing_schema(engine)
     _migrate_pension_contribution_years(engine)
+    _migrate_manual_patrimony_cash_to_emergency_reserve(engine)
     _ensure_default_objectives(engine)
 
     if needs_migration:

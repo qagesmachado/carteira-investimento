@@ -7,7 +7,7 @@
   $: dashboardOpen = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
   $: analiseOpen = pathname.startsWith('/analise');
   $: rebalanceOpen = pathname.startsWith('/rebalanceamento');
-  $: bitcoinOpen = pathname.startsWith('/ferramentas/bitcoin');
+  $: criptomoedasOpen = pathname.startsWith('/ferramentas/criptomoedas');
   $: objetivosOpen = pathname.startsWith('/ferramentas/objetivos');
   $: alocacaoOpen = analiseOpen || rebalanceOpen;
   $: cadastroOpen =
@@ -23,6 +23,7 @@
   $: financiamentoOpen = pathname.startsWith('/ferramentas/financiamento-imovel');
   $: calculoPrecoMedioOpen = pathname.startsWith('/ferramentas/calculo-preco-medio');
   $: conferenciaIrOpen = pathname.startsWith('/ferramentas/conferencia-ir');
+  $: controlePatrimonioOpen = pathname.startsWith('/ferramentas/controle-patrimonio');
 </script>
 
 <header class="flex min-h-16 w-full items-center bg-base-100 shadow-sm">
@@ -122,8 +123,8 @@
           </a>
         </li>
         <li>
-          <a href="/ferramentas/bitcoin" class:active={bitcoinOpen}>
-            Taxas bitcoin
+          <a href="/ferramentas/criptomoedas" class:active={criptomoedasOpen}>
+            Taxas cripto
           </a>
         </li>
         <li>
@@ -139,6 +140,11 @@
         <li>
           <a href="/ferramentas/conferencia-ir" class:active={conferenciaIrOpen}>
             Conferência anual de IR
+          </a>
+        </li>
+        <li>
+          <a href="/ferramentas/controle-patrimonio" class:active={controlePatrimonioOpen}>
+            Controle de patrimônio
           </a>
         </li>
       </ul>

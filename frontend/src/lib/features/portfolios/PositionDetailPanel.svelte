@@ -1,21 +1,22 @@
 <script lang="ts">
   import type { Asset } from '$lib/api/assets';
+  import type { AssetPartition } from '$lib/api/objetivos';
   import type { Position } from '$lib/api/portfolios';
 
   import type { CryptoFeeDetailSummary } from '$lib/features/bitcoin/cryptoFeePositionDetail';
 
   import { buildPositionDetailSections } from './positionDetail';
+  import PositionPurposeSection from './PositionPurposeSection.svelte';
+  import { positionCurrentValue, valueInBrl } from './positionMetrics';
 
   export let position: Position;
   export let asset: Asset;
   export let usdBrlRate: number | null | undefined = undefined;
   export let panelId = 'position-detail-panel';
-  /** Resumo de proventos do ativo (somente consolidada). */
   export let dividendsSummary: string | undefined = undefined;
-  /** Lucro após taxas de movimentação (cripto na consolidada). */
   export let cryptoFeeSummary: CryptoFeeDetailSummary | undefined = undefined;
-  /** `portfolio`: /portfolios — sem hints BRL; `consolidated`: /portfolios/consolidada */
   export let variant: 'portfolio' | 'consolidated' = 'portfolio';
+  export let assetPartition: AssetPartition | null = null;
 
   $: sections = buildPositionDetailSections(position, asset, {
     usdBrlRate: variant === 'consolidated' ? usdBrlRate : undefined,
@@ -24,8 +25,15 @@
     cryptoFeeSummary: variant === 'consolidated' ? cryptoFeeSummary : undefined
   });
 
-  $: isConsolidated = variant === 'consolidated';
+  $: positionCurrentBrlForPurpose =
+    assetPartition?.position_current_value_brl ??
+    valueInBrl(
+      positionCurrentValue(position, asset),
+      asset.currency,
+      variant === 'consolidated' ? usdBrlRate : undefined
+    );
 
+  $: isConsolidated = variant === 'consolidated';
   $: outerGridClass = isConsolidated
     ? 'grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-[1.1fr_1.1fr_minmax(12rem,0.9fr)]'
     : 'grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3';
@@ -127,8 +135,12 @@
     {/if}
   </div>
 
-  <div class="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-base-300 pt-3">
-    <h3 class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Proventos</h3>
+  <PositionPurposeSection
+    partition={assetPartition}
+    positionCurrentBrl={positionCurrentBrlForPurpose}
+  />
+
+  <div class="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 border-t border-base-300 pt-3">    <h3 class="text-xs font-semibold uppercase tracking-wide text-base-content/70">Proventos</h3>
     <p class="text-base-content/70">
       <span class="font-medium">{sections.dividendsLabel}:</span>
       <span class="italic">{sections.dividendsValue}</span>

@@ -57,4 +57,14 @@ describe('PortfolioSelect', () => {
 
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it('aplica data-testid quando informado', () => {
+    render(PortfolioSelect, {
+      props: { portfolios, activeId: 1, testId: 'portfolio-select-header' }
+    });
+
+    expect(screen.getByTestId('portfolio-select-header').getAttribute('aria-label')).toBe(
+      'Selecionar carteira'
+    );
+  });
 });

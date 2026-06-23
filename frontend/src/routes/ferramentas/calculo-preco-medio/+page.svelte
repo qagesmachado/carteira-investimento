@@ -12,6 +12,10 @@
     type Position
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
+  import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
+  import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
   import AveragePriceCalculator from '$lib/features/ferramentas/calculo-preco-medio/AveragePriceCalculator.svelte';
 
   let assets: Asset[] = [];
@@ -29,14 +33,14 @@
     loading = true;
     error = '';
     try {
-      const [assetList, portfolioList, activeResponse] = await Promise.all([
+      const [assetList, portfolioList, storedActiveId] = await Promise.all([
         listAssets(),
         listPortfolios(),
         getActivePortfolioId()
       ]);
       assets = assetList;
       portfolios = portfolioList;
-      activeId = activeResponse.portfolio_id ?? portfolioList[0]?.id ?? null;
+      activeId = resolveActivePortfolioId(storedActiveId, portfolioList);
       if (activeId != null) {
         await loadPositions(activeId);
       } else {
@@ -51,6 +55,9 @@
   }
 
   async function handlePortfolioChange(portfolioId: number) {
+    if (portfolioId === activeId) {
+      return;
+    }
     error = '';
     try {
       await setActivePortfolioId(portfolioId);
@@ -70,14 +77,21 @@
   <title>Cálculo de preço médio · Ferramentas</title>
 </svelte:head>
 
-<div>
-  <div class="mb-6">
-    <h2 class="text-xl font-semibold">Cálculo de preço médio</h2>
-    <p class="text-sm text-base-content/70">
-      Combine dois lotes do mesmo ativo e obtenha quantidade total, preço médio ponderado e valor
-      investido.
-    </p>
-  </div>
+<div class="space-y-6">
+  <PageHeader
+    title="Cálculo de preço médio"
+    subtitle="Combine dois lotes do mesmo ativo e obtenha quantidade total, preço médio ponderado e valor investido."
+  >
+    <div slot="actions">
+      <PortfolioSelect
+        testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
+        {portfolios}
+        activeId={activeId}
+        disabled={loading}
+        on:select={(e) => void handlePortfolioChange(e.detail)}
+      />
+    </div>
+  </PageHeader>
 
   {#if error}
     <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />

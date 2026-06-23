@@ -45,9 +45,11 @@ export type RebalanceSnapshot = {
   stock_assets: AssetRebalanceRow[];
   international_assets: AssetRebalanceRow[];
   fund_assets: AssetRebalanceRow[];
+  crypto_assets: AssetRebalanceRow[];
   total_gap_brl: number;
   assets_without_score_count: number;
   fund_assets_without_score_count: number;
+  crypto_assets_without_allocation_count: number;
 };
 
 async function parseResponse<T>(response: Response): Promise<T> {

@@ -8,7 +8,7 @@
     type AssetType,
     type DisplayClass
   } from '$lib/api/assets';
-  import { getBitcoinSnapshot, type BitcoinSnapshot } from '$lib/api/cryptoFees';
+  import { getCryptoSnapshot, type CryptoSnapshot } from '$lib/api/cryptoFees';
   import { getUsdBrl, refreshUsdBrl } from '$lib/api/fx';
   import { listDividendPayments, type DividendPayment } from '$lib/api/dividendPayments';
   import {
@@ -32,6 +32,12 @@
   import type { CryptoFeeDetailSummary } from '$lib/features/bitcoin/cryptoFeePositionDetail';
   import BrlEquivalentHint from '$lib/features/portfolios/BrlEquivalentHint.svelte';
   import PositionDetailPanel from '$lib/features/portfolios/PositionDetailPanel.svelte';
+  import {
+    computeExcludedRebalanceBrl,
+    computeInvestmentValueBrl,
+    findAssetPartition
+  } from '$lib/features/portfolios/positionPurpose';
+  import { getObjectivesSnapshot, type ObjectivesSnapshot } from '$lib/api/objetivos';
   import {
     buildDividendTotalsByAssetId,
     formatDividendsReceivedSummary
@@ -95,6 +101,7 @@
 
   let filterText = '';
   let filterCurrency = '';
+  let filterInvestmentOnly = false;
 
   let sortKey: SortKey = 'ticker';
   let sortDir: 'asc' | 'desc' = 'asc';
@@ -110,7 +117,8 @@
   let loadError = '';
   let expandedPositionId: number | null = null;
   let prevActiveIdForExpanded: number | null = null;
-  let bitcoinSnapshot: BitcoinSnapshot | null = null;
+  let cryptoSnapshotsByAssetId: Record<number, CryptoSnapshot> = {};
+  let objectivesSnapshot: ObjectivesSnapshot | null = null;
 
   $: assetById = Object.fromEntries(assets.map((a) => [a.id, a]));
   $: dividendTotalsByAssetId = buildDividendTotalsByAssetId(dividendPayments);
@@ -120,41 +128,55 @@
   }
 
   function cryptoFeeSummaryForAsset(asset: Asset): CryptoFeeDetailSummary | undefined {
-    if (asset.asset_type !== 'crypto' || !bitcoinSnapshot) {
+    if (asset.asset_type !== 'crypto') {
       return undefined;
     }
-    const snapshotAssetId = bitcoinSnapshot.position.asset_id;
-    if (snapshotAssetId != null && snapshotAssetId !== asset.id) {
+    const snapshot = cryptoSnapshotsByAssetId[asset.id];
+    if (!snapshot) {
       return undefined;
     }
     return {
-      profitAfterFeesBrl: bitcoinSnapshot.profit_after_fees_brl,
-      appreciationAfterFeesPercent: bitcoinSnapshot.appreciation_after_fees_percent,
-      totalFeesBrl: bitcoinSnapshot.total_fees_brl,
-      totalFeesUsd: bitcoinSnapshot.total_fees_usd
+      profitAfterFeesBrl: snapshot.profit_after_fees_brl,
+      appreciationAfterFeesPercent: snapshot.appreciation_after_fees_percent,
+      totalFeesBrl: snapshot.total_fees_brl,
+      totalFeesUsd: snapshot.total_fees_usd
     };
   }
 
-  async function loadBitcoinSnapshot(
+  async function loadCryptoSnapshots(
     portfolioId: number | null,
     positionList: Position[],
     assetList: Asset[]
   ) {
     if (portfolioId == null) {
-      bitcoinSnapshot = null;
+      cryptoSnapshotsByAssetId = {};
       return;
     }
     const byId = Object.fromEntries(assetList.map((a) => [a.id, a]));
-    const hasCrypto = positionList.some((p) => byId[p.asset_id]?.asset_type === 'crypto');
-    if (!hasCrypto) {
-      bitcoinSnapshot = null;
+    const cryptoAssetIds = [
+      ...new Set(
+        positionList
+          .map((p) => p.asset_id)
+          .filter((id) => byId[id]?.asset_type === 'crypto')
+      )
+    ];
+    if (cryptoAssetIds.length === 0) {
+      cryptoSnapshotsByAssetId = {};
       return;
     }
-    try {
-      bitcoinSnapshot = await getBitcoinSnapshot(portfolioId);
-    } catch {
-      bitcoinSnapshot = null;
-    }
+    const entries = await Promise.all(
+      cryptoAssetIds.map(async (assetId) => {
+        try {
+          const snap = await getCryptoSnapshot(portfolioId, assetId);
+          return [assetId, snap] as const;
+        } catch {
+          return null;
+        }
+      })
+    );
+    cryptoSnapshotsByAssetId = Object.fromEntries(
+      entries.filter((entry): entry is readonly [number, CryptoSnapshot] => entry != null)
+    );
   }
 
   $: if (activeId !== prevActiveIdForExpanded) {
@@ -386,6 +408,49 @@
     return false;
   }
 
+  function assetPartitionFor(assetId: number) {
+    return findAssetPartition(objectivesSnapshot?.asset_partitions ?? [], assetId) ?? null;
+  }
+
+  function investmentCurrentBrl(row: Row): number | null {
+    return computeInvestmentValueBrl(
+      row.currentBrl,
+      computeExcludedRebalanceBrl(assetPartitionFor(row.asset.id))
+    );
+  }
+
+  function investmentInvestedBrl(row: Row): number | null {
+    const partition = assetPartitionFor(row.asset.id);
+    if (partition?.position_current_value_brl == null || partition.position_invested_value_brl == null) {
+      return row.investedBrl;
+    }
+    if (partition.position_current_value_brl <= 0) {
+      return row.investedBrl;
+    }
+    const investmentCurrent = investmentCurrentBrl(row);
+    if (investmentCurrent == null) {
+      return row.investedBrl;
+    }
+    const ratio = investmentCurrent / partition.position_current_value_brl;
+    return partition.position_invested_value_brl * ratio;
+  }
+
+  function displayCurrentBrl(row: Row): number | null {
+    return filterInvestmentOnly ? investmentCurrentBrl(row) : row.currentBrl;
+  }
+
+  function displayInvestedBrl(row: Row): number | null {
+    return filterInvestmentOnly ? investmentInvestedBrl(row) : row.investedBrl;
+  }
+
+  async function loadObjectivesSnapshot(portfolioId: number) {
+    try {
+      objectivesSnapshot = await getObjectivesSnapshot(portfolioId);
+    } catch {
+      objectivesSnapshot = null;
+    }
+  }
+
   $: allRows = buildRows(positions, assetById, usdBrlRate);
 
   $: filteredRows = allRows.filter((row) => {
@@ -404,6 +469,12 @@
     }
     if (!currencyMatches(filterCurrency, row.asset.currency)) {
       return false;
+    }
+    if (filterInvestmentOnly) {
+      const investmentValue = investmentCurrentBrl(row);
+      if (investmentValue == null || investmentValue <= 0) {
+        return false;
+      }
     }
     return true;
   });
@@ -528,8 +599,10 @@
     }
     if (activeId != null) {
       positions = await listPositions(activeId);
+      await loadObjectivesSnapshot(activeId);
     } else {
       positions = [];
+      objectivesSnapshot = null;
     }
   }
 
@@ -578,7 +651,7 @@
     } catch {
       dividendPayments = [];
     }
-    await loadBitcoinSnapshot(activeId, positions, assets);
+    await loadCryptoSnapshots(activeId, positions, assets);
     await loadFx();
   }
 
@@ -589,12 +662,13 @@
     activeId = id;
     await setActivePortfolioId(id);
     positions = await listPositions(id);
+    await loadObjectivesSnapshot(id);
     try {
       dividendPayments = await listDividendPayments({ portfolio_id: id });
     } catch {
       dividendPayments = [];
     }
-    await loadBitcoinSnapshot(id, positions, assets);
+    await loadCryptoSnapshots(id, positions, assets);
   }
 
   async function handlePortfolioSelect(id: number) {
@@ -759,6 +833,15 @@
                 placeholder="BRL, USD, real…"
                 bind:value={filterCurrency}
               />
+            </label>
+            <label class="label cursor-pointer justify-start gap-2 self-end">
+              <input
+                type="checkbox"
+                class="checkbox checkbox-sm"
+                bind:checked={filterInvestmentOnly}
+                data-testid="filter-investment-only"
+              />
+              <span class="label-text">Apenas investimento</span>
             </label>
           </div>
 
@@ -1078,8 +1161,8 @@
                             </span>
                             <BrlEquivalentHint asset={row.asset} brlValue={row.investedBrl} />
                           </span>
-                        {:else if row.investedBrl != null}
-                          <span class="tabular-nums">{formatMoneyAmount(row.investedBrl, 'BRL')}</span>
+                        {:else if displayInvestedBrl(row) != null}
+                          <span class="tabular-nums">{formatMoneyAmount(displayInvestedBrl(row), 'BRL')}</span>
                         {:else}
                           <span class="tabular-nums">{formatOptionalMoney(row.invested, row.asset.currency)}</span>
                         {/if}
@@ -1097,8 +1180,8 @@
                             </span>
                             <BrlEquivalentHint asset={row.asset} brlValue={row.currentBrl} />
                           </span>
-                        {:else if row.currentBrl != null}
-                          <span class="tabular-nums">{formatMoneyAmount(row.currentBrl, 'BRL')}</span>
+                        {:else if displayCurrentBrl(row) != null}
+                          <span class="tabular-nums">{formatMoneyAmount(displayCurrentBrl(row), 'BRL')}</span>
                         {:else}
                           <span class="tabular-nums">{formatOptionalMoney(row.current, row.asset.currency)}</span>
                         {/if}
@@ -1138,6 +1221,7 @@
                             asset={row.asset}
                             variant="consolidated"
                             usdBrlRate={usdBrlRate}
+                            assetPartition={assetPartitionFor(row.asset.id)}
                             dividendsSummary={dividendsSummaryForAsset(row.asset)}
                             cryptoFeeSummary={cryptoFeeSummaryForAsset(row.asset)}
                             panelId={positionDetailPanelId(row.position.id)}

@@ -110,6 +110,8 @@ class RebalanceSnapshotRead(BaseModel):
     stock_assets: list[AssetRebalanceRowRead]
     international_assets: list[AssetRebalanceRowRead] = Field(default_factory=list)
     fund_assets: list[AssetRebalanceRowRead] = Field(default_factory=list)
+    crypto_assets: list[AssetRebalanceRowRead] = Field(default_factory=list)
     total_gap_brl: float
     assets_without_score_count: int
     fund_assets_without_score_count: int = 0
+    crypto_assets_without_allocation_count: int = 0

@@ -29,6 +29,8 @@ def infer_display_class(
     if asset_type == AssetType.ETF and market == AssetMarket.NATIONAL:
         if etf_subtype == EtfSubtype.FIXED_INCOME:
             return DisplayClass.FIXED_INCOME
+        if etf_subtype == EtfSubtype.CRYPTO:
+            return DisplayClass.CRYPTO
         return DisplayClass.STOCKS
 
     if asset_type == AssetType.ETF and market == AssetMarket.INTERNATIONAL:
@@ -152,6 +154,7 @@ def _lookup_result_to_read(result: object) -> AssetLookupRead:
         market=result.market,
         country=result.country,
         currency=result.currency,
+        etf_subtype=getattr(result, "etf_subtype", None),
         sector=result.sector,
         subsector=result.subsector,
         segment=result.segment,

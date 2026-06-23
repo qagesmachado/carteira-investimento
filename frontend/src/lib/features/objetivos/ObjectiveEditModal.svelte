@@ -139,7 +139,8 @@
             <div>
               <span class="label-text mb-1 block">Ativo a particionar</span>
               <p class="mb-2 text-xs opacity-70">
-                Escolha o ativo uma vez; as fatias só pedem nome interno e cotas ou valor.
+                Escolha o ativo uma vez; as fatias só pedem nome interno e cotas ou valor. A
+                finalidade (investimento, reserva etc.) é definida por fatia na tabela do objetivo.
               </p>
               <AssetPicker
                 assets={portfolioAssets}

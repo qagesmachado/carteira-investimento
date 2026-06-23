@@ -3,7 +3,7 @@ import { apiFetch } from './http';
 
 export type AssetType = 'stock' | 'etf' | 'fii' | 'fixed_income' | 'crypto' | 'pension' | 'other';
 export type AssetMarket = 'national' | 'international';
-export type EtfSubtype = 'variable_income' | 'fixed_income';
+export type EtfSubtype = 'variable_income' | 'fixed_income' | 'crypto';
 export type FixedIncomeIndexer = 'prefixed' | 'ipca_plus' | 'post_fixed';
 export type DisplayClass =
   | 'stocks'
@@ -21,6 +21,7 @@ export type AssetLookup = {
   market: AssetMarket;
   country?: string | null;
   currency: string;
+  etf_subtype?: EtfSubtype | null;
   sector?: string | null;
   subsector?: string | null;
   segment?: string | null;
