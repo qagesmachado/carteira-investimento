@@ -168,7 +168,7 @@
 </script>
 
 <form
-  class="rounded-box bg-base-100 p-4 shadow"
+  class="flex flex-col gap-4"
   data-testid="crypto-fee-form"
   on:submit|preventDefault={handleSubmit}
 >

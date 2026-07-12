@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 
 export async function gotoBitcoinPage(page: Page): Promise<void> {
   await page.goto('/ferramentas/criptomoedas');
-  await expect(page.getByRole('heading', { name: 'Criptomoedas', level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Criptomoedas', level: 1 })).toBeVisible();
 }
 
 export async function gotoCriptomoedasToolsPage(page: Page): Promise<void> {

@@ -27,16 +27,28 @@ from app.models.pension_contribution_year import PensionContributionYear
 from app.models.property_financing import (
     PropertyFinancing,
     PropertyFinancingEntry,
+    PropertyFinancingEntryTemplate,
 )
 from app.models.portfolio import AppPreference, Portfolio
 from app.models.position import Position
 from app.models.year_snapshot import PortfolioYearSnapshot, PositionSnapshot
+from app.models.budget import (
+    BudgetCategory,
+    BudgetIncomeSource,
+    BudgetMonth,
+    BudgetMonthIncome,
+    BudgetMonthTarget,
+    BudgetProfile,
+    BudgetRecurringExpense,
+    BudgetTag,
+    BudgetTransaction,
+)
 
 logger = logging.getLogger(__name__)
 
 # Versão do schema esperada pelo código. Incrementar ao adicionar uma migração
 # nova; é comparada com o `PRAGMA user_version` gravado dentro do arquivo do banco.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 3
 
 engine = create_engine(
     settings.database_url,
@@ -66,9 +78,21 @@ PORTFOLIO_TABLES = [
     PensionContributionYear.__table__,
     PropertyFinancing.__table__,
     PropertyFinancingEntry.__table__,
+    PropertyFinancingEntryTemplate.__table__,
     ManualPatrimonyItem.__table__,
 ]
-ALL_TABLES = ASSET_TABLES + PORTFOLIO_TABLES
+BUDGET_TABLES = [
+    BudgetProfile.__table__,
+    BudgetCategory.__table__,
+    BudgetTag.__table__,
+    BudgetIncomeSource.__table__,
+    BudgetMonth.__table__,
+    BudgetMonthTarget.__table__,
+    BudgetMonthIncome.__table__,
+    BudgetRecurringExpense.__table__,
+    BudgetTransaction.__table__,
+]
+ALL_TABLES = ASSET_TABLES + PORTFOLIO_TABLES + BUDGET_TABLES
 
 POSITION_OPTIONAL_COLUMNS = {
     "invested_amount": "FLOAT",
@@ -324,6 +348,32 @@ def _ensure_dividend_payment_portfolio_column(engine_param: Engine) -> None:
             )
 
 
+def _ensure_dividend_payment_amount_columns(engine_param: Engine) -> None:
+    with engine_param.begin() as connection:
+        tables = {
+            row[0]
+            for row in connection.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        if "dividendpayment" not in tables:
+            return
+        existing = {
+            row[1]
+            for row in connection.exec_driver_sql(
+                "PRAGMA table_info(dividendpayment)"
+            ).fetchall()
+        }
+        if "gross_amount" not in existing:
+            connection.exec_driver_sql(
+                "ALTER TABLE dividendpayment ADD COLUMN gross_amount REAL",
+            )
+        if "tax_withheld" not in existing:
+            connection.exec_driver_sql(
+                "ALTER TABLE dividendpayment ADD COLUMN tax_withheld REAL",
+            )
+
+
 def _migrate_property_financing_schema(engine_param: Engine) -> None:
     """Recria lançamentos quando o schema antigo (períodos mensais) ainda existir."""
     with engine_param.begin() as connection:
@@ -400,6 +450,18 @@ def _migrate_manual_patrimony_cash_to_emergency_reserve(engine_param: Engine) ->
         )
 
 
+def _ensure_budget_columns(engine_param: Engine) -> None:
+    with engine_param.begin() as connection:
+        existing = {
+            row[1]
+            for row in connection.exec_driver_sql("PRAGMA table_info(budgettransaction)").fetchall()
+        }
+        if "recurring_expense_id" not in existing:
+            connection.exec_driver_sql(
+                "ALTER TABLE budgettransaction ADD COLUMN recurring_expense_id INTEGER"
+            )
+
+
 def init_db() -> None:
     db_path = _database_file_path(engine)
     pre_existing = bool(db_path and db_path.exists() and db_path.stat().st_size > 0)
@@ -420,9 +482,11 @@ def init_db() -> None:
     _ensure_objective_allocation_columns(engine)
     _migrate_objective_flags_to_allocations(engine)
     _ensure_dividend_payment_portfolio_column(engine)
+    _ensure_dividend_payment_amount_columns(engine)
     _migrate_property_financing_schema(engine)
     _migrate_pension_contribution_years(engine)
     _migrate_manual_patrimony_cash_to_emergency_reserve(engine)
+    _ensure_budget_columns(engine)
     _ensure_default_objectives(engine)
 
     if needs_migration:

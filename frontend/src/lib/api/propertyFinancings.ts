@@ -32,6 +32,16 @@ export type FinancingEntry = {
   amount_brl: number;
 };
 
+export type FinancingEntryTemplate = {
+  id: number;
+  name: string;
+  entry_type: EntryType;
+  event_category: EventCategory;
+  description: string;
+  amount_brl: number;
+  sort_order: number;
+};
+
 export type PropertyFinancing = {
   id: number;
   portfolio_id: number;
@@ -39,6 +49,7 @@ export type PropertyFinancing = {
   property_type: PropertyType;
   description: string | null;
   entries: FinancingEntry[];
+  entry_templates: FinancingEntryTemplate[];
   metrics: FinancingSummaryMetrics;
 };
 
@@ -80,6 +91,20 @@ export type FinancingEntryCreate = {
 };
 
 export type FinancingEntryUpdate = Partial<FinancingEntryCreate>;
+
+export type FinancingEntryTemplateCreate = {
+  name: string;
+  entry_type: EntryType;
+  event_category: EventCategory;
+  description: string;
+  amount_brl: number;
+};
+
+export type FinancingEntryTemplateUpdate = Partial<
+  Omit<FinancingEntryTemplateCreate, 'name'>
+> & {
+  name?: string;
+};
 
 function baseUrl(portfolioId: number): string {
   return `${API_BASE_URL}/portfolios/${portfolioId}/property-financings`;
@@ -165,6 +190,47 @@ export async function deleteFinancingEntry(
   entryId: number
 ): Promise<void> {
   const response = await apiFetch(`${baseUrl(portfolioId)}/entries/${entryId}`, {
+    method: 'DELETE'
+  });
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+}
+
+export async function createFinancingEntryTemplate(
+  portfolioId: number,
+  financingId: number,
+  payload: FinancingEntryTemplateCreate
+): Promise<FinancingEntryTemplate> {
+  const response = await apiFetch(
+    `${baseUrl(portfolioId)}/${financingId}/entry-templates`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }
+  );
+  return parseResponse<FinancingEntryTemplate>(response);
+}
+
+export async function updateFinancingEntryTemplate(
+  portfolioId: number,
+  templateId: number,
+  payload: FinancingEntryTemplateUpdate
+): Promise<FinancingEntryTemplate> {
+  const response = await apiFetch(`${baseUrl(portfolioId)}/entry-templates/${templateId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return parseResponse<FinancingEntryTemplate>(response);
+}
+
+export async function deleteFinancingEntryTemplate(
+  portfolioId: number,
+  templateId: number
+): Promise<void> {
+  const response = await apiFetch(`${baseUrl(portfolioId)}/entry-templates/${templateId}`, {
     method: 'DELETE'
   });
   if (!response.ok) {

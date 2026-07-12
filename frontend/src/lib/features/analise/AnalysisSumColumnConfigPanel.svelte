@@ -94,7 +94,7 @@
 </script>
 
 <section class="card bg-base-100 shadow">
-  <div class="card-body gap-6">
+  <div class="card-body gap-3">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h2 class="card-title">{title}</h2>
       <div class="flex gap-2">

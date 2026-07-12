@@ -31,3 +31,12 @@ export function formatEventCategory(category: EventCategory): string {
 export function defaultEventCategoryForType(entryType: EntryType): EventCategory {
   return entryType === 'income' ? 'aluguel' : 'financiamento';
 }
+
+export function normalizeEventCategoryForType(
+  entryType: EntryType,
+  eventCategory: EventCategory
+): EventCategory {
+  return eventOptionsForType(entryType).some((option) => option.value === eventCategory)
+    ? eventCategory
+    : defaultEventCategoryForType(entryType);
+}

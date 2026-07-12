@@ -27,6 +27,7 @@
     "vitest": "^1.6.1"
   },
   "dependencies": {
+    "lucide-svelte": "^0.501.0",
     "xlsx": "^0.18.5"
   }
 }

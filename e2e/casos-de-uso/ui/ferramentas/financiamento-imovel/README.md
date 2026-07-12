@@ -11,5 +11,6 @@ Prefixo: `UI-FERR-`
 | UI-FERR-005 | `05-kpis-grafico.spec.ts` | aprovado |
 | UI-FERR-006 | `06-multiplos-imoveis.spec.ts` | aprovado |
 | UI-FERR-007 | `07-trocar-carteira.spec.ts` | aprovado |
+| UI-FERR-008 | `08-padroes-lancamento.spec.ts` | aprovado |
 
 Referência: [controle-financiamento-imovel.md](../../../../docs/produto/desenvolvido/controle-financiamento-imovel.md)

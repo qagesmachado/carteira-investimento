@@ -246,6 +246,221 @@ export function computeDividendBarRows(
   }));
 }
 
+export type DividendAmountMode = 'national' | 'total';
+
+function paymentAmountBrl(
+  payment: DividendPayment,
+  usdBrlRate: number | null | undefined,
+  mode: DividendAmountMode
+): number {
+  const currency = payment.currency?.trim().toUpperCase() || 'BRL';
+  if (mode === 'national') {
+    return currency === 'BRL' ? payment.amount : 0;
+  }
+  if (currency === 'BRL') {
+    return payment.amount;
+  }
+  if (currency === 'USD' && usdBrlRate != null && usdBrlRate > 0) {
+    return payment.amount * usdBrlRate;
+  }
+  return payment.amount;
+}
+
+/** Últimos 12 meses calendário (inclui mês de referência). */
+export function aggregateDividendsRolling12Months(
+  payments: DividendPayment[],
+  usdBrlRate: number | null | undefined,
+  mode: DividendAmountMode = 'total',
+  reference: Date = new Date()
+): DividendBarRow[] {
+  const rows: DividendSummaryRow[] = [];
+
+  for (let offset = 11; offset >= 0; offset -= 1) {
+    const monthDate = new Date(reference.getFullYear(), reference.getMonth() - offset, 1);
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth() + 1;
+    const label = MONTH_LABELS_SHORT[month - 1];
+    let amount = 0;
+    let count = 0;
+
+    for (const payment of payments) {
+      if (parsePaymentYear(payment.payment_date) !== year) {
+        continue;
+      }
+      if (parsePaymentMonth(payment.payment_date) !== month) {
+        continue;
+      }
+      amount += paymentAmountBrl(payment, usdBrlRate, mode);
+      count += 1;
+    }
+
+    rows.push({
+      label,
+      totalByCurrency: amount > 0 ? { BRL: amount } : {},
+      count
+    });
+  }
+
+  return computeDividendBarRows(rows, usdBrlRate);
+}
+
+export type DividendYearChartPoint = {
+  month: number;
+  label: string;
+  amountBrl: number;
+  barPercent: number;
+};
+
+export type DividendYearChartModel = {
+  year: number;
+  throughMonth: number;
+  comparisonPeriodLabel: string;
+  points: DividendYearChartPoint[];
+  yMax: number;
+  yTicks: number[];
+  totalBrl: number;
+  previousYearTotalBrl: number;
+  yearOverYearPercent: number | null;
+};
+
+export function buildLinearYTicks(maxValue: number, divisions = 4): { yMax: number; yTicks: number[] } {
+  if (maxValue <= 0) {
+    const yMax = 100;
+    const step = yMax / divisions;
+    return {
+      yMax,
+      yTicks: Array.from({ length: divisions + 1 }, (_, index) => index * step)
+    };
+  }
+
+  const rawStep = maxValue / divisions;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const normalized = rawStep / magnitude;
+  const niceMultiplier = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  const step = niceMultiplier * magnitude;
+  const yMax = step * divisions;
+  return {
+    yMax,
+    yTicks: Array.from({ length: divisions + 1 }, (_, index) => index * step)
+  };
+}
+
+export function sumDividendsYearTotalBrl(
+  payments: DividendPayment[],
+  usdBrlRate: number | null | undefined,
+  year: number
+): number {
+  return sumDividendsThroughMonthBrl(payments, usdBrlRate, year, 12);
+}
+
+export function formatComparisonPeriodLabel(throughMonth: number): string {
+  if (throughMonth >= 12) {
+    return '';
+  }
+  return `${MONTH_LABELS_SHORT[0]}–${MONTH_LABELS_SHORT[throughMonth - 1]}`;
+}
+
+export function sumDividendsThroughMonthBrl(
+  payments: DividendPayment[],
+  usdBrlRate: number | null | undefined,
+  year: number,
+  throughMonth: number
+): number {
+  let total = 0;
+  for (const payment of payments) {
+    if (parsePaymentYear(payment.payment_date) !== year) {
+      continue;
+    }
+    const month = parsePaymentMonth(payment.payment_date);
+    if (month > throughMonth) {
+      continue;
+    }
+    total += paymentAmountBrl(payment, usdBrlRate, 'total');
+  }
+  return total;
+}
+
+export function buildDividendYearChartModel(
+  payments: DividendPayment[],
+  usdBrlRate: number | null | undefined,
+  reference: Date = new Date()
+): DividendYearChartModel {
+  const year = reference.getFullYear();
+  const throughMonth = reference.getMonth() + 1;
+  const comparisonPeriodLabel = formatComparisonPeriodLabel(throughMonth);
+  const monthRows = aggregateDividendsByMonth(payments, year);
+  const amounts = monthRows.map((row) => dividendRowAmountBrl(row, usdBrlRate));
+  const maxAmount = Math.max(...amounts, 0);
+  const { yMax, yTicks } = buildLinearYTicks(maxAmount);
+
+  const points = monthRows.map((row, index) => ({
+    month: index + 1,
+    label: row.label,
+    amountBrl: amounts[index],
+    barPercent: yMax > 0 ? (amounts[index] / yMax) * 100 : 0
+  }));
+
+  const totalBrl = sumDividendsThroughMonthBrl(payments, usdBrlRate, year, throughMonth);
+  const previousYearTotalBrl = sumDividendsThroughMonthBrl(
+    payments,
+    usdBrlRate,
+    year - 1,
+    throughMonth
+  );
+  const yearOverYearPercent =
+    previousYearTotalBrl > 0 ? ((totalBrl - previousYearTotalBrl) / previousYearTotalBrl) * 100 : null;
+
+  return {
+    year,
+    throughMonth,
+    comparisonPeriodLabel,
+    points,
+    yMax,
+    yTicks,
+    totalBrl,
+    previousYearTotalBrl,
+    yearOverYearPercent
+  };
+}
+
+export function formatYearOverYearChange(percent: number | null): string {
+  if (percent == null) {
+    return 'Sem base no ano anterior';
+  }
+  const sign = percent >= 0 ? '+' : '';
+  return `${sign}${percent.toLocaleString('pt-BR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  })}% em relação ao ano anterior`;
+}
+
+export function yearOverYearClass(percent: number | null): string {
+  if (percent == null) {
+    return 'text-base-content/60';
+  }
+  return percent >= 0 ? 'text-success' : 'text-error';
+}
+
+export const MAX_RECENT_DIVIDEND_ITEMS = 3;
+
+export function pickRecentDividendPayments(
+  payments: DividendPayment[],
+  limit = MAX_RECENT_DIVIDEND_ITEMS
+): DividendPayment[] {
+  if (payments.length === 0) {
+    return [];
+  }
+  return [...payments]
+    .sort((a, b) => b.payment_date.localeCompare(a.payment_date))
+    .slice(0, limit);
+}
+
+export function pickLastDividendPayment(
+  payments: DividendPayment[]
+): DividendPayment | null {
+  return pickRecentDividendPayments(payments, 1)[0] ?? null;
+}
+
 /** Ranking por valor na moeda do lançamento (BRL preferido para sort). */
 export function topAssetsByDividendAmount(
   payments: DividendPayment[],

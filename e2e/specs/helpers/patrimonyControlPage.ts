@@ -1,5 +1,13 @@
 import { expect, type Page } from '@playwright/test';
 
+async function fillBrDecimalTestInput(page: Page, testId: string, value: string): Promise<void> {
+  const input = page.getByTestId(testId);
+  await input.click();
+  await input.fill(value);
+  await input.dispatchEvent('input');
+  await input.blur();
+}
+
 export async function gotoPatrimonyControlPage(page: Page): Promise<void> {
   await page.goto('/ferramentas/controle-patrimonio', { waitUntil: 'domcontentloaded' });
   await expect(
@@ -26,7 +34,7 @@ export async function fillManualPatrimonyForm(
   if (options.location != null) {
     await page.getByTestId('manual-patrimony-location').selectOption(options.location);
   }
-  await page.getByTestId('manual-patrimony-amount').fill(options.amount);
+  await fillBrDecimalTestInput(page, 'manual-patrimony-amount', options.amount);
 }
 
 export async function saveManualPatrimonyForm(page: Page): Promise<void> {

@@ -8,8 +8,8 @@ describe('applyThemeToDocument', () => {
   });
 
   it('define data-theme no elemento html', () => {
-    applyThemeToDocument('dim');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dim');
+    applyThemeToDocument('dark');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
 
     applyThemeToDocument('light');
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');

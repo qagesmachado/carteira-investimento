@@ -35,7 +35,7 @@
 
   $: isConsolidated = variant === 'consolidated';
   $: outerGridClass = isConsolidated
-    ? 'grid grid-cols-1 gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-[1.1fr_1.1fr_minmax(12rem,0.9fr)]'
+    ? 'grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-3 xl:grid-cols-[1.1fr_1.1fr_minmax(12rem,0.9fr)]'
     : 'grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3';
 
   $: metricsGridClass = isConsolidated

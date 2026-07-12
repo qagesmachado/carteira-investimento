@@ -18,6 +18,8 @@
   import AssetList from '$lib/features/assets/AssetList.svelte';
   import AssetLookupForm from '$lib/features/assets/AssetLookupForm.svelte';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
   /** Renda fixa tradicional e previdência são cadastradas na carteira, não aqui. */
@@ -141,18 +143,14 @@
 </svelte:head>
 
 <main class="min-h-screen w-full bg-base-200">
-  <div class="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 py-8">
-    <section
-      class="w-full min-w-0 rounded-box bg-gradient-to-r from-primary to-secondary px-6 py-10 text-primary-content"
-    >
-      <h1 class="text-4xl font-bold">Cadastro de ativos no banco de dados</h1>
-    </section>
+  <AppPageShell paddingY="py-4" class="flex w-full min-w-0 flex-col gap-3">
+    <PageHero title="Cadastro de ativos no banco de dados" variant="primary" />
 
     <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
 
     <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
 
-    <div class="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <div class="grid gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
       <div class="flex flex-col gap-4">
         <AssetLookupForm onLookup={handleLookup} loading={loadingLookup} />
         <div class="card bg-base-100 shadow">
@@ -178,5 +176,5 @@
     </div>
 
     <AssetList assets={marketAssets} onEdit={handleEdit} onDelete={handleDelete} />
-  </div>
+  </AppPageShell>
 </main>

@@ -35,6 +35,7 @@ import-local-proventos
 
 # Catálogo pessoal (opcional; o repositório versiona backend/seed/assets.json)
 backend/seed/assets.local.json
+mockups/
 
 # testes
 test-reports

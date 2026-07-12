@@ -2,18 +2,31 @@
   import { formatMoneyAmount } from '$lib/assetLabels';
 
   import {
-    allocationBarClass,
-    allocationPieSliceClass
+    allocationBarClassForDisplayClass,
+    allocationPieSliceClassForDisplayClass
   } from './allocationChartColors';
+  import DashboardPatrimonyFilterCheckboxes from './DashboardPatrimonyFilterCheckboxes.svelte';
   import type { AllocationRow } from './portfolioDashboard';
-  import { allocationToPieSegments, pieSlicePath } from './topAssetsDashboard';
+  import type { DashboardPatrimonyFilterAvailability } from './dashboardPatrimonyScope';
+  import { hasDashboardPatrimonyFilterOptions } from './dashboardPatrimonyScope';
+  import {
+    allocationToPieSegments,
+    donutSegmentLabelPoint,
+    donutSlicePath,
+    shouldShowDonutSegmentLabel
+  } from './topAssetsDashboard';
 
   export let rows: AllocationRow[] = [];
+  export let filterAvailability: DashboardPatrimonyFilterAvailability = {
+    hasNonInvestment: false,
+    hasPension: false
+  };
 
-  type ViewMode = 'list' | 'pie';
-  let viewMode: ViewMode = 'list';
+  $: showPatrimonyFilters = hasDashboardPatrimonyFilterOptions(filterAvailability);
 
   $: pieSegments = allocationToPieSegments(rows);
+  $: totalBrl = rows.reduce((sum, row) => sum + row.valueBrl, 0);
+  $: totalPercent = rows.reduce((sum, row) => sum + row.percent, 0);
 
   type HoveredSegment = (typeof pieSegments)[number];
   let hoveredSegment: HoveredSegment | null = null;
@@ -21,9 +34,12 @@
   let tooltipY = 0;
   let chartEl: HTMLDivElement;
 
+  function formatPercent(value: number): string {
+    return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
+  }
+
   function formatSegmentTooltip(segment: HoveredSegment): string {
-    const pct = segment.percent.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
-    return `${segment.label}: ${pct}% · ${formatMoneyAmount(segment.valueBrl, 'BRL')}`;
+    return `${segment.label}: ${formatPercent(segment.percent)} · ${formatMoneyAmount(segment.valueBrl, 'BRL')}`;
   }
 
   function showSegmentTooltip(segment: HoveredSegment, event: MouseEvent) {
@@ -47,55 +63,53 @@
 
 <section class="card bg-base-100 shadow" aria-label="Alocação por classe">
   <div class="card-body gap-4">
-    <div class="flex flex-wrap items-center justify-between gap-2">
+    <div class="flex flex-wrap items-start justify-between gap-3">
       <h2 class="card-title text-lg">Alocação por classe</h2>
-      {#if rows.length > 0}
-        <div class="join">
-          <button
-            type="button"
-            class="btn btn-xs join-item {viewMode === 'list' ? 'btn-active' : 'btn-outline'}"
-            aria-pressed={viewMode === 'list'}
-            on:click={() => (viewMode = 'list')}
-          >
-            Barras
-          </button>
-          <button
-            type="button"
-            class="btn btn-xs join-item {viewMode === 'pie' ? 'btn-active' : 'btn-outline'}"
-            aria-pressed={viewMode === 'pie'}
-            on:click={() => (viewMode = 'pie')}
-          >
-            Pizza
-          </button>
-        </div>
+      {#if rows.length > 0 && showPatrimonyFilters}
+        <DashboardPatrimonyFilterCheckboxes {filterAvailability} compact />
       {/if}
     </div>
 
     {#if rows.length === 0}
       <p class="text-sm text-base-content/60">Sem valor de mercado para calcular alocação.</p>
-    {:else if viewMode === 'pie'}
-      <div class="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+    {:else}
+      <div class="flex flex-col items-center gap-6 lg:flex-row lg:items-center">
         <div
           bind:this={chartEl}
-          class="relative h-44 w-44 shrink-0"
+          class="relative h-56 w-56 shrink-0 sm:h-64 sm:w-64"
           on:mouseleave={hideSegmentTooltip}
         >
           <svg
             viewBox="0 0 100 100"
             class="h-full w-full"
             role="img"
-            aria-label="Gráfico pizza de alocação por classe"
+            aria-label="Gráfico rosca de alocação por classe"
           >
             {#each pieSegments as segment}
               <path
-                class="cursor-pointer {allocationPieSliceClass(segment.colorIndex)}"
-                d={pieSlicePath(segment.startAngle, segment.endAngle)}
+                class="cursor-pointer {allocationPieSliceClassForDisplayClass(segment.displayClass)}"
+                d={donutSlicePath(segment.startAngle, segment.endAngle)}
                 stroke="oklch(var(--b1) / 1)"
-                stroke-width="0.5"
+                stroke-width="0.6"
                 aria-label={formatSegmentTooltip(segment)}
                 on:mouseenter={(event) => showSegmentTooltip(segment, event)}
                 on:mousemove={positionTooltip}
               ></path>
+            {/each}
+            {#each pieSegments as segment}
+              {@const labelPoint = donutSegmentLabelPoint(segment.startAngle, segment.endAngle)}
+              {#if shouldShowDonutSegmentLabel(segment.percent, labelPoint.sweep)}
+                <text
+                  x={labelPoint.x}
+                  y={labelPoint.y}
+                  text-anchor="middle"
+                  dominant-baseline="middle"
+                  class="allocation-donut-label pointer-events-none select-none"
+                  aria-hidden="true"
+                >
+                  {segment.percent.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%
+                </text>
+              {/if}
             {/each}
           </svg>
           {#if hoveredSegment}
@@ -108,54 +122,46 @@
             </div>
           {/if}
         </div>
-        <ul class="flex min-w-0 flex-1 flex-col gap-2 text-sm">
-          {#each rows as row, i}
-            <li class="flex flex-wrap items-baseline justify-between gap-2">
-              <span class="flex items-center gap-2">
-                <span
-                  class="inline-block h-3 w-3 shrink-0 rounded-sm {allocationBarClass(i)}"
-                  aria-hidden="true"
-                ></span>
-                <a
-                  class="link link-hover font-medium"
-                  href="/portfolios/consolidada?display_class={row.displayClass}"
-                >
-                  {row.label}
-                </a>
-              </span>
-              <span class="text-base-content/70">
-                {row.percent.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% ·
-                {formatMoneyAmount(row.valueBrl, 'BRL')}
-              </span>
-            </li>
-          {/each}
-        </ul>
-      </div>
-    {:else}
-      <div class="flex flex-col gap-3">
-        {#each rows as row, i}
-          <div class="flex flex-col gap-1">
-            <div class="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-              <a
-                class="link link-hover font-medium"
-                href="/portfolios/consolidada?display_class={row.displayClass}"
-              >
-                {row.label}
-              </a>
-              <span class="text-base-content/70">
-                {row.percent.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% ·
-                {formatMoneyAmount(row.valueBrl, 'BRL')}
-              </span>
-            </div>
-            <div class="h-2 w-full overflow-hidden rounded-full bg-base-200">
-              <div
-                class="h-full rounded-full {allocationBarClass(i)}"
-                style="width: {Math.min(100, row.percent)}%"
-                role="presentation"
-              ></div>
-            </div>
-          </div>
-        {/each}
+
+        <div class="min-w-0 flex-1 self-stretch">
+          <table class="w-full border-collapse text-sm" data-testid="dashboard-allocation-legend">
+            <tbody>
+              {#each rows as row (row.displayClass)}
+                <tr class="border-b border-base-200">
+                  <td class="py-2 pr-3">
+                    <span class="flex items-center gap-2">
+                      <span
+                        class="inline-block h-2.5 w-2.5 shrink-0 rounded-full {allocationBarClassForDisplayClass(row.displayClass)}"
+                        aria-hidden="true"
+                      ></span>
+                      <a
+                        class="link link-hover font-medium"
+                        href="/portfolios/consolidada?display_class={row.displayClass}"
+                      >
+                        {row.label}
+                      </a>
+                    </span>
+                  </td>
+                  <td class="py-2 pr-3 text-right tabular-nums text-base-content/80">
+                    {formatPercent(row.percent)}
+                  </td>
+                  <td class="py-2 text-right tabular-nums text-base-content/80">
+                    {formatMoneyAmount(row.valueBrl, 'BRL')}
+                  </td>
+                </tr>
+              {/each}
+              <tr class="font-semibold text-base-content" data-testid="dashboard-allocation-total">
+                <td class="border-t border-base-300 pt-3">Total</td>
+                <td class="border-t border-base-300 pt-3 text-right tabular-nums">
+                  {formatPercent(totalPercent)}
+                </td>
+                <td class="border-t border-base-300 pt-3 text-right tabular-nums">
+                  {formatMoneyAmount(totalBrl, 'BRL')}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     {/if}
   </div>
@@ -182,6 +188,12 @@
   }
   .allocation-pie-6 {
     fill: oklch(var(--n) / 1);
+  }
+
+  .allocation-donut-label {
+    fill: #fff;
+    font-size: 4.5px;
+    font-weight: 600;
   }
 
   .allocation-pie-tooltip {

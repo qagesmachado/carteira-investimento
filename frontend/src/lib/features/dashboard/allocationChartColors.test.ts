@@ -4,7 +4,10 @@ import {
   ALLOCATION_BAR_CLASSES,
   ALLOCATION_FILL_STYLES,
   allocationBarClass,
+  allocationBarClassForDisplayClass,
+  allocationColorIndexForDisplayClass,
   allocationFillStyle,
+  allocationPieSliceClassForDisplayClass,
   buildAllocationConicGradient
 } from './allocationChartColors';
 
@@ -19,10 +22,18 @@ describe('allocationChartColors', () => {
 
   it('monta conic-gradient proporcional aos percentuais', () => {
     const gradient = buildAllocationConicGradient([
-      { percent: 25 },
-      { percent: 75 }
+      { percent: 25, displayClass: 'stocks' },
+      { percent: 75, displayClass: 'fixed_income' }
     ]);
-    expect(gradient).toContain('oklch(var(--p) / 1) 0% 25%');
-    expect(gradient).toContain('oklch(var(--s) / 1) 25% 100%');
+    expect(gradient).toContain('oklch(var(--s) / 1) 0% 25%');
+    expect(gradient).toContain('oklch(var(--p) / 1) 25% 100%');
+  });
+
+  it('mantem cor fixa por display_class', () => {
+    expect(allocationBarClassForDisplayClass('crypto')).toBe('bg-warning');
+    expect(allocationBarClassForDisplayClass('pension')).toBe('bg-accent');
+    expect(allocationPieSliceClassForDisplayClass('funds')).toBe('allocation-pie-4');
+    expect(allocationColorIndexForDisplayClass('stocks')).toBe(1);
+    expect(allocationColorIndexForDisplayClass('unknown')).toBe(6);
   });
 });

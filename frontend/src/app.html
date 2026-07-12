@@ -7,7 +7,7 @@
       (function () {
         try {
           var stored = localStorage.getItem('carteira.theme');
-          var theme = stored === 'dim' ? 'dim' : 'light';
+          var theme = stored === 'dark' || stored === 'dim' ? 'dark' : 'light';
           document.documentElement.setAttribute('data-theme', theme);
         } catch (e) {
           document.documentElement.setAttribute('data-theme', 'light');

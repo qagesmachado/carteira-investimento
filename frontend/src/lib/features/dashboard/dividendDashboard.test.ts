@@ -6,6 +6,13 @@ import {
   aggregateDividendsByDisplayClass,
   aggregateDividendsByMonth,
   aggregateDividendsByYear,
+  aggregateDividendsRolling12Months,
+  buildDividendYearChartModel,
+  buildLinearYTicks,
+  formatComparisonPeriodLabel,
+  formatYearOverYearChange,
+  sumDividendsThroughMonthBrl,
+  sumDividendsYearTotalBrl,
   computeDividendBarRows,
   dividendRowAmountBrl,
   filterPaymentsInRange,
@@ -14,6 +21,8 @@ import {
   getYearBounds,
   listPaymentYears,
   pickDefaultYear,
+  pickLastDividendPayment,
+  pickRecentDividendPayments,
   topAssetsByDividendAmount
 } from './dividendDashboard';
 
@@ -147,5 +156,111 @@ describe('dividendDashboard', () => {
     expect(bars).toHaveLength(2);
     expect(bars[0].barPercent).toBe(100);
     expect(bars[1].barPercent).toBe(50);
+  });
+
+  it('aggregateDividendsRolling12Months retorna 12 meses', () => {
+    const ref = new Date(2025, 5, 15);
+    const bars = aggregateDividendsRolling12Months(
+      [payment({ payment_date: '2025-06-10', amount: 100 })],
+      null,
+      'total',
+      ref
+    );
+    expect(bars).toHaveLength(12);
+    expect(bars[11].amountBrl).toBe(100);
+    expect(bars[10].amountBrl).toBe(0);
+  });
+
+  it('buildDividendYearChartModel agrega jan-dez do ano com escala linear', () => {
+    const ref = new Date(2025, 5, 15);
+    const model = buildDividendYearChartModel(
+      [
+        payment({ payment_date: '2025-02-10', amount: 200 }),
+        payment({ payment_date: '2025-06-10', amount: 100 }),
+        payment({ payment_date: '2024-12-01', amount: 400 })
+      ],
+      null,
+      ref
+    );
+
+    expect(model.year).toBe(2025);
+    expect(model.points).toHaveLength(12);
+    expect(model.points[0].label).toBe('Jan');
+    expect(model.points[1].amountBrl).toBe(200);
+    expect(model.points[5].amountBrl).toBe(100);
+    expect(model.totalBrl).toBe(300);
+    expect(model.previousYearTotalBrl).toBe(0);
+    expect(model.yearOverYearPercent).toBeNull();
+    expect(model.comparisonPeriodLabel).toBe('Jan–Jun');
+    expect(model.points[5].barPercent).toBeCloseTo((100 / model.yMax) * 100, 5);
+  });
+
+  it('buildDividendYearChartModel compara mesmo periodo jan-jun com ano anterior', () => {
+    const ref = new Date(2025, 5, 15);
+    const model = buildDividendYearChartModel(
+      [
+        payment({ payment_date: '2025-02-10', amount: 200 }),
+        payment({ payment_date: '2025-06-10', amount: 100 }),
+        payment({ payment_date: '2024-03-01', amount: 100 }),
+        payment({ payment_date: '2024-12-01', amount: 400 })
+      ],
+      null,
+      ref
+    );
+
+    expect(model.totalBrl).toBe(300);
+    expect(model.previousYearTotalBrl).toBe(100);
+    expect(model.yearOverYearPercent).toBeCloseTo(200, 5);
+  });
+
+  it('sumDividendsThroughMonthBrl limita ate o mes informado', () => {
+    const payments = [
+      payment({ payment_date: '2025-02-10', amount: 200 }),
+      payment({ payment_date: '2025-08-10', amount: 500 })
+    ];
+    expect(sumDividendsThroughMonthBrl(payments, null, 2025, 6)).toBe(200);
+    expect(sumDividendsThroughMonthBrl(payments, null, 2025, 12)).toBe(700);
+  });
+
+  it('formatComparisonPeriodLabel omite periodo em dezembro', () => {
+    expect(formatComparisonPeriodLabel(6)).toBe('Jan–Jun');
+    expect(formatComparisonPeriodLabel(12)).toBe('');
+  });
+
+  it('buildLinearYTicks arredonda topo do eixo Y', () => {
+    expect(buildLinearYTicks(1939).yMax).toBe(2000);
+    expect(buildLinearYTicks(0).yTicks).toEqual([0, 25, 50, 75, 100]);
+  });
+
+  it('sumDividendsYearTotalBrl converte USD no modo total', () => {
+    const total = sumDividendsYearTotalBrl(
+      [payment({ payment_date: '2025-03-01', amount: 10, currency: 'USD' })],
+      5,
+      2025
+    );
+    expect(total).toBe(50);
+  });
+
+  it('formatYearOverYearChange descreve variacao percentual', () => {
+    expect(formatYearOverYearChange(12.3)).toBe('+12,3% em relação ao ano anterior');
+    expect(formatYearOverYearChange(null)).toBe('Sem base no ano anterior');
+  });
+
+  it('pickRecentDividendPayments retorna os mais recentes limitados', () => {
+    const recent = pickRecentDividendPayments([
+      payment({ id: 1, payment_date: '2025-01-01' }),
+      payment({ id: 2, payment_date: '2025-06-01' }),
+      payment({ id: 3, payment_date: '2025-05-01' }),
+      payment({ id: 4, payment_date: '2024-12-01' })
+    ]);
+    expect(recent.map((item) => item.id)).toEqual([2, 3, 1]);
+  });
+
+  it('pickLastDividendPayment ordena por data', () => {
+    const last = pickLastDividendPayment([
+      payment({ id: 1, payment_date: '2025-01-01' }),
+      payment({ id: 2, payment_date: '2025-06-01' })
+    ]);
+    expect(last?.id).toBe(2);
   });
 });

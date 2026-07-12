@@ -9,6 +9,9 @@
     type Portfolio
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import {
     CLASS_TARGET_FIELDS,
     defaultAllocationTargets,
@@ -96,14 +99,14 @@
   <title>Configuração — Rebalanceamento</title>
 </svelte:head>
 
-<main class="mx-auto max-w-3xl space-y-6 p-4">
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-bold">Metas de rebalanceamento</h1>
-      <p class="text-sm opacity-70">Percentuais alvo por classe e relação ETF/Ação.</p>
-    </div>
-    <a class="btn btn-sm btn-ghost" href="/rebalanceamento">Voltar</a>
-  </div>
+<main class="min-h-screen w-full bg-base-200">
+<AppPageShell paddingY="py-2-px-4" class="flex flex-col gap-3">
+  <PageHeader
+    title="Metas de rebalanceamento"
+    subtitle="Percentuais alvo por classe e relação ETF/Ação."
+  >
+    <a slot="actions" class="btn btn-sm btn-ghost" href="/rebalanceamento">Voltar</a>
+  </PageHeader>
 
   {#if error}
     <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
@@ -117,7 +120,7 @@
   {:else if portfolios.length === 0}
     <p class="text-sm opacity-70">Cadastre uma carteira antes de definir metas.</p>
   {:else}
-    <section class="rounded-box bg-base-100 p-4 shadow-sm space-y-4">
+    <PageSection>
       <label class="form-control w-full max-w-md">
         <span class="label-text">Carteira</span>
         <PortfolioSelect
@@ -197,6 +200,7 @@
           Restaurar padrão
         </button>
       </div>
-    </section>
+    </PageSection>
   {/if}
+</AppPageShell>
 </main>

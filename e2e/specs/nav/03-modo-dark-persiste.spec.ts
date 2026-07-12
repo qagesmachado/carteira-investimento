@@ -21,15 +21,15 @@ test.describe('UI-NAV-003', () => {
 
     await clickThemeToggle(page);
     await expect(themeToggle(page)).toHaveAttribute('aria-pressed', 'true');
-    await expectDocumentTheme(page, 'dim');
-    await expectThemePreferenceStored(page, 'dim');
+    await expectDocumentTheme(page, 'dark');
+    await expectThemePreferenceStored(page, 'dark');
 
     await gotoObjetivosPage(page);
-    await expectDocumentTheme(page, 'dim');
+    await expectDocumentTheme(page, 'dark');
 
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Objetivos financeiros' })).toBeVisible();
-    await expectDocumentTheme(page, 'dim');
+    await expectDocumentTheme(page, 'dark');
 
     await clickThemeToggle(page);
     await expect(themeToggle(page)).toHaveAttribute('aria-pressed', 'false');

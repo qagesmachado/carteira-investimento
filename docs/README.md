@@ -47,11 +47,12 @@ Neste momento não há decisão de stack, banco de dados, framework ou arquitetu
 
 **Transversal**
 
+- [Ícones de UI (Lucide)](produto/desenvolvido/icones-ui.md): padrão de ícones no frontend (implementado).
 - [Ocultar valores monetários](produto/desenvolvido/ocultar-valores.md): privacidade visual global via navbar (implementado).
 
 ### Candidatos (não implementados)
 
-- [Dashboard Tier 3 (candidato)](produto/candidato/dashboard-tier-3.md): aderência no dashboard, evolução patrimonial, multi-carteira (não implementado).
+- [Dashboard Tier 3 (candidato)](produto/candidato/dashboard-tier-3.md): evolução patrimonial e widget de objetivos (parcial — aderência e gráfico 12 meses já entregues).
 - [Módulos Tier 4 (candidato)](produto/candidato/modulos-tier-4.md): simulações, IR e extensões de análise (parcial).
 
 ## Princípios da documentação

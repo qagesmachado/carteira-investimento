@@ -29,6 +29,22 @@ class PropertyFinancingEntryUpdate(BaseModel):
     amount_brl: float | None = Field(default=None, gt=0)
 
 
+class PropertyFinancingEntryTemplateCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    entry_type: str
+    event_category: str
+    description: str = Field(min_length=1, max_length=200)
+    amount_brl: float = Field(gt=0)
+
+
+class PropertyFinancingEntryTemplateUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    entry_type: str | None = None
+    event_category: str | None = None
+    description: str | None = Field(default=None, min_length=1, max_length=200)
+    amount_brl: float | None = Field(default=None, gt=0)
+
+
 class FinancingSummaryMetricsRead(BaseModel):
     total_income_brl: float
     total_expenses_brl: float
@@ -45,6 +61,16 @@ class PropertyFinancingEntryRead(BaseModel):
     amount_brl: float
 
 
+class PropertyFinancingEntryTemplateRead(BaseModel):
+    id: int
+    name: str
+    entry_type: str
+    event_category: str
+    description: str
+    amount_brl: float
+    sort_order: int
+
+
 class PropertyFinancingRead(BaseModel):
     id: int
     portfolio_id: int
@@ -52,6 +78,7 @@ class PropertyFinancingRead(BaseModel):
     property_type: str
     description: str | None
     entries: list[PropertyFinancingEntryRead]
+    entry_templates: list[PropertyFinancingEntryTemplateRead]
     metrics: FinancingSummaryMetricsRead
 
 

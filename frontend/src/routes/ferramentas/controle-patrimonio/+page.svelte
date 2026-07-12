@@ -162,7 +162,7 @@
   <title>Controle de patrimônio · Ferramentas</title>
 </svelte:head>
 
-<div class="space-y-6">
+<div class="flex flex-col gap-3">
   <PageHeader
     title="Controle de patrimônio"
     subtitle="Patrimônio investido (automático) e reserva de emergência manual (banco, corretora ou dinheiro em espécie). Distinto dos objetivos financeiros, que particionam posições já investidas."

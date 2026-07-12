@@ -14,10 +14,42 @@ A carteira funciona como proxy do titular (campo `holder`); não há camada de l
 - **Detalhe por imóvel**: KPIs, gráfico, formulário de lançamento (estilo taxas BTC) e lista de eventos.
 - Tipos de imóvel: casa, lote, apartamento, galpão, sala comercial.
 - Lançamentos por **data** com tipo do evento (Receita/Despesa), categoria (Aluguel, Financiamento, Outras taxas, Entrada do financiamento), descrição e valor.
+- **Padrões de lançamento** por imóvel: pré-preenchimento de tipo, evento, valor e descrição (sem data); CRUD independente dos lançamentos.
 - API: `/portfolios/{portfolio_id}/property-financings`.
+
+## Padrões de lançamento
+
+Por imóvel (`financing_id`), o usuário pode salvar padrões nomeados que preenchem o formulário «Registrar lançamento»:
+
+| Campo no padrão | Campo no lançamento |
+| --------------- | ------------------- |
+| `name` | — (rótulo do padrão) |
+| `entry_type` | Tipo do evento |
+| `event_category` | Evento |
+| `description` | Descrição |
+| `amount_brl` | Valor (R$) |
+
+Regras:
+
+- **Data não faz parte do padrão** — informada a cada lançamento.
+- Aplicar padrão **não cria** lançamento; o usuário pode editar campos antes de Salvar.
+- Editar ou excluir padrão **não altera** lançamentos já registrados.
+- `UNIQUE(financing_id, name)` — nomes únicos por imóvel.
+- Não é recorrência nem geração automática de meses.
+
+API:
+
+| Método | Path |
+| ------ | ---- |
+| GET (snapshot) | lista em `financings[].entry_templates` |
+| POST | `/{financing_id}/entry-templates` |
+| PATCH | `/entry-templates/{template_id}` |
+| DELETE | `/entry-templates/{template_id}` |
 
 ## Fora do escopo
 
+- Recorrência ou geração automática de lançamentos mensais.
+- Padrões compartilhados entre imóveis da mesma carteira.
 - Login/perfil de usuário.
 - Vínculo com ativo imobiliário cadastrado na carteira.
 - Importação automática de aluguel a partir de proventos.
@@ -29,6 +61,7 @@ A carteira funciona como proxy do titular (campo `holder`); não há camada de l
 | -------- | ----------------- |
 | `PropertyFinancing` | `portfolio_id`, `name`, `property_type`, `description` |
 | `PropertyFinancingEntry` | `financing_id`, `event_date`, `entry_type` (`income` \| `expense`), `event_category`, `description`, `amount_brl` |
+| `PropertyFinancingEntryTemplate` | `financing_id`, `name`, `entry_type`, `event_category`, `description`, `amount_brl`, `sort_order` |
 
 Regras:
 

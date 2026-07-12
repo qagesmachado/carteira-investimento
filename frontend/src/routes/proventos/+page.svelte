@@ -18,6 +18,9 @@
     type Portfolio
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import DividendPaymentForm from '$lib/features/proventos/DividendPaymentForm.svelte';
   import DividendPaymentEditModal from '$lib/features/proventos/DividendPaymentEditModal.svelte';
   import DividendPaymentList from '$lib/features/proventos/DividendPaymentList.svelte';
@@ -195,23 +198,24 @@
   <title>Proventos — Carteira de Investimentos</title>
 </svelte:head>
 
-<main class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8">
-  <header>
-    <h1 class="text-3xl font-bold">Proventos</h1>
-    <p class="mt-1 text-base-content/70">
-      Cadastre dividendos, JCP e outros proventos recebidos por ativo.
+<main class="min-h-screen w-full bg-base-200">
+<AppPageShell paddingY="py-4" class="flex flex-col gap-3">
+  <PageHero
+    title="Proventos"
+    subtitle="Cadastre dividendos, JCP e outros proventos recebidos por ativo."
+    variant="primary"
+  />
+
+  {#if !assetsLoading}
+    <p class="text-sm text-base-content/60">
+      {#if assetsError}
+        Catálogo de ativos indisponível.
+      {:else}
+        {assets.length} ativo{assets.length === 1 ? '' : 's'} no catálogo ·
+        {payments.length} provento{payments.length === 1 ? '' : 's'} cadastrado{payments.length === 1 ? '' : 's'}
+      {/if}
     </p>
-    {#if !assetsLoading}
-      <p class="mt-2 text-sm text-base-content/60">
-        {#if assetsError}
-          Catálogo de ativos indisponível.
-        {:else}
-          {assets.length} ativo{assets.length === 1 ? '' : 's'} no catálogo ·
-          {payments.length} provento{payments.length === 1 ? '' : 's'} cadastrado{payments.length === 1 ? '' : 's'}
-        {/if}
-      </p>
-    {/if}
-  </header>
+  {/if}
 
   {#if message}
     <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
@@ -245,8 +249,7 @@
     </div>
   {/if}
 
-  <section class="card overflow-visible bg-base-100 shadow-xl">
-    <div class="card-body overflow-visible">
+  <PageSection class="overflow-visible">
       <DividendPaymentForm
         bind:this={formComponent}
         {assets}
@@ -256,8 +259,7 @@
         loading={loading}
         onSubmit={handleCreate}
       />
-    </div>
-  </section>
+  </PageSection>
 
   <DividendPaymentList
     {payments}
@@ -279,4 +281,5 @@
     onSubmit={handleUpdate}
     onClose={closeEditModal}
   />
+</AppPageShell>
 </main>

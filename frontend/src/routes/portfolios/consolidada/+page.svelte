@@ -29,6 +29,8 @@
     formatMoneyAmount
   } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import type { CryptoFeeDetailSummary } from '$lib/features/bitcoin/cryptoFeePositionDetail';
   import BrlEquivalentHint from '$lib/features/portfolios/BrlEquivalentHint.svelte';
   import PositionDetailPanel from '$lib/features/portfolios/PositionDetailPanel.svelte';
@@ -37,6 +39,10 @@
     computeInvestmentValueBrl,
     findAssetPartition
   } from '$lib/features/portfolios/positionPurpose';
+  import {
+    computeInvestmentShare,
+    scalePositionAmount
+  } from '$lib/features/portfolios/consolidadaInvestmentDisplay';
   import { getObjectivesSnapshot, type ObjectivesSnapshot } from '$lib/api/objetivos';
   import {
     buildDividendTotalsByAssetId,
@@ -276,16 +282,30 @@
 
   function formatConsolidatedProfit(row: Row): string {
     if (isUsdAsset(row.asset)) {
+      if (filterInvestmentOnly) {
+        const invested = displayInvestedNative(row);
+        const current = displayCurrentNative(row);
+        if (invested != null && current != null && invested > 0) {
+          const p = current - invested;
+          const pct = (p / invested) * 100;
+          return `${formatMoneyAmount(p, 'USD')} (${pct.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}%)`;
+        }
+      }
       return formatPositionProfit(row.position, row.asset);
     }
+    const invested = displayInvestedBrl(row);
+    const current = displayCurrentBrl(row);
     if (
-      row.investedBrl != null &&
-      row.currentBrl != null &&
-      row.investedBrl > 0 &&
-      Number.isFinite(row.currentBrl - row.investedBrl)
+      invested != null &&
+      current != null &&
+      invested > 0 &&
+      Number.isFinite(current - invested)
     ) {
-      const p = row.currentBrl - row.investedBrl;
-      const pct = (p / row.investedBrl) * 100;
+      const p = current - invested;
+      const pct = (p / invested) * 100;
       return `${formatMoneyAmount(p, 'BRL')} (${pct.toLocaleString('pt-BR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
@@ -295,26 +315,27 @@
   }
 
   function consolidatedProfitBrl(row: Row): number | null {
+    const invested = displayInvestedBrl(row);
+    const current = displayCurrentBrl(row);
     if (
-      row.investedBrl != null &&
-      row.currentBrl != null &&
-      row.investedBrl > 0 &&
-      Number.isFinite(row.currentBrl - row.investedBrl)
+      invested != null &&
+      current != null &&
+      invested > 0 &&
+      Number.isFinite(current - invested)
     ) {
-      return row.currentBrl - row.investedBrl;
+      return current - invested;
     }
     return null;
   }
 
   function consolidatedProfitAmount(row: Row): number | null {
-    if (
-      !isUsdAsset(row.asset) &&
-      row.investedBrl != null &&
-      row.currentBrl != null &&
-      row.investedBrl > 0 &&
-      Number.isFinite(row.currentBrl - row.investedBrl)
-    ) {
-      return row.currentBrl - row.investedBrl;
+    if (!isUsdAsset(row.asset)) {
+      return consolidatedProfitBrl(row);
+    }
+    const invested = displayInvestedNative(row);
+    const current = displayCurrentNative(row);
+    if (invested != null && current != null && invested > 0) {
+      return current - invested;
     }
     return row.profit?.profit ?? null;
   }
@@ -412,6 +433,22 @@
     return findAssetPartition(objectivesSnapshot?.asset_partitions ?? [], assetId) ?? null;
   }
 
+  function investmentShare(row: Row): number {
+    return computeInvestmentShare(
+      filterInvestmentOnly,
+      row.currentBrl,
+      investmentCurrentBrl(row)
+    );
+  }
+
+  function displayInvestedNative(row: Row): number | null {
+    return scalePositionAmount(row.invested, investmentShare(row));
+  }
+
+  function displayCurrentNative(row: Row): number | null {
+    return scalePositionAmount(row.current, investmentShare(row));
+  }
+
   function investmentCurrentBrl(row: Row): number | null {
     return computeInvestmentValueBrl(
       row.currentBrl,
@@ -488,25 +525,32 @@
     (r) => r.asset.currency?.trim().toUpperCase() === 'BRL'
   );
   $: totalInvestedBrlCurrency = rowsBrlCurrency.reduce((sum, r) => {
-    if (r.investedBrl == null) {
+    const v = displayInvestedBrl(r);
+    if (v == null) {
       return sum;
     }
-    return sum + r.investedBrl;
+    return sum + v;
   }, 0);
   $: totalCurrentBrlCurrency = rowsBrlCurrency.reduce((sum, r) => {
-    if (r.currentBrl == null) {
+    const v = displayCurrentBrl(r);
+    if (v == null) {
       return sum;
     }
-    return sum + r.currentBrl;
+    return sum + v;
   }, 0);
-  $: totalInvestedBrlCurrencyLines = rowsBrlCurrency.filter((r) => r.investedBrl != null).length;
-  $: totalCurrentBrlCurrencyLines = rowsBrlCurrency.filter((r) => r.currentBrl != null).length;
-  $: profitBrlCurrencyRows = rowsBrlCurrency.filter((r) => r.investedBrl != null && r.currentBrl != null);
+  $: totalInvestedBrlCurrencyLines = rowsBrlCurrency.filter((r) => displayInvestedBrl(r) != null).length;
+  $: totalCurrentBrlCurrencyLines = rowsBrlCurrency.filter((r) => displayCurrentBrl(r) != null).length;
+  $: profitBrlCurrencyRows = rowsBrlCurrency.filter(
+    (r) => displayInvestedBrl(r) != null && displayCurrentBrl(r) != null
+  );
   $: totalProfitBrlCurrency = profitBrlCurrencyRows.reduce(
-    (sum, r) => sum + (r.currentBrl! - r.investedBrl!),
+    (sum, r) => sum + (displayCurrentBrl(r)! - displayInvestedBrl(r)!),
     0
   );
-  $: sumInvestedBrlCurrencyForPct = profitBrlCurrencyRows.reduce((sum, r) => sum + r.investedBrl!, 0);
+  $: sumInvestedBrlCurrencyForPct = profitBrlCurrencyRows.reduce(
+    (sum, r) => sum + displayInvestedBrl(r)!,
+    0
+  );
   $: aggregateProfitPercentBrlCurrency =
     sumInvestedBrlCurrencyForPct > 0 ? (totalProfitBrlCurrency / sumInvestedBrlCurrencyForPct) * 100 : null;
 
@@ -515,35 +559,53 @@
    * (garante USD internacional quando há taxa, mesmo se algo na linha mudar).
    */
   $: totalInvestedBrl = displayedRows.reduce((sum, r) => {
-    const v = valueInBrl(r.invested, r.asset.currency, usdBrlRate);
+    const v = filterInvestmentOnly
+      ? displayInvestedBrl(r)
+      : valueInBrl(r.invested, r.asset.currency, usdBrlRate);
     return v != null ? sum + v : sum;
   }, 0);
   $: totalCurrentBrl = displayedRows.reduce((sum, r) => {
-    const v = valueInBrl(r.current, r.asset.currency, usdBrlRate);
+    const v = filterInvestmentOnly
+      ? displayCurrentBrl(r)
+      : valueInBrl(r.current, r.asset.currency, usdBrlRate);
     return v != null ? sum + v : sum;
   }, 0);
-  $: totalInvestedBrlLines = displayedRows.filter(
-    (r) => valueInBrl(r.invested, r.asset.currency, usdBrlRate) != null
+  $: totalInvestedBrlLines = displayedRows.filter((r) =>
+    filterInvestmentOnly
+      ? displayInvestedBrl(r) != null
+      : valueInBrl(r.invested, r.asset.currency, usdBrlRate) != null
   ).length;
-  $: totalCurrentBrlLines = displayedRows.filter(
-    (r) => valueInBrl(r.current, r.asset.currency, usdBrlRate) != null
+  $: totalCurrentBrlLines = displayedRows.filter((r) =>
+    filterInvestmentOnly
+      ? displayCurrentBrl(r) != null
+      : valueInBrl(r.current, r.asset.currency, usdBrlRate) != null
   ).length;
 
   /** Lucro e % do consolidado: linhas com aplicado e atual convertíveis para BRL. */
-  $: profitBrlRows = displayedRows.filter(
-    (r) =>
-      valueInBrl(r.invested, r.asset.currency, usdBrlRate) != null &&
-      valueInBrl(r.current, r.asset.currency, usdBrlRate) != null
-  );
+  $: profitBrlRows = displayedRows.filter((r) => {
+    const invested = filterInvestmentOnly
+      ? displayInvestedBrl(r)
+      : valueInBrl(r.invested, r.asset.currency, usdBrlRate);
+    const current = filterInvestmentOnly
+      ? displayCurrentBrl(r)
+      : valueInBrl(r.current, r.asset.currency, usdBrlRate);
+    return invested != null && current != null;
+  });
   $: totalProfitBrl = profitBrlRows.reduce((sum, r) => {
-    const a = valueInBrl(r.invested, r.asset.currency, usdBrlRate)!;
-    const b = valueInBrl(r.current, r.asset.currency, usdBrlRate)!;
+    const a = filterInvestmentOnly
+      ? displayInvestedBrl(r)!
+      : valueInBrl(r.invested, r.asset.currency, usdBrlRate)!;
+    const b = filterInvestmentOnly
+      ? displayCurrentBrl(r)!
+      : valueInBrl(r.current, r.asset.currency, usdBrlRate)!;
     return sum + (b - a);
   }, 0);
-  $: sumInvestedBrlForProfitPct = profitBrlRows.reduce(
-    (sum, r) => sum + valueInBrl(r.invested, r.asset.currency, usdBrlRate)!,
-    0
-  );
+  $: sumInvestedBrlForProfitPct = profitBrlRows.reduce((sum, r) => {
+    const a = filterInvestmentOnly
+      ? displayInvestedBrl(r)!
+      : valueInBrl(r.invested, r.asset.currency, usdBrlRate)!;
+    return sum + a;
+  }, 0);
   $: aggregateProfitPercent =
     sumInvestedBrlForProfitPct > 0 ? (totalProfitBrl / sumInvestedBrlForProfitPct) * 100 : null;
 
@@ -552,22 +614,32 @@
     (r) => r.asset.currency?.trim().toUpperCase() === 'USD' && r.asset.market === 'international'
   );
   $: totalInvestedUsdIntl = usdInternationalRows.reduce((sum, r) => {
-    if (r.invested == null) {
+    const v = displayInvestedNative(r);
+    if (v == null) {
       return sum;
     }
-    return sum + r.invested;
+    return sum + v;
   }, 0);
   $: totalCurrentUsdIntl = usdInternationalRows.reduce((sum, r) => {
-    if (r.current == null) {
+    const v = displayCurrentNative(r);
+    if (v == null) {
       return sum;
     }
-    return sum + r.current;
+    return sum + v;
   }, 0);
-  $: totalInvestedUsdIntlLines = usdInternationalRows.filter((r) => r.invested != null).length;
-  $: totalCurrentUsdIntlLines = usdInternationalRows.filter((r) => r.current != null).length;
-  $: profitUsdIntlRows = usdInternationalRows.filter((r) => r.invested != null && r.current != null);
-  $: totalProfitUsdIntl = profitUsdIntlRows.reduce((sum, r) => sum + (r.current! - r.invested!), 0);
-  $: sumInvestedUsdIntlForPct = profitUsdIntlRows.reduce((sum, r) => sum + r.invested!, 0);
+  $: totalInvestedUsdIntlLines = usdInternationalRows.filter((r) => displayInvestedNative(r) != null).length;
+  $: totalCurrentUsdIntlLines = usdInternationalRows.filter((r) => displayCurrentNative(r) != null).length;
+  $: profitUsdIntlRows = usdInternationalRows.filter(
+    (r) => displayInvestedNative(r) != null && displayCurrentNative(r) != null
+  );
+  $: totalProfitUsdIntl = profitUsdIntlRows.reduce(
+    (sum, r) => sum + (displayCurrentNative(r)! - displayInvestedNative(r)!),
+    0
+  );
+  $: sumInvestedUsdIntlForPct = profitUsdIntlRows.reduce(
+    (sum, r) => sum + displayInvestedNative(r)!,
+    0
+  );
   $: aggregateProfitUsdIntlPercent =
     sumInvestedUsdIntlForPct > 0 ? (totalProfitUsdIntl / sumInvestedUsdIntlForPct) * 100 : null;
 
@@ -736,12 +808,8 @@
 </svelte:head>
 
 <main class="min-h-screen w-full bg-base-200">
-  <div class="mx-auto flex w-full min-w-0 max-w-none flex-col gap-6 px-4 py-8 2xl:max-w-[112rem]">
-    <section
-      class="w-full min-w-0 rounded-box bg-gradient-to-r from-primary to-secondary px-6 py-10 text-primary-content"
-    >
-      <h1 class="text-4xl font-bold">Visão consolidada</h1>
-    </section>
+  <AppPageShell paddingY="py-4" class="flex w-full min-w-0 flex-col gap-3">
+    <PageHero title="Visão consolidada" variant="primary" />
 
     <DismissibleAlert text={loadError} variant="error" on:dismiss={() => (loadError = '')} />
     <DismissibleAlert text={quotesMessage} variant="success" on:dismiss={() => (quotesMessage = '')} />
@@ -849,7 +917,7 @@
             <p class="text-xs font-semibold uppercase tracking-wide text-base-content/70">
               Totais do filtro atual (BRL nativo + internacional USD)
             </p>
-            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
               <div
                 class="rounded-box border-2 border-primary/35 bg-gradient-to-br from-primary/15 to-base-100 p-5 shadow-md"
               >
@@ -1244,5 +1312,5 @@
         </div>
       </div>
     {/if}
-  </div>
+  </AppPageShell>
 </main>

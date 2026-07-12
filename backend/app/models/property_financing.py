@@ -45,3 +45,18 @@ class PropertyFinancingEntry(SQLModel, table=True):
     description: str
     amount_brl: float
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PropertyFinancingEntryTemplate(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("financing_id", "name"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    financing_id: int = Field(foreign_key="propertyfinancing.id", index=True)
+    name: str = Field(index=True)
+    entry_type: PropertyFinancingEntryType
+    event_category: PropertyFinancingEventCategory
+    description: str
+    amount_brl: float
+    sort_order: int = Field(default=0)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

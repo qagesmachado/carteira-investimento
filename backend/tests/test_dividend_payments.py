@@ -242,3 +242,44 @@ def test_update_can_reassign_portfolio(db_session: Session):
         DividendPaymentUpdate(portfolio_id=portfolio_b.id),
     )
     assert updated.portfolio_id == portfolio_b.id
+
+
+def test_create_with_tax_withheld(db_session: Session):
+    asset_id = _asset(db_session, "QUAL")
+    portfolio = _portfolio(db_session)
+    created = create_dividend_payment(
+        db_session,
+        DividendPaymentCreate(
+            asset_id=asset_id,
+            portfolio_id=portfolio.id,  # type: ignore[arg-type]
+            payment_type=DividendPaymentType.DIVIDEND,
+            payment_date=date(2026, 6, 17),
+            amount=0.27,
+            gross_amount=0.39,
+            tax_withheld=0.12,
+            currency="USD",
+        ),
+    )
+    assert created.amount == 0.27
+    assert created.gross_amount == 0.39
+    assert created.tax_withheld == 0.12
+
+
+def test_create_rejects_tax_greater_than_gross(db_session: Session):
+    asset_id = _asset(db_session)
+    portfolio = _portfolio(db_session)
+    with pytest.raises(HTTPException) as exc:
+        create_dividend_payment(
+            db_session,
+            DividendPaymentCreate(
+                asset_id=asset_id,
+                portfolio_id=portfolio.id,  # type: ignore[arg-type]
+                payment_type=DividendPaymentType.DIVIDEND,
+                payment_date=date(2024, 6, 1),
+                amount=1.0,
+                gross_amount=0.5,
+                tax_withheld=0.6,
+                currency="BRL",
+            ),
+        )
+    assert exc.value.status_code == 422

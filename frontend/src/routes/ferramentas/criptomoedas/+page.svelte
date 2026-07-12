@@ -21,6 +21,7 @@
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
   import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
@@ -133,7 +134,7 @@
   <title>Criptomoedas — Carteira de Investimentos</title>
 </svelte:head>
 
-<div class="space-y-6">
+<div class="flex flex-col gap-3">
   <PageHeader
     title="Criptomoedas"
     subtitle="Taxas de compra e transferência para criptoativos nativos (ex.: BTC-USD). ETFs de cripto usam a alocação em Análise → Criptomoedas."
@@ -155,21 +156,27 @@
     <DismissibleAlert variant="success" text={message} on:dismiss={() => (message = '')} />
   {/if}
 
-  <BitcoinSummaryCards {snapshot} />
+  <PageSection>
+    <BitcoinSummaryCards {snapshot} />
+  </PageSection>
 
-  <CryptoFeeForm
-    {assets}
-    {portfolios}
-    {activePortfolioId}
-    editing={editingFee}
-    {loading}
-    onSubmit={handleSubmit}
-    onCancel={() => (editingFee = null)}
-  />
+  <PageSection>
+    <CryptoFeeForm
+      {assets}
+      {portfolios}
+      {activePortfolioId}
+      editing={editingFee}
+      {loading}
+      onSubmit={handleSubmit}
+      onCancel={() => (editingFee = null)}
+    />
+  </PageSection>
 
-  <CryptoFeeList
-    {fees}
-    onEdit={(fee) => (editingFee = fee)}
-    onDelete={handleDelete}
-  />
+  <PageSection>
+    <CryptoFeeList
+      {fees}
+      onEdit={(fee) => (editingFee = fee)}
+      onDelete={handleDelete}
+    />
+  </PageSection>
 </div>

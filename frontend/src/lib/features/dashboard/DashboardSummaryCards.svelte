@@ -2,71 +2,104 @@
   import { formatMoneyAmount } from '$lib/assetLabels';
 
   import type { DashboardPatrimony } from './portfolioDashboard';
+  import type { DashboardPatrimonyFilterAvailability } from './dashboardPatrimonyScope';
   import type { DividendAssetTotals } from '$lib/features/proventos/dividendSummary';
   import { formatDividendPaymentsTotalAmounts } from '$lib/features/proventos/dividendSummary';
+  import DashboardKpiCard from './DashboardKpiCard.svelte';
+  import { KPI_ICON_ACCENTS } from './dashboardIcons';
+  import {
+    DASHBOARD_DIVIDENDS_MONTH_LUCIDE_ICON,
+    DASHBOARD_DIVIDENDS_YEAR_LUCIDE_ICON,
+    DASHBOARD_INVESTED_LUCIDE_ICON,
+    DASHBOARD_PATRIMONY_LUCIDE_ICON,
+    DASHBOARD_POSITIONS_LUCIDE_ICON,
+    DASHBOARD_PROFIT_LUCIDE_ICON
+  } from '$lib/icons/lucideIconCatalog';
 
   export let patrimony: DashboardPatrimony;
   export let dividendsMonth: DividendAssetTotals;
   export let dividendsYear: DividendAssetTotals;
+  export let filterAvailability: DashboardPatrimonyFilterAvailability = {
+    hasNonInvestment: false,
+    hasPension: false
+  };
 
   function formatProfitPercent(value: number | null): string {
     if (value == null) {
       return '—';
     }
-    return `${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
   }
+
+  $: profitPrefix = patrimony.profitBrl >= 0 ? '+' : '';
+  $: profitValueClass = patrimony.profitBrl >= 0 ? 'text-success' : 'text-error';
+  $: profitBadgeClass =
+    patrimony.profitBrl >= 0 ? 'bg-success/15 text-success' : 'bg-error/15 text-error';
 </script>
 
-<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-  <div class="stat rounded-box bg-base-100 shadow">
-    <div class="stat-title">Patrimônio total</div>
-    <div class="stat-value text-primary text-2xl">
-      {formatMoneyAmount(patrimony.currentBrl, 'BRL')}
-    </div>
-    <div class="stat-desc">Consolidado em reais</div>
-  </div>
+<div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3" data-testid="dashboard-kpi-grid">
+  <DashboardKpiCard
+    title="Patrimônio total"
+    value={formatMoneyAmount(patrimony.currentBrl, 'BRL')}
+    description="Consolidado em reais"
+    lucideIcon={DASHBOARD_PATRIMONY_LUCIDE_ICON}
+    iconBgClass={KPI_ICON_ACCENTS.patrimony.bgClass}
+    iconFgClass={KPI_ICON_ACCENTS.patrimony.fgClass}
+    testId="dashboard-kpi-patrimony"
+    {filterAvailability}
+  />
 
-  <div class="stat rounded-box bg-base-100 shadow">
-    <div class="stat-title">Valor investido</div>
-    <div class="stat-value text-2xl">{formatMoneyAmount(patrimony.investedBrl, 'BRL')}</div>
-  </div>
+  <DashboardKpiCard
+    title="Valor investido"
+    value={formatMoneyAmount(patrimony.investedBrl, 'BRL')}
+    lucideIcon={DASHBOARD_INVESTED_LUCIDE_ICON}
+    iconBgClass={KPI_ICON_ACCENTS.invested.bgClass}
+    iconFgClass={KPI_ICON_ACCENTS.invested.fgClass}
+    testId="dashboard-kpi-invested"
+  />
 
-  <div class="stat rounded-box bg-base-100 shadow">
-    <div class="stat-title">Lucro / prejuízo</div>
-    <div
-      class="stat-value text-2xl"
-      class:text-success={patrimony.profitBrl >= 0}
-      class:text-error={patrimony.profitBrl < 0}
-    >
-      {formatMoneyAmount(patrimony.profitBrl, 'BRL')}
-    </div>
-    <div class="stat-desc">{formatProfitPercent(patrimony.profitPercent)}</div>
-  </div>
+  <DashboardKpiCard
+    title="Lucro / prejuízo"
+    value="{profitPrefix}{formatMoneyAmount(patrimony.profitBrl, 'BRL')}"
+    lucideIcon={DASHBOARD_PROFIT_LUCIDE_ICON}
+    iconBgClass={KPI_ICON_ACCENTS.profit.bgClass}
+    iconFgClass={KPI_ICON_ACCENTS.profit.fgClass}
+    valueClass={profitValueClass}
+    badge={formatProfitPercent(patrimony.profitPercent)}
+    badgeClass={profitBadgeClass}
+    testId="dashboard-kpi-profit"
+  />
 
-  <div class="stat rounded-box bg-base-100 shadow">
-    <div class="stat-title">Proventos (mês)</div>
-    <div class="stat-value text-2xl">
-      {formatDividendPaymentsTotalAmounts(dividendsMonth) || 'R$ 0,00'}
-    </div>
-    <div class="stat-desc">
-      {#if dividendsMonth.count === 0}
-        <a class="link link-primary" href="/proventos">Cadastrar proventos</a>
-      {:else}
-        {dividendsMonth.count} lançamento(s)
-      {/if}
-    </div>
-  </div>
+  <DashboardKpiCard
+    title="Proventos (mês)"
+    value={formatDividendPaymentsTotalAmounts(dividendsMonth) || 'R$ 0,00'}
+    description={dividendsMonth.count === 0 ? '' : `${dividendsMonth.count} lançamento(s)`}
+    actionHref={dividendsMonth.count === 0 ? '/proventos' : ''}
+    actionLabel={dividendsMonth.count === 0 ? 'Cadastrar proventos' : ''}
+    lucideIcon={DASHBOARD_DIVIDENDS_MONTH_LUCIDE_ICON}
+    iconBgClass={KPI_ICON_ACCENTS['dividends-month'].bgClass}
+    iconFgClass={KPI_ICON_ACCENTS['dividends-month'].fgClass}
+    testId="dashboard-kpi-dividends-month"
+  />
 
-  <div class="stat rounded-box bg-base-100 shadow">
-    <div class="stat-title">Proventos (ano)</div>
-    <div class="stat-value text-2xl">
-      {formatDividendPaymentsTotalAmounts(dividendsYear) || 'R$ 0,00'}
-    </div>
-    <div class="stat-desc">{dividendsYear.count} lançamento(s) no ano</div>
-  </div>
+  <DashboardKpiCard
+    title="Proventos (ano)"
+    value={formatDividendPaymentsTotalAmounts(dividendsYear) || 'R$ 0,00'}
+    description="{dividendsYear.count} lançamento(s) no ano"
+    lucideIcon={DASHBOARD_DIVIDENDS_YEAR_LUCIDE_ICON}
+    iconBgClass={KPI_ICON_ACCENTS['dividends-year'].bgClass}
+    iconFgClass={KPI_ICON_ACCENTS['dividends-year'].fgClass}
+    testId="dashboard-kpi-dividends-year"
+  />
 
-  <div class="stat rounded-box bg-base-100 shadow">
-    <div class="stat-title">Posições ativas</div>
-    <div class="stat-value text-2xl">{patrimony.activePositions}</div>
-  </div>
+  <DashboardKpiCard
+    title="Posições ativas"
+    value={String(patrimony.activePositions)}
+    lucideIcon={DASHBOARD_POSITIONS_LUCIDE_ICON}
+    iconBgClass={KPI_ICON_ACCENTS.positions.bgClass}
+    iconFgClass={KPI_ICON_ACCENTS.positions.fgClass}
+    maskValue={false}
+    testId="dashboard-kpi-positions"
+  />
 </div>

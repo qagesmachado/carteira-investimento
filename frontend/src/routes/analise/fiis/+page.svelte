@@ -218,7 +218,7 @@
   <title>Análise — FIIs</title>
 </svelte:head>
 
-<div class="flex flex-col gap-8">
+<div class="flex flex-col gap-3">
   <div class="card bg-base-100 shadow">
     <div class="card-body flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div class="form-control min-w-[12rem] max-w-xs">

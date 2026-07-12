@@ -2,7 +2,7 @@ import { expect, test } from '../fixtures/test';
 
 
 import { isApiQuoteRefreshResponse } from '../helpers/apiResponses';
-import { clickRefreshQuotes, gotoDashboardPage } from '../helpers/dashboardPage';
+import { clickRefreshQuotes, dashboardQuotesBadge, gotoDashboardPage } from '../helpers/dashboardPage';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
 import { seedConsolidadaPrincipal } from '../helpers/seedConsolidada';
 
@@ -30,5 +30,6 @@ test.describe('UI-DASH-005', () => {
     await expect(
       page.getByRole('alert').filter({ hasText: /Cotações atualizadas/ })
     ).toBeVisible({ timeout: 15_000 });
+    await expect(dashboardQuotesBadge(page)).toContainText(/Cotações · \d{2}\/\d{2} \d{2}:\d{2}/);
   });
 });

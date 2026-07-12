@@ -12,8 +12,8 @@ Toda **página/rota nova** do frontend deve ganhar um teste de **smoke** (soment
 
 ## Regras
 
-- Local: [e2e/specs/smoke/](../../e2e/specs/smoke/) (ex.: `navegacao.spec.ts`).
-- Importar `test`/`expect` de [e2e/specs/fixtures/test.ts](../../e2e/specs/fixtures/test.ts) (igual aos demais specs; **não** importar de `@playwright/test`).
+- Local: [e2e/specs/smoke/](../../../e2e/specs/smoke/) (ex.: `navegacao.spec.ts`).
+- Importar `test`/`expect` de [e2e/specs/fixtures/test.ts](../../../e2e/specs/fixtures/test.ts) (igual aos demais specs; **não** importar de `@playwright/test`).
 - Usar **apenas** o fixture `page` — **sem seed**, sem chamadas que mutam dados (somente `page.goto` + asserts de leitura).
 - Marcar cada teste com a tag `@smoke`: `test('carrega /rota', { tag: '@smoke' }, async ({ page }) => { ... })`.
 - Asserção estável: `await expect(page.getByRole('heading', { name: '<Título da página>', exact: true })).toBeVisible();`.
@@ -22,9 +22,9 @@ Toda **página/rota nova** do frontend deve ganhar um teste de **smoke** (soment
 ## Dois alvos (mesmos arquivos)
 
 1. **`npm run test:all`** (projeto `ui`): os specs em `specs/smoke/` entram automaticamente, rodando contra os servidores de dev por worker. Nada a configurar.
-2. **Passo 4 do build** ([scripts/build-desktop.ps1](../../scripts/build-desktop.ps1)): reexecuta os mesmos `@smoke` contra o `.exe` via [e2e/playwright.smoke.config.js](../../e2e/playwright.smoke.config.js), que:
+2. **Passo 4 do build** ([scripts/build-desktop.ps1](../../../scripts/build-desktop.ps1)): reexecuta os mesmos `@smoke` contra o `.exe` via [e2e/playwright.smoke.config.js](../../../e2e/playwright.smoke.config.js), que:
    - lança o executável em porta fixa, **sem abrir navegador** (`CARTEIRA_DESKTOP_NO_BROWSER=1`) e com **banco temporário** (`DATABASE_URL` em `%TEMP%`);
-   - aponta os specs para a origem única via `SMOKE_BASE_URL` (ver override em [e2e/worker-env.js](../../e2e/worker-env.js));
+   - aponta os specs para a origem única via `SMOKE_BASE_URL` (ver override em [e2e/worker-env.js](../../../e2e/worker-env.js));
    - usa `ASSET_LOOKUP_MODE=fake` (sem rede).
 
 ## Comandos
@@ -35,6 +35,7 @@ Toda **página/rota nova** do frontend deve ganhar um teste de **smoke** (soment
 ## Checklist — página nova
 
 1. Criei `+page.svelte` em `frontend/src/routes/<rota>/`?
-2. Adicionei o caso `@smoke` em `e2e/specs/smoke/` (rota + heading), sem seed?
-3. `npm run test:ui -- specs/smoke/` verde?
-4. (Quando for empacotar) `build-desktop.ps1` passo 4/4 verde com a nova rota?
+2. Shell de página (`AppPageShell`) e **padrão visual Hub/Ferramenta** aplicados conforme [page-layout.mdc](../app/page-layout.mdc)?
+3. Adicionei o caso `@smoke` em `e2e/specs/smoke/` (rota + heading), sem seed?
+4. `npm run test:ui -- specs/smoke/` verde?
+5. (Quando for empacotar) `build-desktop.ps1` passo 4/4 verde com a nova rota?

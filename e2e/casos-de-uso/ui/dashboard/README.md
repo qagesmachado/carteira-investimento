@@ -12,5 +12,9 @@ Prefixo: **UI-DASH-**
 | UI-DASH-006 | [06-atualizar-cambio-usd-brl.md](06-atualizar-cambio-usd-brl.md) | aprovado | [06-atualizar-cambio-usd-brl.spec.ts](../../../specs/dashboard/06-atualizar-cambio-usd-brl.spec.ts) |
 | UI-DASH-007 | [07-top-ativos-abas-tabela.md](07-top-ativos-abas-tabela.md) | aprovado | [07-top-ativos-abas-tabela.spec.ts](../../../specs/dashboard/07-top-ativos-abas-tabela.spec.ts) |
 | UI-DASH-008 | [08-proventos-painel-visao.md](08-proventos-painel-visao.md) | aprovado | [08-proventos-painel-visao.spec.ts](../../../specs/dashboard/08-proventos-painel-visao.spec.ts) |
+| UI-DASH-009 | [09-aderencia-rebalanceamento.md](09-aderencia-rebalanceamento.md) | aprovado | [09-aderencia-rebalanceamento.spec.ts](../../../specs/dashboard/09-aderencia-rebalanceamento.spec.ts) |
+| UI-DASH-010 | [10-destaques-classe-provento.md](10-destaques-classe-provento.md) | aprovado | [10-destaques-classe-provento.spec.ts](../../../specs/dashboard/10-destaques-classe-provento.spec.ts) |
+| UI-DASH-011 | [11-atalhos-inferiores.md](11-atalhos-inferiores.md) | aprovado | [11-atalhos-inferiores.spec.ts](../../../specs/dashboard/11-atalhos-inferiores.spec.ts) |
+| UI-DASH-012 | [12-toolbar-hero.md](12-toolbar-hero.md) | aprovado | [12-toolbar-hero.spec.ts](../../../specs/dashboard/12-toolbar-hero.spec.ts) |
 
-**Total:** 8 casos · **8 specs**
+**Total:** 12 casos · **12 specs**

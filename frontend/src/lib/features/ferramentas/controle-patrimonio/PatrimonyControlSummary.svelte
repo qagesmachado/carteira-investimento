@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PatrimonyControlSnapshot } from '$lib/api/patrimonyControl';
   import { formatBrl } from '$lib/features/rebalance/allocationTargets';
+  import { PAGE_SECTION_CLASS } from '$lib/layout/pageVisual';
 
   import { pctOfPatrimony } from './patrimonyControlForm';
 
@@ -11,8 +12,9 @@
   $: emergency = snapshot.total_emergency_reserve_brl;
 </script>
 
-<section class="rounded-box bg-base-100 p-4 shadow-sm" data-testid="patrimony-control-summary">
-  <h2 class="text-lg font-semibold">Resumo do patrimônio</h2>
+<section class={PAGE_SECTION_CLASS} data-testid="patrimony-control-summary">
+  <div class="card-body gap-4">
+  <h2 class="card-title text-lg">Resumo do patrimônio</h2>
   <p class="mb-4 text-sm opacity-70">
     Total = posições na carteira + reserva manual (banco, espécie). Fatias da carteira marcadas
     como reserva nos objetivos entram só no card «Reserva de emergência», não somam duas vezes.
@@ -42,5 +44,6 @@
       </p>
       <p class="text-xs opacity-60">Investido + reserva</p>
     </div>
+  </div>
   </div>
 </section>

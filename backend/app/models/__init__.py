@@ -5,6 +5,16 @@ from app.models.analysis import (
     AssetAnalysisScore,
 )
 from app.models.asset import Asset
+from app.models.budget import (
+    BudgetCategory,
+    BudgetIncomeSource,
+    BudgetMonth,
+    BudgetMonthIncome,
+    BudgetMonthTarget,
+    BudgetProfile,
+    BudgetTag,
+    BudgetTransaction,
+)
 from app.models.crypto_fee import CryptoFee, CryptoFeeType
 from app.models.dividend_payment import DividendPayment, DividendPaymentType
 from app.models.manual_patrimony_item import ManualPatrimonyCategory, ManualPatrimonyItem
@@ -13,6 +23,7 @@ from app.models.objective_allocation import ObjectiveAllocation
 from app.models.property_financing import (
     PropertyFinancing,
     PropertyFinancingEntry,
+    PropertyFinancingEntryTemplate,
     PropertyFinancingEntryType,
     PropertyFinancingEventCategory,
     PropertyType,
@@ -28,6 +39,14 @@ __all__ = [
     "AnalysisProfileSettings",
     "AnalysisViabilityRule",
     "AppPreference",
+    "BudgetCategory",
+    "BudgetIncomeSource",
+    "BudgetMonth",
+    "BudgetMonthIncome",
+    "BudgetMonthTarget",
+    "BudgetProfile",
+    "BudgetTag",
+    "BudgetTransaction",
     "CryptoFee",
     "CryptoFeeType",
     "DividendPayment",
@@ -38,6 +57,7 @@ __all__ = [
     "ObjectiveAllocation",
     "PropertyFinancing",
     "PropertyFinancingEntry",
+    "PropertyFinancingEntryTemplate",
     "PropertyFinancingEntryType",
     "PropertyFinancingEventCategory",
     "PropertyType",

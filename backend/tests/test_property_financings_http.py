@@ -148,3 +148,124 @@ def test_delete_financing(client: TestClient) -> None:
     assert response.status_code == 204
     snapshot = client.get(f"/portfolios/{portfolio_id}/property-financings").json()
     assert snapshot["financings"] == []
+
+
+def _create_entry_template(
+    client: TestClient,
+    portfolio_id: int,
+    financing_id: int,
+    *,
+    name: str = "Parcela financiamento",
+    entry_type: str = "expense",
+    event_category: str = "financiamento",
+    description: str = "Parcela mensal",
+    amount_brl: float = 3_000.0,
+) -> dict:
+    response = client.post(
+        f"/portfolios/{portfolio_id}/property-financings/{financing_id}/entry-templates",
+        json={
+            "name": name,
+            "entry_type": entry_type,
+            "event_category": event_category,
+            "description": description,
+            "amount_brl": amount_brl,
+        },
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
+def test_create_entry_template_and_snapshot(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "FIN Tpl"}).json()["id"]
+    financing = _create_financing(client, portfolio_id)
+    template = _create_entry_template(client, portfolio_id, financing["id"])
+    assert template["name"] == "Parcela financiamento"
+    assert template["amount_brl"] == 3_000.0
+
+    snapshot = client.get(f"/portfolios/{portfolio_id}/property-financings").json()
+    templates = snapshot["financings"][0]["entry_templates"]
+    assert len(templates) == 1
+    assert templates[0]["id"] == template["id"]
+
+
+def test_entry_template_category_must_match_type(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "FIN Tpl Val"}).json()["id"]
+    financing = _create_financing(client, portfolio_id)
+    response = client.post(
+        f"/portfolios/{portfolio_id}/property-financings/{financing['id']}/entry-templates",
+        json={
+            "name": "Inválido",
+            "entry_type": "income",
+            "event_category": "financiamento",
+            "description": "Erro",
+            "amount_brl": 100.0,
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_duplicate_template_name_rejected(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "FIN Tpl Dup"}).json()["id"]
+    financing = _create_financing(client, portfolio_id)
+    _create_entry_template(client, portfolio_id, financing["id"])
+    response = client.post(
+        f"/portfolios/{portfolio_id}/property-financings/{financing['id']}/entry-templates",
+        json={
+            "name": "Parcela financiamento",
+            "entry_type": "expense",
+            "event_category": "financiamento",
+            "description": "Outra",
+            "amount_brl": 100.0,
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_update_entry_template(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "FIN Tpl Upd"}).json()["id"]
+    financing = _create_financing(client, portfolio_id)
+    template = _create_entry_template(client, portfolio_id, financing["id"])
+    response = client.patch(
+        f"/portfolios/{portfolio_id}/property-financings/entry-templates/{template['id']}",
+        json={"amount_brl": 3_500.0, "description": "Parcela atualizada"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["amount_brl"] == 3_500.0
+    assert body["description"] == "Parcela atualizada"
+
+
+def test_delete_entry_template(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "FIN Tpl Del"}).json()["id"]
+    financing = _create_financing(client, portfolio_id)
+    template = _create_entry_template(client, portfolio_id, financing["id"])
+    response = client.delete(
+        f"/portfolios/{portfolio_id}/property-financings/entry-templates/{template['id']}"
+    )
+    assert response.status_code == 204
+    snapshot = client.get(f"/portfolios/{portfolio_id}/property-financings").json()
+    assert snapshot["financings"][0]["entry_templates"] == []
+
+
+def test_entry_template_isolated_by_portfolio(client: TestClient) -> None:
+    p1 = client.post("/portfolios", json={"name": "FIN Tpl P1"}).json()["id"]
+    p2 = client.post("/portfolios", json={"name": "FIN Tpl P2"}).json()["id"]
+    financing = _create_financing(client, p1)
+    template = _create_entry_template(client, p1, financing["id"])
+    response = client.patch(
+        f"/portfolios/{p2}/property-financings/entry-templates/{template['id']}",
+        json={"amount_brl": 1.0},
+    )
+    assert response.status_code == 404
+
+
+def test_delete_financing_cascades_templates(client: TestClient) -> None:
+    portfolio_id = client.post("/portfolios", json={"name": "FIN Tpl Cas"}).json()["id"]
+    financing = _create_financing(client, portfolio_id)
+    _create_entry_template(client, portfolio_id, financing["id"])
+    response = client.delete(
+        f"/portfolios/{portfolio_id}/property-financings/{financing['id']}"
+    )
+    assert response.status_code == 204
+    snapshot = client.get(f"/portfolios/{portfolio_id}/property-financings").json()
+    assert snapshot["financings"] == []

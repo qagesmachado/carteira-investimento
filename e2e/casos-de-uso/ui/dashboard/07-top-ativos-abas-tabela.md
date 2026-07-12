@@ -29,3 +29,5 @@
 4. Tabela exibe colunas Ticker, Nome do ativo, Tipo e métrica.
 5. Ticker aparece sem sufixo `.SA` (ex.: BBSE3).
 6. Na aba «Maior lucro (%)», a métrica inclui percentual e valor nominal entre parênteses.
+7. Tabela exibe colunas #, Evolução 12M e barras proporcionais.
+8. Link «Ver todos os ativos →» aponta para `/portfolios/consolidada`.

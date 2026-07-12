@@ -6,6 +6,7 @@ from sqlmodel import Session, select
 from app.models.property_financing import (
     PropertyFinancing,
     PropertyFinancingEntry,
+    PropertyFinancingEntryTemplate,
     PropertyFinancingEntryType,
     PropertyFinancingEventCategory,
     PropertyType,
@@ -16,6 +17,9 @@ from app.schemas.property_financing import (
     PropertyFinancingCreate,
     PropertyFinancingEntryCreate,
     PropertyFinancingEntryRead,
+    PropertyFinancingEntryTemplateCreate,
+    PropertyFinancingEntryTemplateRead,
+    PropertyFinancingEntryTemplateUpdate,
     PropertyFinancingEntryUpdate,
     PropertyFinancingRead,
     PropertyFinancingSnapshotRead,
@@ -112,6 +116,22 @@ def _load_entries(session: Session, financing_id: int) -> list[PropertyFinancing
     )
 
 
+def _load_entry_templates(
+    session: Session,
+    financing_id: int,
+) -> list[PropertyFinancingEntryTemplate]:
+    return list(
+        session.exec(
+            select(PropertyFinancingEntryTemplate)
+            .where(PropertyFinancingEntryTemplate.financing_id == financing_id)
+            .order_by(
+                PropertyFinancingEntryTemplate.sort_order,
+                PropertyFinancingEntryTemplate.name,
+            )
+        ).all()
+    )
+
+
 def _entry_to_input(entry: PropertyFinancingEntry) -> EntryInput:
     return EntryInput(
         event_date=entry.event_date,
@@ -140,12 +160,39 @@ def _entry_to_read(entry: PropertyFinancingEntry) -> PropertyFinancingEntryRead:
     )
 
 
+def _template_to_read(
+    template: PropertyFinancingEntryTemplate,
+) -> PropertyFinancingEntryTemplateRead:
+    return PropertyFinancingEntryTemplateRead(
+        id=template.id,  # type: ignore[arg-type]
+        name=template.name,
+        entry_type=template.entry_type.value,
+        event_category=template.event_category.value,
+        description=template.description,
+        amount_brl=template.amount_brl,
+        sort_order=template.sort_order,
+    )
+
+
+def _get_template_with_financing(
+    session: Session,
+    portfolio_id: int,
+    template_id: int,
+) -> tuple[PropertyFinancingEntryTemplate, PropertyFinancing]:
+    template = session.get(PropertyFinancingEntryTemplate, template_id)
+    if template is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="template not found")
+    financing = _get_financing(session, portfolio_id, template.financing_id)
+    return template, financing
+
+
 def _financing_to_read(
     session: Session,
     financing: PropertyFinancing,
 ) -> PropertyFinancingRead:
     assert financing.id is not None
     entries = _load_entries(session, financing.id)
+    templates = _load_entry_templates(session, financing.id)
     metrics = compute_financing_metrics([_entry_to_input(e) for e in entries])
     return PropertyFinancingRead(
         id=financing.id,
@@ -154,6 +201,7 @@ def _financing_to_read(
         property_type=financing.property_type.value,
         description=financing.description,
         entries=[_entry_to_read(e) for e in entries],
+        entry_templates=[_template_to_read(t) for t in templates],
         metrics=_metrics_to_read(metrics),
     )
 
@@ -301,6 +349,15 @@ def delete_property_financing(
     )
     for entry in entries:
         session.delete(entry)
+    templates = list(
+        session.exec(
+            select(PropertyFinancingEntryTemplate).where(
+                PropertyFinancingEntryTemplate.financing_id == financing_id
+            )
+        ).all()
+    )
+    for template in templates:
+        session.delete(template)
     financing = session.get(PropertyFinancing, financing_id)
     assert financing is not None
     session.delete(financing)
@@ -368,4 +425,89 @@ def delete_property_financing_entry(
 ) -> None:
     entry, _ = _get_entry_with_financing(session, portfolio_id, entry_id)
     session.delete(entry)
+    session.commit()
+
+
+def create_property_financing_entry_template(
+    session: Session,
+    portfolio_id: int,
+    financing_id: int,
+    payload: PropertyFinancingEntryTemplateCreate,
+) -> PropertyFinancingEntryTemplate:
+    _get_financing(session, portfolio_id, financing_id)
+    entry_type = _validate_entry_type(payload.entry_type)
+    event_category = _validate_event_category(payload.event_category)
+    _validate_entry_type_category(entry_type, event_category)
+    existing = session.exec(
+        select(PropertyFinancingEntryTemplate).where(
+            PropertyFinancingEntryTemplate.financing_id == financing_id,
+            PropertyFinancingEntryTemplate.name == payload.name.strip(),
+        )
+    ).first()
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="template name already exists for financing",
+        )
+    template = PropertyFinancingEntryTemplate(
+        financing_id=financing_id,
+        name=payload.name.strip(),
+        entry_type=entry_type,
+        event_category=event_category,
+        description=payload.description.strip(),
+        amount_brl=payload.amount_brl,
+    )
+    session.add(template)
+    session.commit()
+    session.refresh(template)
+    return template
+
+
+def update_property_financing_entry_template(
+    session: Session,
+    portfolio_id: int,
+    template_id: int,
+    payload: PropertyFinancingEntryTemplateUpdate,
+) -> PropertyFinancingEntryTemplate:
+    template, financing = _get_template_with_financing(session, portfolio_id, template_id)
+    entry_type = template.entry_type
+    event_category = template.event_category
+    if payload.entry_type is not None:
+        entry_type = _validate_entry_type(payload.entry_type)
+        template.entry_type = entry_type
+    if payload.event_category is not None:
+        event_category = _validate_event_category(payload.event_category)
+        template.event_category = event_category
+    _validate_entry_type_category(entry_type, event_category)
+    if payload.name is not None and payload.name.strip() != template.name:
+        duplicate = session.exec(
+            select(PropertyFinancingEntryTemplate).where(
+                PropertyFinancingEntryTemplate.financing_id == financing.id,
+                PropertyFinancingEntryTemplate.name == payload.name.strip(),
+            )
+        ).first()
+        if duplicate is not None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="template name already exists for financing",
+            )
+        template.name = payload.name.strip()
+    if payload.description is not None:
+        template.description = payload.description.strip()
+    if payload.amount_brl is not None:
+        template.amount_brl = payload.amount_brl
+    template.updated_at = datetime.utcnow()
+    session.add(template)
+    session.commit()
+    session.refresh(template)
+    return template
+
+
+def delete_property_financing_entry_template(
+    session: Session,
+    portfolio_id: int,
+    template_id: int,
+) -> None:
+    template, _ = _get_template_with_financing(session, portfolio_id, template_id)
+    session.delete(template)
     session.commit()

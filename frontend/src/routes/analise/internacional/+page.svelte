@@ -253,7 +253,7 @@
   });
 </script>
 
-<div class="space-y-4">
+<div class="flex flex-col gap-3">
   {#if error}
     <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
   {/if}

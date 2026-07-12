@@ -8,6 +8,7 @@
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
   import { createEventDispatcher } from 'svelte';
 
+  import { PAGE_SECTION_CLASS } from '$lib/layout/pageVisual';
   import {
     formatEmergencyReserveLocation,
     formatLinkedEmergencyReserveObservation,
@@ -33,9 +34,10 @@
   $: hasRows = items.length > 0 || linkedItems.length > 0;
 </script>
 
-<section class="rounded-box bg-base-100 p-4 shadow-sm" data-testid={sectionTestId}>
-  <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-    <h2 class="text-lg font-semibold">{title}</h2>
+<section class={PAGE_SECTION_CLASS} data-testid={sectionTestId}>
+  <div class="card-body gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h2 class="card-title text-lg">{title}</h2>
     <button
       type="button"
       class="btn btn-primary btn-sm"
@@ -129,4 +131,5 @@
       </table>
     </div>
   {/if}
+  </div>
 </section>

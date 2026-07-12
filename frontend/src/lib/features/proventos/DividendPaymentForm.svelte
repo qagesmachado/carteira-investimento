@@ -13,6 +13,12 @@
   } from '$lib/brDate';
   import AssetPicker from '$lib/features/portfolios/AssetPicker.svelte';
   import {
+    computeNetAmount,
+    normalizeProventoAmounts,
+    resolveGrossAmount,
+    resolveTaxWithheld
+  } from '$lib/features/proventos/proventoAmounts';
+  import {
     formatPaymentTypeForDisplay,
     paymentTypeOptions,
     type DividendPaymentType
@@ -31,7 +37,8 @@
   let portfolioId: number | '' = '';
   let paymentType: DividendPaymentType = 'dividend';
   let paymentDateBr = '';
-  let amountValue = 0;
+  let grossAmountValue = 0;
+  let taxWithheldValue = 0;
   let currency = 'BRL';
   let notes = '';
   let companyCnpj = '';
@@ -41,7 +48,10 @@
 
   let loadedEditingId: number | null = null;
   let portfolioDefaultApplied = false;
-  let amountInput: BrDecimalInput;
+  let grossAmountInput: BrDecimalInput;
+  let taxWithheldInput: BrDecimalInput;
+
+  $: finalAmountValue = computeNetAmount(grossAmountValue, taxWithheldValue);
 
   $: if (assetId !== '' && formError === 'Selecione um ativo.') {
     formError = '';
@@ -57,7 +67,8 @@
     portfolioId = editing.portfolio_id ?? '';
     paymentType = editing.payment_type;
     paymentDateBr = formatIsoDateToBr(editing.payment_date);
-    amountValue = editing.amount;
+    grossAmountValue = resolveGrossAmount(editing);
+    taxWithheldValue = resolveTaxWithheld(editing);
     currency = editing.currency;
     notes = editing.notes ?? '';
     companyCnpj = editing.company_cnpj ?? '';
@@ -123,22 +134,46 @@
       return;
     }
 
-    if (!amountInput?.flush()) {
-      formError = 'Valor inválido. Use vírgula para decimais (ex.: 1,10 ou 1.234,56).';
+    if (!grossAmountInput?.flush()) {
+      formError = 'Valor recebido inválido. Use vírgula para decimais (ex.: 1,10 ou 1.234,56).';
       return;
     }
 
-    if (amountValue <= 0) {
-      formError = 'Informe um valor maior que zero.';
+    if (!taxWithheldInput?.flush()) {
+      formError = 'Imposto retido inválido. Use vírgula para decimais (ex.: 1,10 ou 1.234,56).';
       return;
     }
+
+    if (grossAmountValue <= 0) {
+      formError = 'Informe um valor recebido maior que zero.';
+      return;
+    }
+
+    if (taxWithheldValue < 0) {
+      formError = 'Imposto retido não pode ser negativo.';
+      return;
+    }
+
+    if (taxWithheldValue > grossAmountValue) {
+      formError = 'Imposto retido não pode ser maior que o valor recebido.';
+      return;
+    }
+
+    if (finalAmountValue <= 0) {
+      formError = 'O valor final após imposto deve ser maior que zero.';
+      return;
+    }
+
+    const amounts = normalizeProventoAmounts(grossAmountValue, taxWithheldValue);
 
     onSubmit({
       asset_id: Number(assetId),
       portfolio_id: Number(portfolioId),
       payment_type: paymentType,
       payment_date: paymentDateIso,
-      amount: amountValue,
+      amount: amounts.amount,
+      gross_amount: amounts.gross_amount,
+      tax_withheld: amounts.tax_withheld,
       currency: currency.trim() || 'BRL',
       notes: notes.trim() || null,
       company_cnpj: companyCnpj.trim() || null,
@@ -155,7 +190,8 @@
     portfolioDefaultApplied = portfolioId !== '';
     paymentType = 'dividend';
     paymentDateBr = '';
-    amountValue = 0;
+    grossAmountValue = 0;
+    taxWithheldValue = 0;
     currency = 'BRL';
     notes = '';
     companyCnpj = '';
@@ -246,24 +282,39 @@
     Data em DD/MM/AAAA. Você pode digitar ou colar; também é aceito colar no formato ISO (AAAA-MM-DD).
   </p>
 
-  <div class="grid gap-4 md:grid-cols-2">
+  <div class="grid gap-4 md:grid-cols-3">
     <BrDecimalInput
-      bind:this={amountInput}
-      bind:value={amountValue}
-      label="Valor recebido"
+      bind:this={grossAmountInput}
+      bind:value={grossAmountValue}
+      label="Recebido"
       inputClass="input input-bordered w-full"
       disabled={loading}
     />
 
-    <label class="form-control">
-      <span class="label"><span class="label-text">Moeda</span></span>
-      <input class="input input-bordered" bind:value={currency} maxlength="8" disabled={loading} />
-    </label>
+    <BrDecimalInput
+      bind:this={taxWithheldInput}
+      bind:value={taxWithheldValue}
+      label="Imposto retido"
+      inputClass="input input-bordered w-full"
+      disabled={loading}
+    />
+
+    <BrDecimalInput
+      value={finalAmountValue}
+      label="Final após imposto"
+      inputClass="input input-bordered w-full"
+      disabled={true}
+    />
   </div>
 
   <p class="text-xs text-base-content/60">
-    Valor com vírgula para decimais (ex.: 1,10 ou 1.234,56).
+    Valores com vírgula para decimais (ex.: 1,10 ou 1.234,56). O campo final é calculado automaticamente.
   </p>
+
+  <label class="form-control md:max-w-xs">
+    <span class="label"><span class="label-text">Moeda</span></span>
+    <input class="input input-bordered" bind:value={currency} maxlength="8" disabled={loading} />
+  </label>
 
   <label class="form-control">
     <span class="label"><span class="label-text">Observações</span></span>

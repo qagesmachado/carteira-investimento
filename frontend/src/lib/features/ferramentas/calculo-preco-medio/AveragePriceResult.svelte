@@ -9,7 +9,7 @@
   export let currency = 'BRL';
 </script>
 
-<section class="rounded-box bg-base-100 p-4 shadow-sm" data-testid="average-price-result">
+<div data-testid="average-price-result">
   <h3 class="mb-3 text-lg font-semibold">Resultado</h3>
 
   {#if outcome == null}
@@ -38,4 +38,4 @@
       </div>
     </div>
   {/if}
-</section>
+</div>

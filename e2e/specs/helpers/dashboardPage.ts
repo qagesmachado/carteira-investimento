@@ -31,7 +31,19 @@ export async function gotoDashboardPage(page: Page): Promise<void> {
 }
 
 export function dashboardPortfolioSelect(page: Page) {
-  return page.getByLabel('Selecionar carteira');
+  return page.getByTestId('dashboard-portfolio-select');
+}
+
+export function dashboardPortfolioBar(page: Page): Locator {
+  return page.getByTestId('dashboard-portfolio-bar');
+}
+
+export function dashboardFxBadge(page: Page): Locator {
+  return page.getByTestId('dashboard-fx-badge');
+}
+
+export function dashboardQuotesBadge(page: Page): Locator {
+  return page.getByTestId('dashboard-quotes-badge');
 }
 
 export async function expectEmptyDashboardMessage(page: Page): Promise<void> {
@@ -54,7 +66,19 @@ export async function clickRefreshQuotes(page: Page): Promise<void> {
 }
 
 export async function clickRefreshFx(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Atualizar câmbio (USD/BRL)' }).click();
+  await page.getByRole('button', { name: /Atualizar câmbio/i }).click();
+}
+
+export function dividends12MonthSection(page: Page): Locator {
+  return page.getByTestId('dashboard-dividends-12m');
+}
+
+export function dashboardHighlightsSection(page: Page): Locator {
+  return page.getByTestId('dashboard-highlights-row');
+}
+
+export function dashboardShortcutBar(page: Page): Locator {
+  return page.getByTestId('dashboard-shortcut-bar');
 }
 
 export function allocationSection(page: Page): Locator {
@@ -63,27 +87,4 @@ export function allocationSection(page: Page): Locator {
 
 export function topAssetsSection(page: Page): Locator {
   return page.locator('section[aria-label="Top ativos"]');
-}
-
-export async function switchAllocationView(page: Page, mode: 'Barras' | 'Pizza'): Promise<void> {
-  await allocationSection(page).getByRole('button', { name: mode }).click();
-}
-
-export function dividendSummarySection(page: Page): Locator {
-  return page.locator('section[aria-label="Proventos no dashboard"]');
-}
-
-export async function switchDividendTimeline(
-  page: Page,
-  mode: 'Anual' | 'Mensal'
-): Promise<void> {
-  await dividendSummarySection(page).getByRole('button', { name: mode }).click();
-}
-
-export async function switchDividendView(page: Page, mode: 'Tabela' | 'Barras'): Promise<void> {
-  await dividendSummarySection(page).getByRole('button', { name: mode }).click();
-}
-
-export async function selectDividendYear(page: Page, year: number): Promise<void> {
-  await dividendSummarySection(page).getByLabel('Ano').selectOption(String(year));
 }

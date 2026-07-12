@@ -10,14 +10,18 @@
   } from '$lib/api/portfolios';
   import { getPortfolioRebalance, type RebalanceSnapshot } from '$lib/api/rebalance';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import {
     formatBrl,
     formatPercent
   } from '$lib/features/rebalance/allocationTargets';
   import {
-    computeProjectedClassGap,
-    computeProjectedTotalGap
-  } from '$lib/features/rebalance/projectedRebalance';
+    computeClassInvestmentAllocation,
+    defaultIncludedClasses,
+    getClassContributionFromPlan
+  } from '$lib/features/rebalance/investmentAllocation';
   import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
   import AssetRebalanceTable from '$lib/features/rebalance/AssetRebalanceTable.svelte';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
@@ -36,8 +40,9 @@
   let snapshot: RebalanceSnapshot | null = null;
   let loading = true;
   let error = '';
-  /** Patrimônio total após aporte (R$); 0 = não informado. */
-  let finalPatrimonyInput = 0;
+  /** Valor a investir (R$); 0 = não informado. */
+  let investmentAmountInput = 0;
+  let includedClasses: Record<string, boolean> = {};
   let assetGroupTab: AssetGroupTab = 'stocks';
 
   $: activeAssetRows =
@@ -57,17 +62,63 @@
           ? 'Nenhuma posição na estratégia Criptomoeda nesta carteira.'
           : 'Nenhuma posição em FII nesta carteira.';
 
-  $: projectedTotalGap =
-    snapshot != null && finalPatrimonyInput > 0
-      ? computeProjectedTotalGap(snapshot.classes, finalPatrimonyInput)
+  $: investmentPlan =
+    snapshot != null && investmentAmountInput > 0
+      ? computeClassInvestmentAllocation(
+          snapshot.classes,
+          snapshot.patrimony_brl,
+          investmentAmountInput,
+          includedClasses
+        )
       : null;
+
+  $: includedClassCount = Object.values(includedClasses).filter(Boolean).length;
+
+  $: allocationByClass = new Map(
+    (investmentPlan?.rows ?? []).map((row) => [row.display_class, row])
+  );
+
+  $: activeClassContribution = getClassContributionFromPlan(
+    investmentPlan,
+    assetGroupTab === 'stocks'
+      ? 'stocks'
+      : assetGroupTab === 'international'
+        ? 'international'
+        : assetGroupTab === 'crypto'
+          ? 'crypto'
+          : 'funds'
+  );
+
+  function initializeIncludedClasses() {
+    if (snapshot == null) {
+      includedClasses = {};
+      return;
+    }
+    includedClasses = defaultIncludedClasses(snapshot.classes);
+  }
+
+  function toggleClassInclusion(displayClass: string, checked: boolean) {
+    if (!checked && includedClassCount <= 1) {
+      return;
+    }
+    includedClasses = { ...includedClasses, [displayClass]: checked };
+  }
+
+  function handleClassInclusionChange(displayClass: string, event: Event) {
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLInputElement)) {
+      return;
+    }
+    toggleClassInclusion(displayClass, target.checked);
+  }
 
   async function loadSnapshot(portfolioId: number) {
     loading = true;
     error = '';
     try {
       snapshot = await getPortfolioRebalance(portfolioId);
-      finalPatrimonyInput = 0;
+      investmentAmountInput = 0;
+      initializeIncludedClasses();
       assetGroupTab = 'stocks';
     } catch (err) {
       snapshot = null;
@@ -117,15 +168,13 @@
   <title>Rebalanceamento</title>
 </svelte:head>
 
-<main class="mx-auto max-w-6xl space-y-6 p-4">
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-bold">Rebalanceamento</h1>
-      <p class="text-sm opacity-70">
-        Compare alocação atual com metas da carteira e veja quanto falta por classe e por ativo.
-      </p>
-    </div>
-    <div class="flex flex-wrap items-center gap-2">
+<main class="min-h-screen w-full bg-base-200">
+<AppPageShell paddingY="py-2-px-4" class="flex flex-col gap-3">
+  <PageHeader
+    title="Rebalanceamento"
+    subtitle="Compare alocação atual com metas da carteira e veja quanto falta por classe e por ativo."
+  >
+    <div slot="actions" class="flex flex-wrap items-center gap-2">
       {#if portfolios.length > 0}
         <PortfolioSelect
           {portfolios}
@@ -137,7 +186,7 @@
       {/if}
       <a class="btn btn-sm btn-outline" href="/rebalanceamento/configuracao">Configurar metas</a>
     </div>
-  </div>
+  </PageHeader>
 
   {#if error}
     <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
@@ -148,11 +197,13 @@
   {:else if !snapshot}
     <p class="text-sm opacity-70">Nenhuma carteira selecionada.</p>
   {:else}
-    <section class="rounded-box bg-base-100 p-4 shadow-sm">
-      <h2 class="mb-3 text-lg font-semibold">Balanceamento desejado</h2>
-      <p class="mb-4 text-sm opacity-70">
+    <PageSection title="Balanceamento desejado">
+      <p class="text-sm opacity-70">
         Patrimônio (balanceamento): {formatBrl(snapshot.patrimony_brl)} — previdência e outros
         excluídos da soma
+        {#if investmentPlan != null}
+          · Patrimônio final: {formatBrl(investmentPlan.finalPatrimonyBrl)}
+        {/if}
         {#if snapshot.usd_brl_rate != null}
           · USD/BRL: {snapshot.usd_brl_rate.toLocaleString('pt-BR', {
             minimumFractionDigits: 4,
@@ -160,47 +211,72 @@
           })}
         {/if}
       </p>
+      {#if investmentAmountInput > 0 && includedClassCount === 0}
+        <DismissibleAlert
+          variant="warning"
+          text="Selecione ao menos uma classe para distribuir o aporte."
+        />
+      {/if}
       <div class="overflow-x-auto">
         <table class="table table-sm">
           <thead>
             <tr>
+              <th class="w-10">
+                <span class="sr-only">Incluir no aporte</span>
+              </th>
               <th>Ativo</th>
               <th class="text-right">Valor (R$)</th>
               <th class="text-right">Porcentagem</th>
               <th class="text-right">Faltando</th>
-              <th class="text-right min-w-[10rem]">Faltando (patrimônio final)</th>
+              <th class="text-right min-w-[10rem]">Deveria ter</th>
+              <th class="text-right min-w-[10rem]">Aporte sugerido</th>
             </tr>
           </thead>
           <tbody>
             {#each snapshot.classes as row (row.display_class)}
-              {@const projectedGap = computeProjectedClassGap(
-                row.current_value_brl,
-                row.target_percent,
-                finalPatrimonyInput > 0 ? finalPatrimonyInput : null
-              )}
+              {@const allocation = allocationByClass.get(row.display_class)}
               <tr>
+                <td>
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-sm"
+                    checked={includedClasses[row.display_class] !== false}
+                    aria-label="Incluir {row.label} no aporte"
+                    disabled={includedClasses[row.display_class] !== false && includedClassCount <= 1}
+                    on:change={(event) => handleClassInclusionChange(row.display_class, event)}
+                  />
+                </td>
                 <td>{row.label}</td>
                 <td class="text-right">{formatBrl(row.current_value_brl)}</td>
                 <td class="text-right">{formatPercent(row.target_percent)}</td>
                 <td class="text-right">{formatBrl(row.gap_brl)}</td>
-                <td class="text-right">{formatBrl(projectedGap)}</td>
+                <td class="text-right">
+                  {formatBrl(allocation?.idealTargetBrl ?? null)}
+                </td>
+                <td class="text-right">
+                  {formatBrl(allocation?.suggestedContributionBrl ?? null)}
+                </td>
               </tr>
             {/each}
             <tr class="font-semibold">
+              <td></td>
               <td>TOTAL</td>
               <td class="text-right">{formatBrl(snapshot.patrimony_brl)}</td>
               <td class="text-right">100,00%</td>
               <td class="text-right">{formatBrl(snapshot.total_gap_brl)}</td>
               <td class="text-right">
+                {formatBrl(investmentPlan?.finalPatrimonyBrl ?? null)}
+              </td>
+              <td class="text-right">
                 <div class="flex flex-col items-end gap-1">
                   <BrDecimalInput
-                    bind:value={finalPatrimonyInput}
-                    label="Patrimônio final"
+                    bind:value={investmentAmountInput}
+                    label="Valor a investir"
                     inputClass="input input-bordered input-sm w-full max-w-[11rem] text-right font-normal"
                   />
-                  {#if projectedTotalGap != null}
+                  {#if investmentPlan != null}
                     <span class="text-xs font-normal opacity-70">
-                      Faltando: {formatBrl(projectedTotalGap)}
+                      Aporte: {formatBrl(investmentPlan.totalSuggestedContributionBrl)}
                     </span>
                   {/if}
                 </div>
@@ -209,11 +285,10 @@
           </tbody>
         </table>
       </div>
-    </section>
+    </PageSection>
 
-    <section class="rounded-box bg-base-100 p-4 shadow-sm">
-      <h2 class="mb-3 text-lg font-semibold">Relação ETF / Ação</h2>
-      <p class="mb-4 text-sm opacity-70">Sub-divisão dentro de Ações/ETF BR.</p>
+    <PageSection title="Relação ETF / Ação">
+      <p class="text-sm opacity-70">Sub-divisão dentro de Ações/ETF BR.</p>
       <div class="overflow-x-auto">
         <table class="table table-sm">
           <thead>
@@ -238,10 +313,9 @@
           </tbody>
         </table>
       </div>
-    </section>
+    </PageSection>
 
-    <section class="rounded-box bg-base-100 p-4 shadow-sm">
-      <h2 class="mb-3 text-lg font-semibold">Por ativo</h2>
+    <PageSection title="Por ativo">
       <div class="tabs tabs-boxed mb-4 w-fit" role="tablist" aria-label="Grupo de ativos">
         {#each ASSET_GROUP_TABS as tab (tab.id)}
           <button
@@ -287,8 +361,10 @@
         showUsdPrimary={assetGroupTab === 'international'}
         usdBrlRate={snapshot.usd_brl_rate}
         currentPatrimonyBrl={snapshot.patrimony_brl}
-        finalPatrimonyBrl={finalPatrimonyInput > 0 ? finalPatrimonyInput : null}
+        finalPatrimonyBrl={investmentPlan?.finalPatrimonyBrl ?? null}
+        classContributionBrl={activeClassContribution}
       />
-    </section>
+    </PageSection>
   {/if}
+</AppPageShell>
 </main>

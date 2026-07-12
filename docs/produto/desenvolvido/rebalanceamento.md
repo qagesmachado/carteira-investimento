@@ -12,7 +12,7 @@ Comparar alocação **atual** vs. **desejada** da carteira ativa, calcular **FAL
 - Metas persistidas em **`Portfolio.allocation_targets_json`** (validação soma 100%).
 - **Ações/ETF BR:** % desejada por ativo via perfil `stock_br` (Soma + split ETF 70% / Ação 30%).
 - **FIIs:** % desejada por ativo via perfil `fii_br` (Soma distribuída na meta da classe `funds`).
-- Coluna **Faltando (patrimônio final)** por classe e por ativo (quando há % desejada).
+- Coluna **Deveria ter** e **Aporte sugerido** por classe e por ativo (quando há % desejada e valor a investir informado).
 
 ## Fora do escopo
 
@@ -41,11 +41,18 @@ Relação ETF/Ação dentro de `stocks`: **70% / 30%**.
 
 Patrimônio = soma dos valores atuais das posições **das cinco classes de balanceamento**, convertidos para BRL (USD × câmbio). **Previdência** e **Outros** ficam fora dessa soma (como na planilha).
 
-Na UI, a coluna **Faltando (patrimônio final)** recalcula o gap por classe usando um patrimônio total informado após aporte (`max(0, patrimônio_final × meta% − valor_atual)`). A mesma coluna na tabela **Por ativo** aplica a fórmula com a **% desejada** de cada ticker (`max(0, patrimônio_final × % desejada − valor_atual)`); ativos sem % desejada exibem «—».
+Na UI, informe **Valor a investir** na linha TOTAL. O sistema calcula **Patrimônio final** = patrimônio atual + aporte e exibe:
+
+- **Deveria ter** = `patrimônio_final × meta%` (valor ideal da classe/ativo após o aporte).
+- **Aporte sugerido** = parcela do valor investido alocada à classe/ativo.
+
+Checkboxes por classe (marcados por padrão) permitem excluir uma classe do aporte; o gap ideal da classe desmarcada é redistribuído proporcionalmente entre as classes marcadas. A soma dos aportes sugeridos nas classes marcadas equivale ao valor informado.
+
+Na tabela **Por ativo**, as colunas projetadas herdam o aporte da classe da aba ativa e distribuem-no entre os tickers proporcionalmente ao gap ideal de cada um em `patrimônio_final`. Ativos sem % desejada exibem «—».
 
 ### Por ativo (Ações/ETF BR e FIIs)
 
-As colunas **% atual** e **% desejada** na tabela **Por ativo** são relativas **ao conjunto de ativos da aba** (somam 100% entre os tickers listados). **Valor desejável**, **Faltando** e **Faltando (patrimônio final)** continuam baseados no patrimônio total da carteira.
+As colunas **% atual** e **% desejada** na tabela **Por ativo** são relativas **ao conjunto de ativos da aba** (somam 100% entre os tickers listados). **Valor desejável**, **Faltando**, **Deveria ter** e **Aporte sugerido** continuam baseados no patrimônio total da carteira e no plano de aporte por classe.
 
 #### Ações/ETF BR
 

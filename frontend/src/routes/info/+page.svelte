@@ -2,6 +2,9 @@
   import { onMount } from 'svelte';
 
   import { getAppInfo, type AppInfo } from '$lib/api/info';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
 
   let info: AppInfo | null = null;
   let loading = true;
@@ -18,13 +21,12 @@
   });
 </script>
 
-<main class="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
-  <header>
-    <h1 class="text-2xl font-bold">Informações do sistema</h1>
-    <p class="text-sm text-base-content/60">
-      Estado do banco de dados para conferência e suporte.
-    </p>
-  </header>
+<main class="min-h-screen w-full bg-base-200">
+<AppPageShell paddingY="py-2-px-4" class="flex flex-col gap-3">
+  <PageHeader
+    title="Informações do sistema"
+    subtitle="Estado do banco de dados para conferência e suporte."
+  />
 
   {#if loading}
     <div class="flex items-center gap-2 text-base-content/60">
@@ -36,7 +38,7 @@
       <span>{error}</span>
     </div>
   {:else if info}
-    <section class="overflow-x-auto rounded-box bg-base-100 shadow-sm">
+    <PageSection class="overflow-x-auto">
       <table class="table" data-testid="info-table">
         <tbody>
           <tr>
@@ -62,6 +64,7 @@
           </tr>
         </tbody>
       </table>
-    </section>
+    </PageSection>
   {/if}
+</AppPageShell>
 </main>

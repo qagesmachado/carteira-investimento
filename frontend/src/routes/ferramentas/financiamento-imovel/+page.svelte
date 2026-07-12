@@ -10,9 +10,13 @@
 
     createFinancingEntry,
 
+    createFinancingEntryTemplate,
+
     createPropertyFinancing,
 
     deleteFinancingEntry,
+
+    deleteFinancingEntryTemplate,
 
     deletePropertyFinancing,
 
@@ -20,9 +24,13 @@
 
     updateFinancingEntry,
 
+    updateFinancingEntryTemplate,
+
     updatePropertyFinancing,
 
     type FinancingEntryCreate,
+
+    type FinancingEntryTemplateCreate,
 
     type PropertyFinancingSnapshot
 
@@ -43,6 +51,7 @@
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
 
   import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
 
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
 
@@ -82,6 +91,8 @@
   let editMode: 'create' | 'edit' = 'create';
 
   let editError = '';
+
+  let financingDetail: FinancingDetail;
 
 
 
@@ -407,10 +418,73 @@
 
   }
 
+  async function handleCreateTemplate(event: CustomEvent<FinancingEntryTemplateCreate>) {
+    if (activeId == null || !selectedFinancing) return;
+    saving = true;
+    error = '';
+    financingDetail?.setTemplateModalError('');
+    try {
+      await createFinancingEntryTemplate(activeId, selectedFinancing.id, event.detail);
+      financingDetail?.closeTemplateModal();
+      await loadSnapshot(activeId);
+    } catch (err) {
+      financingDetail?.setTemplateModalError(
+        parseApiError(err, 'Não foi possível salvar o padrão.')
+      );
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function handleUpdateTemplate(
+    event: CustomEvent<{
+      templateId: number;
+      payload: Partial<FinancingEntryTemplateCreate>;
+    }>
+  ) {
+    if (activeId == null) return;
+    saving = true;
+    error = '';
+    financingDetail?.setTemplateModalError('');
+    try {
+      await updateFinancingEntryTemplate(
+        activeId,
+        event.detail.templateId,
+        event.detail.payload
+      );
+      financingDetail?.closeTemplateModal();
+      await loadSnapshot(activeId);
+    } catch (err) {
+      financingDetail?.setTemplateModalError(
+        parseApiError(err, 'Não foi possível atualizar o padrão.')
+      );
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function handleDeleteTemplate(event: CustomEvent<number>) {
+    if (activeId == null) return;
+    saving = true;
+    error = '';
+    try {
+      await deleteFinancingEntryTemplate(activeId, event.detail);
+      financingDetail?.closeTemplateDeleteConfirm();
+      await loadSnapshot(activeId);
+    } catch (err) {
+      financingDetail?.setTemplateModalError(
+        parseApiError(err, 'Não foi possível excluir o padrão.')
+      );
+    } finally {
+      saving = false;
+    }
+  }
+
 </script>
 
 
 
+<div class="flex flex-col gap-3">
 <PageHeader
   title="Financiamento imóvel"
   subtitle="Registre receitas e despesas por imóvel e acompanhe lucro e capital investido."
@@ -445,57 +519,43 @@
 
   {:else if snapshot}
 
-    <div class="mb-4">
-
+    <PageSection>
       <FinancingPanel
-
         {financings}
-
         selectedId={selectedFinancingId}
-
         on:select={(e) => handlePanelSelect(e.detail)}
-
         on:create={openCreateModal}
-
       />
-
-    </div>
-
-
+    </PageSection>
 
     {#if showSummary}
-
-      <FinancingSummary
-
-        {snapshot}
-
-        on:selectFinancing={(e) => handlePanelSelect(e.detail)}
-
-      />
-
+      <PageSection>
+        <FinancingSummary
+          {snapshot}
+          on:selectFinancing={(e) => handlePanelSelect(e.detail)}
+        />
+      </PageSection>
     {:else if selectedFinancing}
-
-      <FinancingDetail
-
-        financing={selectedFinancing}
-
-        {saving}
-
-        on:edit={openEditModal}
-
-        on:delete={() => void handleDeleteFinancing()}
-
-        on:addEntry={(e) => void handleAddEntry(e)}
-        on:updateEntry={(e) => void handleUpdateEntry(e)}
-        on:deleteEntry={(e) => void handleDeleteEntry(e)}
-
-      />
-
+      <PageSection>
+        <FinancingDetail
+          bind:this={financingDetail}
+          financing={selectedFinancing}
+          {saving}
+          on:edit={openEditModal}
+          on:delete={() => void handleDeleteFinancing()}
+          on:addEntry={(e) => void handleAddEntry(e)}
+          on:updateEntry={(e) => void handleUpdateEntry(e)}
+          on:deleteEntry={(e) => void handleDeleteEntry(e)}
+          on:createTemplate={(e) => void handleCreateTemplate(e)}
+          on:updateTemplate={(e) => void handleUpdateTemplate(e)}
+          on:deleteTemplate={(e) => void handleDeleteTemplate(e)}
+        />
+      </PageSection>
     {/if}
 
   {/if}
 
-
+</div>
 
 <FinancingEditModal
 

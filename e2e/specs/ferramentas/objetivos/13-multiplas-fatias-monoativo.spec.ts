@@ -6,7 +6,7 @@ import {
   replaceAllocationViaApi,
   seedObjetivosWithStock
 } from '../../helpers/seedObjetivos';
-import { gotoObjetivosPage, selectObjectiveCard } from '../../helpers/objetivosPage';
+import { gotoObjetivosPage, selectObjectiveCard, expectAllocationSliceVisible } from '../../helpers/objetivosPage';
 
 /** @see ../../../casos-de-uso/ui/ferramentas/objetivos/13-multiplas-fatias-monoativo.md */
 test.describe('UI-OBJ-013', () => {
@@ -22,14 +22,14 @@ test.describe('UI-OBJ-013', () => {
 
     await gotoObjetivosPage(page);
     await selectObjectiveCard(page, 'Caixinhas');
-    await expect(page.getByText('Viagem')).toBeVisible();
+    await expectAllocationSliceVisible(page, 'Viagem');
 
     await page.getByTestId('objetivo-add-asset-btn').click();
     await page.getByTestId('allocation-slice-name-input').fill('Reserva');
     await page.getByTestId('allocation-shares-input').fill('15');
     await page.getByTestId('allocation-save-btn').click();
 
-    await expect(page.getByText('Reserva')).toBeVisible();
+    await expectAllocationSliceVisible(page, 'Reserva');
     await expect(page.locator('[data-testid^="objetivo-allocation-"]')).toHaveCount(2);
   });
 });

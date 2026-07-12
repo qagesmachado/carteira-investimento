@@ -19,7 +19,7 @@
     : 'R$';
 </script>
 
-<section class="rounded-box bg-base-100 p-4 shadow-sm" data-testid="manual-lots-form">
+<div data-testid="manual-lots-form">
   <h3 class="mb-1 font-medium">Modo manual</h3>
   <p class="mb-4 text-sm opacity-70">
     Informe quantidade e preço médio de compra de cada lote do mesmo ativo.
@@ -67,4 +67,4 @@
       </div>
     </fieldset>
   </div>
-</section>
+</div>

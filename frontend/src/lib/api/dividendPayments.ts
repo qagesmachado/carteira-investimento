@@ -12,6 +12,8 @@ export type DividendPayment = {
   payment_type: DividendPaymentType;
   payment_date: string;
   amount: number;
+  gross_amount?: number | null;
+  tax_withheld?: number | null;
   currency: string;
   notes?: string | null;
   company_cnpj?: string | null;
@@ -29,6 +31,8 @@ export type DividendPaymentCreate = {
   payment_type: DividendPaymentType;
   payment_date: string;
   amount: number;
+  gross_amount?: number | null;
+  tax_withheld?: number | null;
   currency: string;
   notes?: string | null;
   company_cnpj?: string | null;

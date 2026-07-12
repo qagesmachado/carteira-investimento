@@ -51,14 +51,15 @@ describe('sortAssetRebalanceRows', () => {
     expect(sorted.map((r) => r.symbol)).toEqual(['B', 'A', 'C']);
   });
 
-  it('ordena por faltando projetado quando patrimônio final informado', () => {
+  it('ordena por aporte sugerido quando valor a investir informado', () => {
     const rows = [
-      row('A', { current_value_brl: 1000, target_value_brl: 2000 }),
-      row('B', { current_value_brl: 500, target_value_brl: 1500 })
+      row('A', { asset_id: 1, current_value_brl: 1000, target_value_brl: 2000 }),
+      row('B', { asset_id: 2, current_value_brl: 500, target_value_brl: 1500 })
     ];
-    const sorted = sortAssetRebalanceRows(rows, 'projected_gap', 'desc', {
+    const sorted = sortAssetRebalanceRows(rows, 'suggested_contribution', 'desc', {
       currentPatrimonyBrl: 10_000,
-      finalPatrimonyBrl: 20_000
+      finalPatrimonyBrl: 20_000,
+      classContributionBrl: 10_000
     });
     expect(sorted[0].symbol).toBe('A');
   });

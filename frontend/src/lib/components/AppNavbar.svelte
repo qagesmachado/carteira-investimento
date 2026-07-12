@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { hideMoneyValues, toggleHideMoneyValues } from '$lib/stores/hideMoneyValues';
+  import { PAGE_SHELL_PADDING_X_CLASS, PAGE_SHELL_WIDTH_CLASS } from '$lib/layout/pageShell';
   import { theme, toggleTheme } from '$lib/stores/theme';
 
   $: pathname = $page.url.pathname;
@@ -20,6 +21,7 @@
     pathname === '/dados' ||
     pathname.startsWith('/dados/');
   $: ferramentasOpen = pathname.startsWith('/ferramentas');
+  $: financeiroOpen = pathname.startsWith('/financeiro');
   $: financiamentoOpen = pathname.startsWith('/ferramentas/financiamento-imovel');
   $: calculoPrecoMedioOpen = pathname.startsWith('/ferramentas/calculo-preco-medio');
   $: conferenciaIrOpen = pathname.startsWith('/ferramentas/conferencia-ir');
@@ -27,7 +29,7 @@
 </script>
 
 <header class="flex min-h-16 w-full items-center bg-base-100 shadow-sm">
-  <div class="mx-auto flex min-h-16 w-full min-w-0 max-w-6xl items-center gap-2 px-4">
+  <div class="{PAGE_SHELL_WIDTH_CLASS} {PAGE_SHELL_PADDING_X_CLASS} flex min-h-16 w-full min-w-0 items-center gap-2">
     <a class="btn btn-ghost text-xl" href="/">Carteira de Investimentos</a>
 
     <a class="btn btn-ghost" class:btn-active={dashboardOpen} href="/dashboard">
@@ -43,20 +45,8 @@
     </a>
 
     <div class="dropdown">
-      <div
-        tabindex="0"
-        role="button"
-        class="btn btn-ghost gap-1"
-        class:btn-active={alocacaoOpen}
-      >
+      <div tabindex="0" role="button" class="btn btn-ghost" class:btn-active={alocacaoOpen}>
         Alocação
-        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path
-            fill-rule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.94a.75.75 0 111.08 1.04l-4.24 4.5a.75.75 0 01-1.08 0l-4.24-4.5a.75.75 0 01.02-1.06z"
-            clip-rule="evenodd"
-          />
-        </svg>
       </div>
       <ul class="dropdown-content menu z-50 mt-2 w-52 rounded-box bg-base-100 p-2 shadow">
         <li>
@@ -69,20 +59,8 @@
     </div>
 
     <div class="dropdown">
-      <div
-        tabindex="0"
-        role="button"
-        class="btn btn-ghost gap-1"
-        class:btn-active={cadastroOpen}
-      >
+      <div tabindex="0" role="button" class="btn btn-ghost" class:btn-active={cadastroOpen}>
         Cadastro
-        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path
-            fill-rule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.94a.75.75 0 111.08 1.04l-4.24 4.5a.75.75 0 01-1.08 0l-4.24-4.5a.75.75 0 01.02-1.06z"
-            clip-rule="evenodd"
-          />
-        </svg>
       </div>
       <ul class="dropdown-content menu z-50 mt-2 w-52 rounded-box bg-base-100 p-2 shadow">
         <li>
@@ -101,20 +79,8 @@
     </div>
 
     <div class="dropdown">
-      <div
-        tabindex="0"
-        role="button"
-        class="btn btn-ghost gap-1"
-        class:btn-active={ferramentasOpen}
-      >
+      <div tabindex="0" role="button" class="btn btn-ghost" class:btn-active={ferramentasOpen}>
         Ferramentas
-        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-          <path
-            fill-rule="evenodd"
-            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.94a.75.75 0 111.08 1.04l-4.24 4.5a.75.75 0 01-1.08 0l-4.24-4.5a.75.75 0 01.02-1.06z"
-            clip-rule="evenodd"
-          />
-        </svg>
       </div>
       <ul class="dropdown-content menu z-50 mt-2 w-56 rounded-box bg-base-100 p-2 shadow">
         <li>
@@ -150,17 +116,55 @@
       </ul>
     </div>
 
+    <div class="dropdown">
+      <div tabindex="0" role="button" class="btn btn-ghost" class:btn-active={financeiroOpen}>
+        Financeiro
+      </div>
+      <ul class="dropdown-content menu z-50 mt-2 w-52 rounded-box bg-base-100 p-2 shadow">
+        <li>
+          <a href="/financeiro" class:active={pathname === '/financeiro' || pathname === '/financeiro/'}>
+            Painel
+          </a>
+        </li>
+        <li>
+          <a href="/financeiro/orcamento" class:active={pathname.startsWith('/financeiro/orcamento')}>
+            Orçamento
+          </a>
+        </li>
+        <li>
+          <a href="/financeiro/despesas" class:active={pathname.startsWith('/financeiro/despesas')}>
+            Despesas
+          </a>
+        </li>
+        <li>
+          <a href="/financeiro/metas" class:active={pathname.startsWith('/financeiro/metas')}>
+            Metas
+          </a>
+        </li>
+        <li>
+          <a href="/financeiro/renda" class:active={pathname.startsWith('/financeiro/renda')}>
+            Renda
+          </a>
+        </li>
+        <li>
+          <a href="/financeiro/perfis" class:active={pathname.startsWith('/financeiro/perfis')}>
+            Perfis
+          </a>
+        </li>
+      </ul>
+    </div>
+
     <div class="ml-auto flex items-center gap-1">
       <button
         type="button"
         class="btn btn-ghost btn-circle"
         data-testid="toggle-theme-btn"
-        aria-pressed={$theme === 'dim'}
-        aria-label={$theme === 'dim' ? 'Ativar tema claro' : 'Ativar tema escuro'}
-        title={$theme === 'dim' ? 'Ativar tema claro' : 'Ativar tema escuro'}
+        aria-pressed={$theme === 'dark'}
+        aria-label={$theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
+        title={$theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
         on:click={toggleTheme}
       >
-        {#if $theme === 'dim'}
+        {#if $theme === 'dark'}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-5 w-5"

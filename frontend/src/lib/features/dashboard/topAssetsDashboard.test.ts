@@ -5,8 +5,14 @@ import type { Position } from '$lib/api/portfolios';
 
 import {
   allocationToPieSegments,
+  buildAssetMonthlyDividendAmounts,
   formatProfitPercentWithNominal,
   pieSlicePath,
+  donutSlicePath,
+  donutSegmentLabelPoint,
+  shouldShowDonutSegmentLabel,
+  sparklinePolyline,
+  sparklinePointsFromAmounts,
   topAssetsByGrossProfit,
   topAssetsByPositionValue,
   topAssetsByProfitPercent
@@ -136,9 +142,72 @@ describe('allocationToPieSegments', () => {
     expect(segments[1].endAngle).toBeCloseTo(360);
   });
 
+  it('usa indice de cor fixo por display_class', () => {
+    const segments = allocationToPieSegments([
+      { displayClass: 'crypto', label: 'Cripto', percent: 10, valueBrl: 100 },
+      { displayClass: 'stocks', label: 'Ações', percent: 90, valueBrl: 900 }
+    ]);
+
+    expect(segments[0].colorIndex).toBe(5);
+    expect(segments[1].colorIndex).toBe(1);
+  });
+
   it('gera path SVG valido para fatia', () => {
     const path = pieSlicePath(0, 90);
     expect(path).toMatch(/^M /);
     expect(path).toContain('A');
+  });
+
+  it('gera path SVG valido para fatia de rosca', () => {
+    const path = donutSlicePath(0, 90);
+    expect(path).toMatch(/^M /);
+    expect(path).toContain('A');
+    expect(path.split('A').length).toBeGreaterThan(2);
+  });
+
+  it('shouldShowDonutSegmentLabel exige percentual e angulo minimos', () => {
+    expect(shouldShowDonutSegmentLabel(42, 151.2)).toBe(true);
+    expect(shouldShowDonutSegmentLabel(4.7, 16.9)).toBe(true);
+    expect(shouldShowDonutSegmentLabel(3.9, 14)).toBe(false);
+    expect(shouldShowDonutSegmentLabel(10, 10)).toBe(false);
+  });
+
+  it('buildAssetMonthlyDividendAmounts agrega por mes', () => {
+    const ref = new Date(2025, 5, 15);
+    const amounts = buildAssetMonthlyDividendAmounts(
+      [
+        {
+          id: 1,
+          asset_id: 1,
+          symbol: 'PETR4',
+          payment_date: '2025-06-10',
+          amount: 50,
+          currency: 'BRL',
+          display_class: 'stocks',
+          payment_type: 'dividend',
+          portfolio_id: 1,
+          created_at: '',
+          updated_at: ''
+        }
+      ],
+      1,
+      ref
+    );
+    expect(amounts).toHaveLength(12);
+    expect(amounts[11]).toBe(50);
+  });
+
+  it('sparklinePointsFromAmounts gera pontos normalizados', () => {
+    const points = sparklinePointsFromAmounts([0, 50, 100], 100, 20);
+    expect(points).toHaveLength(3);
+    expect(points[2].y).toBeLessThan(points[0].y);
+  });
+
+  it('sparklinePolyline monta string de pontos', () => {
+    const poly = sparklinePolyline([
+      { x: 0, y: 10 },
+      { x: 5, y: 5 }
+    ]);
+    expect(poly).toBe('0,10 5,5');
   });
 });

@@ -8,7 +8,8 @@ export const TOP_LEVEL_MENU_ORDER = [
   'Visão consolidada',
   'Alocação',
   'Cadastro',
-  'Ferramentas'
+  'Ferramentas',
+  'Financeiro'
 ] as const;
 
 function topLevelMenuItem(page: Page, label: string) {
@@ -70,7 +71,7 @@ export async function clickThemeToggle(page: Page): Promise<void> {
   await themeToggle(page).click();
 }
 
-export async function expectDocumentTheme(page: Page, theme: 'light' | 'dim'): Promise<void> {
+export async function expectDocumentTheme(page: Page, theme: 'light' | 'dark'): Promise<void> {
   const applied = await page.evaluate(() =>
     document.documentElement.getAttribute('data-theme')
   );
@@ -79,7 +80,7 @@ export async function expectDocumentTheme(page: Page, theme: 'light' | 'dim'): P
 
 export async function expectThemePreferenceStored(
   page: Page,
-  theme: 'light' | 'dim'
+  theme: 'light' | 'dark'
 ): Promise<void> {
   const stored = await page.evaluate((key) => localStorage.getItem(key), THEME_STORAGE_KEY);
   expect(stored).toBe(theme);

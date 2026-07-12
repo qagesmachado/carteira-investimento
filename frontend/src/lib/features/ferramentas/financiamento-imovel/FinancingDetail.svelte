@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { FinancingEntry, PropertyFinancing } from '$lib/api/propertyFinancings';
+  import type { FinancingEntryTemplateCreate } from '$lib/api/propertyFinancings';
   import { formatIsoDateToBr } from '$lib/brDate';
   import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
   import { formatBrl } from '$lib/features/rebalance/allocationTargets';
@@ -7,6 +8,7 @@
 
   import { buildFinancingTimelinesFromEntries } from './computeFinancingMetrics';
   import FinancingCashflowChart from './FinancingCashflowChart.svelte';
+  import FinancingEntryTemplateBar from './FinancingEntryTemplateBar.svelte';
   import FinancingEventForm from './FinancingEventForm.svelte';
   import { formatEntryType, formatEventCategory } from './eventLabels';
   import { formatPropertyType } from './propertyTypeLabels';
@@ -32,7 +34,16 @@
     addEntry: import('$lib/api/propertyFinancings').FinancingEntryCreate;
     updateEntry: { entryId: number; amount_brl: number };
     deleteEntry: number;
+    createTemplate: FinancingEntryTemplateCreate;
+    updateTemplate: {
+      templateId: number;
+      payload: Partial<FinancingEntryTemplateCreate>;
+    };
+    deleteTemplate: number;
   }>();
+
+  let eventForm: FinancingEventForm;
+  let templateBar: FinancingEntryTemplateBar;
 
   let sortKey: FinancingEntrySortKey = 'event_date';
   let sortDir: SortDirection = 'desc';
@@ -83,6 +94,18 @@
     dispatch('updateEntry', { entryId, amount_brl: editAmount });
     editingEntryId = null;
     editAmount = 0;
+  }
+
+  export function closeTemplateModal() {
+    templateBar?.closeTemplateModal();
+  }
+
+  export function closeTemplateDeleteConfirm() {
+    templateBar?.closeDeleteConfirm();
+  }
+
+  export function setTemplateModalError(message: string) {
+    templateBar?.setTemplateModalError(message);
   }
 </script>
 
@@ -143,7 +166,20 @@
   />
 
   <div class="mt-6">
-    <FinancingEventForm loading={saving} on:submit={(e) => dispatch('addEntry', e.detail)} />
+    <FinancingEntryTemplateBar
+      bind:this={templateBar}
+      templates={financing.entry_templates ?? []}
+      eventForm={eventForm}
+      {saving}
+      on:createTemplate={(e) => dispatch('createTemplate', e.detail)}
+      on:updateTemplate={(e) => dispatch('updateTemplate', e.detail)}
+      on:deleteTemplate={(e) => dispatch('deleteTemplate', e.detail)}
+    />
+    <FinancingEventForm
+      bind:this={eventForm}
+      loading={saving}
+      on:submit={(e) => dispatch('addEntry', e.detail)}
+    />
   </div>
 
   <div class="mt-6">

@@ -1,12 +1,12 @@
-# Dashboard inicial (Tier 1 + 2)
+# Dashboard inicial (Tier 1 + 2 + melhorias visuais)
 
 ## Objetivo
 
-Visão executiva da **carteira selecionada** em `/dashboard`: patrimônio, P&L, alocação por classe, proventos agregados e atalhos para consolidada e proventos.
+Visão executiva da **carteira selecionada** em `/dashboard`: patrimônio, P&L, alocação por classe, proventos agregados, aderência ao rebalanceamento e atalhos para consolidada, rebalanceamento e proventos.
 
 Equivalente parcial à aba `RESUMO` da planilha. Não substitui a tabela operacional em `/portfolios/consolidada`.
 
-## Escopo entregue (Tier 1 + 2)
+## Escopo entregue
 
 ### Rota e navegação
 
@@ -14,13 +14,23 @@ Equivalente parcial à aba `RESUMO` da planilha. Não substitui a tabela operaci
 - Link **Dashboard** na navbar (antes de «Visão consolidada»)
 - Home **`/`** permanece landing
 
+### Hero e toolbar
+
+- `PageHero` com título **Dashboard** (sem subtítulo)
+- Toolbar com **Atualizar cotações**, **Atualizar câmbio** no canto direito do hero
+- Painel de carteira: rótulo «Carteira», nome em negrito com dropdown; badges **USD/BRL** (bandeira EUA) e **Cotações** ([`CircleDollarSign`](https://lucide.dev/icons/circle-dollar-sign))
+- Toolbar: [Atualizar cotações](https://lucide.dev/icons/refresh-cw) (legado SVG) · [Atualizar câmbio](https://lucide.dev/icons/banknote) (`Banknote` Lucide)
+
 ### Seletor de carteira
 
 - Dropdown com carteiras disponíveis
 - Sincroniza com carteira ativa (`GET/PUT /portfolios/active`)
+- Badge USD/BRL quando há posições em dólar
 - Ao trocar, recarrega indicadores
 
-### Cards de resumo
+### Cards de resumo (KPIs com ícones Lucide)
+
+Ícones via [Lucide](https://lucide.dev/icons/) — ver [icones-ui.md](icones-ui.md). Ex.: patrimônio [`Wallet`](https://lucide.dev/icons/wallet).
 
 | Card | Fonte |
 | ---- | ----- |
@@ -31,29 +41,42 @@ Equivalente parcial à aba `RESUMO` da planilha. Não substitui a tabela operaci
 | Proventos ano atual | Idem |
 | Posições ativas | Contagem de posições com ativo resolvido |
 
+### Faixa de destaques (3 cards)
+
+| Card | Dados | Link |
+| ---- | ----- | ---- |
+| Aderência ao rebalanceamento | `GET /portfolios/{id}/rebalance` — `100 - média(\|atual - meta\|)`; até 3 classes abaixo da meta | `/rebalanceamento` ou `/rebalanceamento/configuracao` |
+| Classe em destaque | Top 3 por rendimento bruto `(atual − investido) / investido` | `/portfolios/consolidada?display_class=` por linha |
+| Proventos recentes | Até 3 últimos `payment_date` da carteira | — |
+
 ### Alocação por classe
 
 - Agrupa por `Asset.display_class`
 - Tabela com valor (BRL), % da carteira
-- Gráfico de barras horizontais (CSS, sem lib externa)
+- Gráfico rosca com legenda em tabela, linha «Total» e filtros de escopo (não-investimento / previdência)
 
 ### Proventos no dashboard
 
-- Totais mês e ano nos cards (período corrente)
-- Painel: totais **por ano registrado** (visão anual) ou **por mês** (Jan–Dez do ano escolhido no seletor)
-- Alternância **Tabela / Barras** no painel
-- Ranking top ativos por valor recebido (ano corrente, ativos da carteira)
+- Totais mês e ano nos cards KPI (período corrente)
+- Gráfico de barras de **janeiro a dezembro** do ano corrente (total consolidado em BRL), com eixo Y linear, grade tracejada, tooltip e comparativo com o **mesmo período** (jan–mês atual) do ano anterior
+- Ranking top ativos por valor recebido (histórico)
 
-### Breakdown BRL vs USD
+### Top ativos refinado
 
-- Linha ou card com totais patrimoniais por moeda (antes da conversão consolidada em BRL)
+- Coluna **#** com destaque 1–3
+- Barras horizontais proporcionais à métrica da aba
+- Coluna **Evolução 12M** com sparkline de proventos mensais do ativo
+- Link «Ver todos os ativos →» para `/portfolios/consolidada`
+- Abas: Maior lucro (%), Maior posição, Proventos (total), Retorno bruto
 
-### Ações
+### Atalhos inferiores
 
-- **Atualizar cotações** — `POST /portfolios/{id}/quotes/refresh`
-- **Atualizar câmbio USD/BRL** — `POST /fx/usd-brl/refresh`
+- Visão consolidada → `/portfolios/consolidada`
+- Rebalanceamento → `/rebalanceamento`
+- Proventos → `/proventos`
+- Objetivos → `/ferramentas/objetivos`
 
-### Drill-down
+### Atalhos inferiores
 
 - Classe de alocação → `/portfolios/consolidada?display_class=...`
 - Link proventos → `/proventos`
@@ -64,16 +87,13 @@ Equivalente parcial à aba `RESUMO` da planilha. Não substitui a tabela operaci
 
 Ver [dashboard-tier-3.md](../candidato/dashboard-tier-3.md) e [modulos-tier-4.md](../candidato/modulos-tier-4.md):
 
-- Aderência ao rebalanceamento / metas %
-- Evolução patrimonial histórica
-- Gráfico proventos 12 meses
-- Visão multi-carteira
-- Objetivos / AUPO11AREA11
+- Evolução patrimonial histórica (snapshots)
+- Objetivos / AUPO11AREA11 no dashboard
 - Análise de ações, simulações, IR
 
 ## Dados e API
 
-Sem endpoints novos. Consumo paralelo:
+Sem endpoints novos para KPIs e gráficos. Consumo paralelo:
 
 | Recurso | Endpoint |
 | ------- | -------- |
@@ -81,6 +101,7 @@ Sem endpoints novos. Consumo paralelo:
 | Posições | `GET /portfolios/{id}/positions` |
 | Ativos | `GET /assets` |
 | Proventos | `GET /dividend-payments` (filtros opcionais) |
+| Rebalanceamento | `GET /portfolios/{id}/rebalance` |
 | Câmbio | `GET /fx/usd-brl`, `POST /fx/usd-brl/refresh` |
 | Cotações | `POST /portfolios/{id}/quotes/refresh` |
 
@@ -88,8 +109,11 @@ Sem endpoints novos. Consumo paralelo:
 
 | Módulo | Responsabilidade |
 | ------ | ---------------- |
-| `portfolioDashboard.ts` | Patrimônio BRL, alocação por classe, totais por moeda |
-| `dividendDashboard.ts` | Proventos por período, classe, top ativos |
+| `portfolioDashboard.ts` | Patrimônio BRL, alocação por classe, classe em destaque |
+| `dividendDashboard.ts` | Proventos por período, gráfico anual jan–dez, proventos recentes |
+| `rebalanceAdherence.ts` | Percentual de aderência e até 3 classes abaixo da meta |
+| `topAssetsDashboard.ts` | Ranking, barras, sparklines |
+| `dashboardRelativeTime.ts` | Subtítulo «atualizado há X min» |
 | `positionMetrics.ts` | Valores por posição (reutilizado) |
 
 ## Estados vazios
@@ -97,16 +121,17 @@ Sem endpoints novos. Consumo paralelo:
 - Sem carteira → mensagem + link «Carteiras»
 - Sem posições → orientação cadastrar ativos/posições
 - Sem proventos → R$ 0,00 nos cards + link «Proventos»
+- Sem metas de rebalanceamento → card de aderência com botão para configuração
 
 ## Critérios de aceite
 
-- Usuário vê patrimônio, alocação e proventos mês/ano em uma tela
+- Usuário vê patrimônio, alocação, destaques e proventos mês/ano em uma tela
 - Seletor de carteira atualiza todos os blocos
 - Gráfico/tabela de alocação reflete `display_class`
-- Drill-down para consolidada e proventos funciona
-- Tier 3 documentado em `candidato/` sem implementação
+- Aderência e classe em destaque refletem dados reais da carteira
+- Drill-down para consolidada, rebalanceamento e proventos funciona
 
 ## Testes
 
-- Unitários: `portfolioDashboard.test.ts`, `dividendDashboard.test.ts`
-- E2E: `e2e/casos-de-uso/ui/dashboard/`, specs `UI-DASH-*`
+- Unitários: `portfolioDashboard.test.ts`, `dividendDashboard.test.ts`, `rebalanceAdherence.test.ts`, `topAssetsDashboard.test.ts`, `dashboardRelativeTime.test.ts`, `DashboardKpiCard.test.ts`
+- E2E: `e2e/casos-de-uso/ui/dashboard/`, specs `UI-DASH-001` … `UI-DASH-012`

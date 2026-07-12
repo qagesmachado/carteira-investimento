@@ -12,7 +12,8 @@ A barra de navegação organiza as áreas implementadas nesta ordem e hierarquia
 | 2 | Visão consolidada | — | `/portfolios/consolidada` |
 | 3 | Alocação | Rebalanceamento · Análise de ativos (Ações, FII, ETF intl., **Criptomoedas**) | `/rebalanceamento` · `/analise` · `/analise/criptomoedas` |
 | 4 | Cadastro | Ativos · Carteiras · Proventos · Dados | `/assets` · `/portfolios` · `/proventos` · `/dados` |
-| 5 | Ferramentas | Gerenciamento de objetivos · Taxas cripto · Financiamento imóvel · Cálculo de preço médio · Controle de patrimônio | `/ferramentas/objetivos` · `/ferramentas/criptomoedas` · `/ferramentas/financiamento-imovel` · `/ferramentas/calculo-preco-medio` · `/ferramentas/controle-patrimonio` |
+| 5 | Ferramentas | Gerenciamento de objetivos · Taxas cripto · Financiamento imóvel · Cálculo de preço médio · Conferência anual de IR · Controle de patrimônio | `/ferramentas/objetivos` · `/ferramentas/criptomoedas` · `/ferramentas/financiamento-imovel` · `/ferramentas/calculo-preco-medio` · `/ferramentas/conferencia-ir` · `/ferramentas/controle-patrimonio` |
+| 6 | **Financeiro** | Painel · Orçamento · Metas (+ Tags) · Renda · Perfis | `/financeiro` · `/financeiro/orcamento` · `/financeiro/metas` · `/financeiro/renda` · `/financeiro/perfis` |
 
 As seções numeradas a seguir descrevem os módulos por domínio (origem na planilha) e podem ser lidas independentemente da posição no menu.
 
@@ -20,7 +21,7 @@ As seções numeradas a seguir descrevem os módulos por domínio (origem na pla
 
 Detalhamento: [Dashboard inicial](dashboard-inicial.md) · **Implementado (Tier 1+2):** [desenvolvido/dashboard-inicial.md](desenvolvido/dashboard-inicial.md) · **Futuro:** [candidato/dashboard-tier-3.md](candidato/dashboard-tier-3.md)
 
-**Status:** parcial — rota `/dashboard` com patrimônio, alocação, proventos agregados e drill-down. Rebalanceamento, evolução patrimonial e multi-carteira permanecem candidatos (Tier 3).
+**Status:** parcial — rota `/dashboard` com patrimônio, alocação, proventos agregados, aderência ao rebalanceamento, gráfico 12 meses e drill-down. Evolução patrimonial e widget de objetivos permanecem candidatos (Tier 3).
 
 Origem na planilha:
 
@@ -427,6 +428,12 @@ Funcionalidades:
 - Mascaramento global via formatadores de moeda (`R$ ••••••`, etc.).
 - Persistência ao navegar entre páginas e recarregar o browser.
 - Campos em edição continuam exibindo valor real.
+
+## 11. Ícones de UI (Lucide)
+
+Detalhamento: **[desenvolvido/icones-ui.md](desenvolvido/icones-ui.md)** (implementado).
+
+**Status:** implementado — ícones decorativos e de ação no frontend usam [Lucide](https://lucide.dev/icons/) via `LucideIcon` e registro em `lucideIconCatalog.ts`. Galeria interna em `/dev/icones-lucide`.
 
 ## 14. Ferramentas — financiamento imóvel
 

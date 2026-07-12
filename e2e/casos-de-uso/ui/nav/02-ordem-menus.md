@@ -24,7 +24,7 @@
 ### Passo a passo
 
 1. Abro qualquer página do app.
-2. Os menus principais aparecem na ordem: **Dashboard**, **Visão consolidada**, **Alocação**, **Cadastro**, **Ferramentas**.
+2. Os menus principais aparecem na ordem: **Dashboard**, **Visão consolidada**, **Alocação**, **Cadastro**, **Ferramentas**, **Financeiro**.
 
 ## Cenário — Agrupamento Alocação
 

@@ -27,15 +27,20 @@ export async function clickIrTab(page: Page, tab: 'detalhado' | 'resumo' | 'posi
 }
 
 export async function freezeIrSnapshot(page: Page): Promise<void> {
+  page.once('dialog', (dialog) => dialog.accept());
+
+  await expect(page.getByTestId('ir-freeze-snapshot-btn')).toBeEnabled();
+
   const createResponse = page.waitForResponse(
-    (r) => r.url().includes('/year-snapshots') && r.request().method() === 'POST' && r.ok()
-  );
-  const reportResponse = page.waitForResponse(
-    (r) => r.url().includes('/annual-ir-report?') && r.request().method() === 'GET' && r.ok()
+    (r) => r.url().includes('/year-snapshots') && r.request().method() === 'POST' && r.ok(),
+    { timeout: 30_000 }
   );
   await page.getByTestId('ir-freeze-snapshot-btn').click();
   await createResponse;
-  await reportResponse;
+
+  await expect(page.getByTestId('ir-tab-posicoes')).toHaveClass(/tab-active/, { timeout: 30_000 });
+  await expect(page.getByTestId('ir-table-posicoes')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId('ir-no-snapshot-warning')).toHaveCount(0);
 }
 
 export async function clickExportIrExcel(page: Page): Promise<Download> {

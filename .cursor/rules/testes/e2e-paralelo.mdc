@@ -5,7 +5,7 @@ alwaysApply: true
 
 # E2E paralelo — workers e isolamento
 
-Complementa [testes.mdc](testes.mdc) e [e2e/casos-de-uso/dependencias.md](../../e2e/casos-de-uso/dependencias.md).
+Complementa [testes.mdc](testes.mdc) e [e2e/casos-de-uso/dependencias.md](../../../e2e/casos-de-uso/dependencias.md).
 
 ## Configuração padrão
 
@@ -32,9 +32,9 @@ E2E_WORKERS=2 npm run test:ui
 - **Proibido** aumentar `workers` sem par API + frontend + DB por índice.
 - **Proibido** specs que apagam ou escrevem em `carteira-{M}.db` de outro worker.
 - **Proibido** hardcodar `:8001` / `:5174` em specs ou helpers — usar `getWorkerApiBaseUrl()` / fixture `workerEnv`.
-- Novos specs importam `test` e `expect` de [`e2e/specs/fixtures/test.ts`](../../e2e/specs/fixtures/test.ts), **não** de `@playwright/test` diretamente.
+- Novos specs importam `test` e `expect` de [`e2e/specs/fixtures/test.ts`](../../../e2e/specs/fixtures/test.ts), **não** de `@playwright/test` diretamente.
 
-Infra: [`e2e/worker-env.js`](../../e2e/worker-env.js), [`e2e/playwright.config.js`](../../e2e/playwright.config.js), [`e2e/specs/fixtures/test.ts`](../../e2e/specs/fixtures/test.ts).
+Infra: [`e2e/worker-env.js`](../../../e2e/worker-env.js), [`e2e/playwright.config.js`](../../../e2e/playwright.config.js), [`e2e/specs/fixtures/test.ts`](../../../e2e/specs/fixtures/test.ts).
 
 ## Checklist — nova funcionalidade com E2E
 

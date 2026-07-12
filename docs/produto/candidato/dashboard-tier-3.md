@@ -2,42 +2,38 @@
 
 ## Status
 
-- **Status:** candidato / não implementado
-- **Implementação:** junto com módulos de rebalanceamento, snapshots patrimoniais e objetivos financeiros
+- **Status:** candidato / parcialmente implementado
+- **Implementação:** itens 11 e 13 entregues no dashboard; evolução patrimonial e objetivos permanecem candidatos
 - **Referência entregue:** [Dashboard inicial (Tier 1+2)](../desenvolvido/dashboard-inicial.md)
 
 ## Objetivo
 
-Estender o dashboard com indicadores que dependem de **metas de alocação**, **histórico patrimonial** ou **agregação multi-carteira**, sem duplicar a visão operacional da consolidada.
+Estender o dashboard com indicadores que dependem de **histórico patrimonial** ou **módulos ainda não integrados**, sem duplicar a visão operacional da consolidada.
 
 ## Origem na planilha
 
 | Aba | Uso no dashboard Tier 3 |
 | --- | ------------------------- |
-| `BALANCEAMENTO` | Aderência atual vs. desejado |
+| `BALANCEAMENTO` | Aderência atual vs. desejado — **entregue** |
 | `PATRIMÔNIO TOTAL` | Evolução anual do patrimônio |
-| `Proventos Cálculos` | Gráfico mensal (12 meses) |
+| `Proventos Cálculos` | Gráfico mensal (ano corrente) — **entregue** |
 | `AUPO11AREA11` | ETFs RF por objetivo somados em renda fixa |
 
 Ver também [`docs/planilha/abas.md`](../../planilha/abas.md).
 
 ## Itens candidatos
 
-### 11 — Aderência ao rebalanceamento
+### 11 — Aderência ao rebalanceamento ✅ entregue
 
 **Pergunta:** minha carteira está aderente ao balanceamento desejado?
 
-**Dependências:**
+**Entrega no dashboard:**
 
-- UI para editar metas % por classe (`Portfolio.allocation_targets_json`)
-- Parser e validação de metas no backend ou frontend
-- Módulo [Rebalanceamento](../funcionalidades.md) §5
+- Card com anel de aderência (%)
+- Mensagem com até 3 classes abaixo da meta (maior gap primeiro), gap em `%`
+- Link para `/rebalanceamento` ou configuração de metas
 
-**Entrega esperada no dashboard:**
-
-- Card «classe mais abaixo do alvo»
-- Bloco comparando % atual vs. % desejado por `display_class`
-- Link para tela dedicada de rebalanceamento
+Documentado em [dashboard-inicial.md](../desenvolvido/dashboard-inicial.md). E2E: `UI-DASH-009`.
 
 ### 12 — Evolução patrimonial anual
 
@@ -55,32 +51,17 @@ Ver também [`docs/planilha/abas.md`](../../planilha/abas.md).
 - Alternância valor absoluto vs. % valorização
 - Filtro por classe (opcional)
 
-### 13 — Gráfico mensal de proventos (12 meses)
+### 13 — Gráfico mensal de proventos (ano corrente) ✅ entregue
 
-**Pergunta:** como evoluíram meus proventos mês a mês?
+**Pergunta:** como evoluíram meus proventos mês a mês no ano?
 
-**Dependências:**
+**Entrega no dashboard:**
 
-- Proventos cadastrados (`/dividend-payments`) — **já existe**
-- Agregação por mês no frontend ou endpoint de sumário
+- Barras de janeiro a dezembro do ano corrente (total consolidado em BRL)
+- Eixo Y linear, grade tracejada e tooltip no hover
+- Total do ano até o mês corrente, total do mesmo período no ano anterior e variação percentual
 
-**Entrega esperada no dashboard:**
-
-- Barras dos últimos 12 meses
-- Separação nacional / internacional (opcional)
-
-### 14 — Visão multi-carteira consolidada
-
-**Pergunta:** qual meu patrimônio total em todas as carteiras?
-
-**Dependências:**
-
-- Agregação cross-portfolio (posições de N carteiras)
-- Regras de deduplicação de ativos (mesmo ticker em carteiras diferentes)
-
-**Entrega esperada:**
-
-- Modo «Todas as carteiras» no seletor do dashboard
+Documentado em [dashboard-inicial.md](../desenvolvido/dashboard-inicial.md). E2E: `UI-DASH-008`.
 
 ### 15 — Objetivos / AUPO11AREA11
 

@@ -1,0 +1,66 @@
+---
+description: Padrões de locale pt-BR (valores, datas) em formulários e exibição
+alwaysApply: true
+---
+
+# Locale pt-BR — valores e datas
+
+App brasileiro: **vírgula** para decimais, **ponto** para milhar na exibição. Antes de entregar UI com números ou datas, conferir estes padrões.
+
+## Checklist rápido
+
+- [ ] Campo **editável** de valor monetário/decimal usa `BrDecimalInput` (nunca `String(number)`, `type="number"` ou `<input>` cru)?
+- [ ] Valor **somente leitura** usa `formatBrl`, `formatMoneyAmount` ou `formatBrDecimalDisplay`?
+- [ ] Parse de texto digitado usa `parseBrDecimalInput` ou helper que aceita vírgula (`parseAmountBrl`)?
+- [ ] Data editável usa `formatIsoDateToBr` / `parseBrDateToIso` (`$lib/brDate`)?
+- [ ] Ao **popular formulário de edição**, o número da API (`number`) vai direto para `BrDecimalInput` ou passa por `formatBrDecimalForEditing` — **nunca** `String(valor)`?
+
+## Valores monetários e decimais
+
+| Uso | Onde |
+| --- | ---- |
+| Input editável | `BrDecimalInput` (`$lib/components/BrDecimalInput.svelte`) |
+| Lógica parse/format | `$lib/brDecimal.ts` — `parseBrDecimalInput`, `formatBrDecimalForEditing`, `formatBrDecimalDisplay` |
+| Exibição BRL read-only | `formatBrl` (`allocationTargets`) ou `formatMoneyAmount` (`assetLabels`) |
+| Quantidade BTC | `BrDecimalInput` com `btcQuantity={true}` |
+
+### Evitar (causa bug recorrente)
+
+```typescript
+// ❌ Notação americana ao editar (650.89 em vez de 650,89)
+amountBrl = String(item.amount_brl);
+
+// ❌ input type="number" — locale do browser, não pt-BR
+<input type="number" bind:value={amount} />
+```
+
+### Correto
+
+```svelte
+<!-- ✅ número da API → BrDecimalInput formata ao focar/exibir -->
+<BrDecimalInput bind:this={amountInput} bind:value={amountBrl} testId="campo-valor" />
+```
+
+```typescript
+// ✅ flush antes de salvar (usuário pode clicar Salvar sem blur)
+if (!amountInput?.flush()) {
+  error = 'Use vírgula para centavos (ex.: 1234,56).';
+  return;
+}
+```
+
+## Datas
+
+- Formulário: `$lib/brDate` (`formatIsoDateToBr`, `parseBrDateToIso`, `sanitizeBrDateTyping`).
+- Exibição: `formatIsoDateToBr(iso)` ou `toLocaleDateString('pt-BR')`.
+
+## Percentuais e números gerais
+
+- Percentuais: `toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })`.
+- Não misturar `.` como decimal em strings destinadas ao usuário.
+
+## Testes
+
+- Unitários: `brDecimal.test.ts`, `BrDecimalInput.test.ts`, helpers de form co-localizados (`*.test.ts`).
+- E2E: ao cobrir **editar** valor com centavos, assert que o campo mostra vírgula (ex.: `650,89`), não ponto (`650.89`).
+- E2E em campos `BrDecimalInput`: usar `click` → `fill` → `dispatchEvent('input')` → `blur` (ver helpers em `e2e/specs/helpers/`); `.fill()` sozinho pode corromper valor quando o campo já exibe milhar.

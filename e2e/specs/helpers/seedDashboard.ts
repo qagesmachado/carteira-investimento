@@ -1,9 +1,23 @@
 import type { APIRequestContext } from '@playwright/test';
+import { expect } from '@playwright/test';
 
-import { TICKER_BBSE3, TICKER_VOO } from './e2eFixtures';
+import { getWorkerApiBaseUrl } from './workerContext';
+import { TICKER_BBSE3, TICKER_VOO, TICKER_AUVP11 } from './e2eFixtures';
 import { seedConsolidadaPrincipal } from './seedConsolidada';
 import { createDividendPaymentViaApi } from './testDividendPayments';
 import { getAssetIdBySymbol } from './testPortfolios';
+
+async function setAssetCurrentQuote(
+  request: APIRequestContext,
+  symbol: string,
+  currentQuote: number
+): Promise<void> {
+  const assetId = await getAssetIdBySymbol(request, symbol);
+  const response = await request.patch(`${getWorkerApiBaseUrl()}/assets/${assetId}`, {
+    data: { current_quote: currentQuote }
+  });
+  expect(response.ok()).toBeTruthy();
+}
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -16,6 +30,10 @@ export async function seedDashboardDividendSummary(
   const portfolioId = await seedConsolidadaPrincipal(request);
   const bbse3Id = await getAssetIdBySymbol(request, TICKER_BBSE3);
   const vooId = await getAssetIdBySymbol(request, TICKER_VOO);
+
+  await setAssetCurrentQuote(request, TICKER_BBSE3, 40);
+  await setAssetCurrentQuote(request, TICKER_VOO, 500);
+  await setAssetCurrentQuote(request, TICKER_AUVP11, 120);
 
   const now = new Date();
   const year = now.getFullYear();
@@ -63,4 +81,26 @@ export async function seedDashboardDividendSummary(
   });
 
   return portfolioId;
+}
+
+const DEFAULT_ALLOCATION_TARGETS = JSON.stringify({
+  classes: {
+    stocks: 25,
+    funds: 10,
+    international: 15,
+    fixed_income: 45,
+    crypto: 5
+  },
+  stocks_split: { etf: 60, stock: 40 }
+});
+
+/** Define metas de rebalanceamento na carteira ativa (seed consolidada). */
+export async function seedDashboardRebalanceTargets(
+  request: APIRequestContext,
+  portfolioId: number
+): Promise<void> {
+  const response = await request.patch(`${getWorkerApiBaseUrl()}/portfolios/${portfolioId}`, {
+    data: { allocation_targets_json: DEFAULT_ALLOCATION_TARGETS }
+  });
+  expect(response.ok()).toBeTruthy();
 }

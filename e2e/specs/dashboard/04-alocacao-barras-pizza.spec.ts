@@ -5,14 +5,13 @@ import { isApiQuoteRefreshResponse } from '../helpers/apiResponses';
 import {
   allocationSection,
   clickRefreshQuotes,
-  gotoDashboardPage,
-  switchAllocationView
+  gotoDashboardPage
 } from '../helpers/dashboardPage';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
 import { seedConsolidadaPrincipal } from '../helpers/seedConsolidada';
 
 /**
- * UI-DASH-004 — Alocação Barras/Pizza
+ * UI-DASH-004 — Alocação por classe (rosca)
  * @see ../../../casos-de-uso/ui/dashboard/04-alocacao-barras-pizza.md
  */
 test.describe('UI-DASH-004', () => {
@@ -22,7 +21,7 @@ test.describe('UI-DASH-004', () => {
     await seedConsolidadaPrincipal(request);
   });
 
-  test('alterna alocação entre barras e pizza', async ({ page }) => {
+  test('exibe rosca de alocacao com legenda e total', async ({ page }) => {
     await gotoDashboardPage(page);
 
     const quotesRefresh = page.waitForResponse(
@@ -33,10 +32,10 @@ test.describe('UI-DASH-004', () => {
     await quotesRefresh;
 
     const section = allocationSection(page);
-    await expect(section.getByRole('button', { name: 'Pizza' })).toBeVisible();
-    await switchAllocationView(page, 'Pizza');
+    await expect(section.getByTestId('dashboard-patrimony-filters')).toHaveCount(0);
+    await expect(section.getByRole('button', { name: 'Pizza' })).not.toBeVisible();
     await expect(section.locator('svg')).toBeVisible();
-    await switchAllocationView(page, 'Barras');
-    await expect(section.locator('.rounded-full.bg-base-200 .h-full').first()).toBeVisible();
+    await expect(section.getByTestId('dashboard-allocation-legend')).toBeVisible();
+    await expect(section.getByTestId('dashboard-allocation-total')).toContainText('Total');
   });
 });

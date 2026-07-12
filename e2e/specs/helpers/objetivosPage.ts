@@ -87,3 +87,9 @@ export async function fillAllocationInModal(
   await page.getByTestId('allocation-shares-input').fill(options.shares);
   await page.getByTestId('allocation-save-btn').click();
 }
+
+export async function expectAllocationSliceVisible(page: Page, sliceName: string): Promise<void> {
+  await expect(
+    page.locator('[data-testid^="objetivo-allocation-"] td.font-medium', { hasText: sliceName })
+  ).toBeVisible();
+}

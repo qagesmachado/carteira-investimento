@@ -1,4 +1,4 @@
-# Projeção por ativo com patrimônio final
+# Projeção por ativo com valor a investir
 
 ## Metadados
 
@@ -10,11 +10,11 @@
 ## Cenário
 
 **Como** investidor  
-**Quero** ver quanto falta em cada ativo quando informo um patrimônio final  
-**Para** distribuir o aporte previsto por ticker
+**Quero** ver quanto deveria ter e quanto aportar em cada ativo quando informo um valor a investir  
+**Para** rebalancear dentro da classe Ações/ETF BR
 
 ### Passo a passo
 
-1. Carteira com ações classificadas (Soma) na aba Ações/ETF BR.
-2. Preencho «Patrimônio final» na tabela de balanceamento por classe.
-3. A tabela «Por ativo» exibe a coluna «Faltando (patrimônio final)» com valores calculados para ativos com % desejada.
+1. Carteira com duas ações pontuadas (seed).
+2. Preencho «Valor a investir» na tabela de balanceamento por classe.
+3. A tabela «Por ativo» exibe as colunas «Deveria ter» e «Aporte sugerido» com valores calculados para ativos com % desejada.

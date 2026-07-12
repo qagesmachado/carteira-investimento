@@ -19,6 +19,9 @@
     type Portfolio
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import AssetBulkImport from '$lib/features/assets/AssetBulkImport.svelte';
   import PortfolioImportWizard from '$lib/features/portfolios/PortfolioImportWizard.svelte';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
@@ -175,21 +178,17 @@
 </svelte:head>
 
 <main class="min-h-screen w-full bg-base-200">
-  <div class="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 py-8">
-    <section
-      class="w-full min-w-0 rounded-box bg-gradient-to-r from-neutral to-base-300 px-6 py-10 text-neutral-content"
-    >
-      <h1 class="text-4xl font-bold">Dados</h1>
-      <p class="mt-2 max-w-2xl text-neutral-content/80">
-        Exportação e importação de backup completo, carteiras, catálogo de ativos e proventos.
-      </p>
-    </section>
+  <AppPageShell paddingY="py-4" class="flex w-full min-w-0 flex-col gap-3">
+    <PageHero
+      title="Dados"
+      subtitle="Exportação e importação de backup completo, carteiras, catálogo de ativos e proventos."
+      variant="neutral"
+    />
 
     <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
     <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
 
-    <section class="card bg-base-100 shadow" data-testid="dados-backup">
-      <div class="card-body gap-4">
+    <PageSection testId="dados-backup">
         <div>
           <p class="text-sm font-semibold uppercase tracking-wide text-primary">Backup</p>
           <h2 class="card-title">Backup completo</h2>
@@ -213,11 +212,9 @@
             Em breve — restauração de backup completo estará disponível nesta seção.
           </p>
         </div>
-      </div>
-    </section>
+    </PageSection>
 
-    <section class="card bg-base-100 shadow" data-testid="dados-carteira">
-      <div class="card-body gap-4">
+    <PageSection testId="dados-carteira">
         <div>
           <p class="text-sm font-semibold uppercase tracking-wide text-primary">Carteira</p>
           <h2 class="card-title">Exportar e importar carteira</h2>
@@ -243,11 +240,9 @@
           </button>
         </div>
         <PortfolioImportWizard onImported={handleImported} />
-      </div>
-    </section>
+    </PageSection>
 
-    <section class="card bg-base-100 shadow" data-testid="dados-ativos">
-      <div class="card-body gap-4">
+    <PageSection testId="dados-ativos">
         <div>
           <p class="text-sm font-semibold uppercase tracking-wide text-primary">Ativos</p>
           <h2 class="card-title">Catálogo de ativos</h2>
@@ -264,11 +259,9 @@
           {exportingAssets ? 'Exportando…' : 'Exportar catálogo JSON'}
         </button>
         <AssetBulkImport />
-      </div>
-    </section>
+    </PageSection>
 
-    <section class="card bg-base-100 shadow" data-testid="dados-proventos">
-      <div class="card-body gap-4">
+    <PageSection testId="dados-proventos">
         <div>
           <p class="text-sm font-semibold uppercase tracking-wide text-primary">Proventos</p>
           <h2 class="card-title">Exportar e importar proventos</h2>
@@ -305,7 +298,6 @@
           </button>
         </div>
         <DividendBulkImport {portfolios} activePortfolioId={activeId} />
-      </div>
-    </section>
-  </div>
+    </PageSection>
+  </AppPageShell>
 </main>

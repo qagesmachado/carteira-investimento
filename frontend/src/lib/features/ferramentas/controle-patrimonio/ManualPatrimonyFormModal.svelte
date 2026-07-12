@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { ManualPatrimonyCategory, ManualPatrimonyItem } from '$lib/api/patrimonyControl';
+  import { formatBrDecimalForEditing } from '$lib/brDecimal';
+  import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
   import { createEventDispatcher } from 'svelte';
 
   import {
@@ -23,7 +25,8 @@
   }>();
 
   let name = '';
-  let amountBrl = '';
+  let amountBrl = 0;
+  let amountInput: BrDecimalInput;
   let location: EmergencyReserveLocation | '' = '';
   let notes = '';
   let wasOpen = false;
@@ -36,7 +39,7 @@
 
   $: if (open && !wasOpen) {
     name = initial?.name ?? '';
-    amountBrl = initial ? String(initial.amount_brl) : '';
+    amountBrl = initial?.amount_brl ?? 0;
     location =
       initial?.location && isEmergencyReserveLocation(initial.location)
         ? initial.location
@@ -49,10 +52,14 @@
   }
 
   function handleSubmit() {
+    if (amountInput && !amountInput.flush()) {
+      localError = 'Informe um valor válido. Use vírgula para centavos (ex.: 1234,56).';
+      return;
+    }
     const values: ManualPatrimonyFormValues = {
       category,
       name,
-      amount_brl: amountBrl,
+      amount_brl: amountBrl > 0 ? formatBrDecimalForEditing(amountBrl) : '',
       location,
       notes
     };
@@ -103,16 +110,13 @@
             </select>
           </label>
         {/if}
-        <label class="form-control">
-          <span class="label-text">Valor (R$)</span>
-          <input
-            class="input input-bordered"
-            required
-            inputmode="decimal"
-            data-testid="manual-patrimony-amount"
-            bind:value={amountBrl}
-          />
-        </label>
+        <BrDecimalInput
+          bind:this={amountInput}
+          bind:value={amountBrl}
+          label="Valor (R$)"
+          inputClass="input input-bordered"
+          testId="manual-patrimony-amount"
+        />
         <label class="form-control">
           <span class="label-text">Observações (opcional)</span>
           <textarea class="textarea textarea-bordered" rows="2" bind:value={notes}></textarea>

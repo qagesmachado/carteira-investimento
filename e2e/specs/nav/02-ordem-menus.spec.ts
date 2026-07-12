@@ -9,7 +9,7 @@ import { expectTopLevelMenuOrder, openNavMenu } from '../helpers/navPage';
  * @see ../../../casos-de-uso/ui/nav/02-ordem-menus.md
  */
 test.describe('UI-NAV-002', () => {
-  test('menus na ordem Dashboard → Visão consolidada → Alocação → Cadastro → Ferramentas', async ({
+  test('menus na ordem Dashboard → Visão consolidada → Alocação → Cadastro → Ferramentas → Financeiro', async ({
     page
   }) => {
     await gotoDashboardPage(page);
@@ -42,6 +42,6 @@ test.describe('UI-NAV-002', () => {
     await openNavMenu(page, 'Ferramentas');
     await page.locator('header').getByRole('link', { name: 'Taxas cripto' }).click();
     await expect(page).toHaveURL(/\/ferramentas\/criptomoedas$/);
-    await expect(page.getByRole('heading', { name: 'Criptomoedas', level: 2 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Criptomoedas', level: 1 })).toBeVisible();
   });
 });

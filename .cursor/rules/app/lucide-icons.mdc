@@ -1,0 +1,94 @@
+---
+description: Ícones de UI — usar sempre Lucide (lucide.dev) via lucide-svelte e LucideIcon
+globs: frontend/src/**,docs/produto/**
+alwaysApply: false
+---
+
+# Ícones de UI — Lucide (obrigatório)
+
+Complementa [locale-br-ui.mdc](locale-br-ui.mdc) e [page-layout.mdc](page-layout.mdc).
+
+**Toda UI nova ou alteração de ícone** deve usar a biblioteca **[Lucide](https://lucide.dev/icons/)** — não criar SVG manual, não usar PNG de mockup, não adicionar ícones soltos em `frontend/static/icons/` (exceto bandeiras/logos reais, ex.: `us-flag.svg`).
+
+## Fonte de verdade
+
+| Artefato | Caminho |
+| --- | --- |
+| Pacote | `lucide-svelte` (Svelte 4) em `frontend/package.json` |
+| Catálogo / registro | `$lib/icons/lucideIconCatalog.ts` |
+| Componente | `$lib/components/LucideIcon.svelte` |
+| Galeria local | rota `/dev/icones-lucide` |
+| Catálogo online | [lucide.dev/icons](https://lucide.dev/icons/) |
+
+## Checklist — novo ícone ou troca de ícone
+
+- [ ] Ícone existe em [lucide.dev/icons](https://lucide.dev/icons/)?
+- [ ] Import do componente adicionado em `lucideIconCatalog.ts` (`LUCIDE_ICON_ENTRIES`)?
+- [ ] Uso via `<LucideIcon name="NomePascalCase" size="…" class="text-*" />` (nunca `<img src="…svg">` para ícone decorativo)?
+- [ ] Constante semântica no catálogo quando o ícone identifica uma área fixa (ex.: `DASHBOARD_PATRIMONY_LUCIDE_ICON`)?
+- [ ] Cor via `class` Tailwind (`text-primary`, `text-white`, etc.) — Lucide usa `currentColor`?
+- [ ] Teste unitário mínimo se nova entrada no catálogo ou constante de produto?
+
+## Fluxo recomendado
+
+1. Buscar ícone em [lucide.dev/icons](https://lucide.dev/icons/) (nome em **PascalCase** no código, ex.: `CircleDollarSign`).
+2. Conferir opções na galeria `/dev/icones-lucide` (subset financeiro; catálogo completo no site).
+3. Registrar em `LUCIDE_ICON_ENTRIES` em `lucideIconCatalog.ts`.
+4. Renderizar com `LucideIcon` e tamanho `sm` \| `md` \| `lg` \| `xl` \| `2xl` (`LUCIDE_ICON_SIZE_PX`).
+
+## Correto
+
+```svelte
+<script>
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
+  import { DASHBOARD_PATRIMONY_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
+</script>
+
+<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
+  <LucideIcon name={DASHBOARD_PATRIMONY_LUCIDE_ICON} size="lg" />
+</div>
+```
+
+```typescript
+// lucideIconCatalog.ts — adicionar ícone novo
+import { TrendingUp } from 'lucide-svelte';
+
+export const LUCIDE_ICON_ENTRIES = [
+  // …
+  { name: 'TrendingUp', label: 'Tendência', component: TrendingUp }
+] as const;
+```
+
+## Evitar
+
+```svelte
+<!-- ❌ SVG/PNG estático para ícone de ação ou KPI -->
+<img src="/icons/dashboard/wallet.svg" alt="" />
+
+<!-- ❌ desenhar paths à mão quando Lucide já tem equivalente -->
+<svg><path d="M4 18h11…" /></svg>
+
+<!-- ❌ outra biblioteca (Heroicons, Font Awesome, etc.) sem decisão explícita do time -->
+```
+
+## Legado (`DashboardIcon` + `frontend/static/icons/dashboard/`)
+
+- `DashboardIcon.svelte` e SVGs em `static/icons/dashboard/` são **legado** — migrar para Lucide quando tocar o arquivo.
+- **Não** adicionar novos ícones em `dashboardIcons.ts` / pasta `static/icons/dashboard/`.
+- Exceções documentadas: bandeira EUA no badge USD/BRL (`us-flag.svg`).
+
+## Tamanhos padrão
+
+| `size` | px | Uso típico |
+| --- | --- | --- |
+| `sm` | 16 | inline em texto, link externo |
+| `md` | 20 | atalhos, toolbar compacta |
+| `lg` | 24 | KPI, badges de status |
+| `xl` | 28 | botões do hero |
+| `2xl` | 40 | ícone grande do seletor de carteira (migrar quando aplicável) |
+
+`strokeWidth={1.75}` já definido em `LucideIcon.svelte` — não repetir salvo necessidade visual.
+
+## Documentação de produto
+
+Ao descrever ícones em `docs/produto/`, citar nome Lucide (ex.: «ícone `Wallet`») e link `https://lucide.dev/icons/<kebab-name>`.

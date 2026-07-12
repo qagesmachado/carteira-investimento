@@ -34,6 +34,8 @@
     formatMoneyAmount
   } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import {
     computePortfolioSummary,
     formatPositionProfit,
@@ -392,12 +394,8 @@
 
 <main class="min-h-screen w-full bg-base-200">
 
-  <div class="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-6 px-4 py-8">
-    <section
-      class="w-full min-w-0 rounded-box bg-gradient-to-r from-secondary to-accent px-6 py-10 text-secondary-content"
-    >
-      <h1 class="text-4xl font-bold">Carteiras e posições</h1>
-    </section>
+  <AppPageShell paddingY="py-4" class="flex w-full min-w-0 flex-col gap-3">
+    <PageHero title="Carteiras e posições" variant="secondary" />
 
     <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
     <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
@@ -414,7 +412,7 @@
       </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2">
+    <div class="grid gap-3 lg:grid-cols-2">
       <div class="card bg-base-100 shadow">
         <div class="card-body">
           <h2 class="card-title">Suas carteiras</h2>
@@ -728,7 +726,7 @@
         </div>
       </div>
     {/if}
-  </div>
+  </AppPageShell>
 
   <PortfolioAddAssetModal
     bind:open={addModalOpen}

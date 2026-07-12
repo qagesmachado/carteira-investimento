@@ -26,6 +26,7 @@
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
   import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
@@ -403,7 +404,7 @@
   <title>Objetivos — Carteira</title>
 </svelte:head>
 
-<div class="flex w-full flex-col gap-4">
+<div class="flex w-full flex-col gap-3">
   <PageHeader
     title="Objetivos financeiros"
     subtitle="Divida posições da carteira ativa entre finalidades diferentes."
@@ -426,7 +427,7 @@
   {:else if snapshot}
     <DivergenceBanner {divergences} />
 
-    <section class="rounded-box bg-base-100 p-4 shadow-sm">
+    <PageSection>
       <p class="mb-3 text-sm">
         Patrimônio da carteira: <strong>{formatBrl(snapshot.patrimony_brl)}</strong>
       </p>
@@ -436,7 +437,7 @@
         on:select={(e) => handlePanelSelect(e.detail)}
         on:create={openCreateModal}
       />
-    </section>
+    </PageSection>
 
     {#if showSummary && selectedPartitionAssetId == null}
       <ObjectivesSummary

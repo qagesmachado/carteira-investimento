@@ -45,6 +45,7 @@ export async function fillProventoForm(
     type?: string;
     dateBr?: string;
     amount?: string;
+    taxWithheld?: string;
     currency?: string;
     portfolio?: string;
   } = {}
@@ -66,9 +67,16 @@ export async function fillProventoForm(
   if (options.amount) {
     await form
       .locator('label')
-      .filter({ has: page.locator('span', { hasText: 'Valor recebido' }) })
+      .filter({ has: page.locator('span', { hasText: 'Recebido' }) })
       .locator('input')
       .fill(options.amount);
+  }
+  if (options.taxWithheld) {
+    await form
+      .locator('label')
+      .filter({ has: page.locator('span', { hasText: 'Imposto retido' }) })
+      .locator('input')
+      .fill(options.taxWithheld);
   }
   if (options.currency) {
     await form.getByLabel('Moeda').fill(options.currency);
@@ -186,7 +194,7 @@ export async function saveEditProventoModal(page: Page): Promise<void> {
 
 export async function fillEditProventoModal(
   page: Page,
-  options: { dateBr?: string; amount?: string }
+  options: { dateBr?: string; amount?: string; taxWithheld?: string }
 ): Promise<void> {
   const modal = editProventoModal(page);
   if (options.dateBr) {
@@ -195,9 +203,16 @@ export async function fillEditProventoModal(
   if (options.amount) {
     await modal
       .locator('label')
-      .filter({ has: page.locator('span', { hasText: 'Valor recebido' }) })
+      .filter({ has: page.locator('span', { hasText: 'Recebido' }) })
       .locator('input')
       .fill(options.amount);
+  }
+  if (options.taxWithheld) {
+    await modal
+      .locator('label')
+      .filter({ has: page.locator('span', { hasText: 'Imposto retido' }) })
+      .locator('input')
+      .fill(options.taxWithheld);
   }
 }
 

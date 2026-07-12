@@ -32,15 +32,72 @@ def _ensure_portfolio_exists(session: Session, portfolio_id: int | None) -> None
         )
 
 
+def _normalize_amount_fields(data: dict, *, prefer_amount: bool = False) -> dict:
+    gross = data.get("gross_amount")
+    tax = data.get("tax_withheld")
+    amount = data.get("amount")
+
+    if prefer_amount and amount is not None:
+        amount_val = float(amount)
+        if amount_val <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="amount must be greater than zero",
+            )
+        data["amount"] = amount_val
+        data["gross_amount"] = amount_val
+        data["tax_withheld"] = 0.0 if tax is None else float(tax)
+        return data
+
+    if gross is not None:
+        gross_val = float(gross)
+        tax_val = 0.0 if tax is None else float(tax)
+        if gross_val <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="gross_amount must be greater than zero",
+            )
+        if tax_val < 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="tax_withheld cannot be negative",
+            )
+        if tax_val > gross_val:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="tax_withheld cannot exceed gross_amount",
+            )
+        net = gross_val - tax_val
+        if net <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="amount must be greater than zero",
+            )
+        data["amount"] = net
+        data["gross_amount"] = gross_val
+        data["tax_withheld"] = tax_val
+        return data
+
+    if amount is not None:
+        amount_val = float(amount)
+        if amount_val <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="amount must be greater than zero",
+            )
+        data["amount"] = amount_val
+        if gross is None:
+            data["gross_amount"] = amount_val
+        if tax is None:
+            data["tax_withheld"] = 0.0
+
+    return data
+
+
 def validate_dividend_payment(
     session: Session,
     payload: DividendPaymentCreate,
 ) -> None:
-    if payload.amount <= 0:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="amount must be greater than zero",
-        )
     _ensure_portfolio_exists(session, payload.portfolio_id)
 
 
@@ -52,6 +109,8 @@ def to_dividend_payment_read(payment: DividendPayment, asset: Asset) -> Dividend
         payment_type=payment.payment_type,
         payment_date=payment.payment_date,
         amount=payment.amount,
+        gross_amount=payment.gross_amount,
+        tax_withheld=payment.tax_withheld,
         currency=payment.currency,
         notes=payment.notes,
         company_cnpj=payment.company_cnpj,
@@ -154,7 +213,7 @@ def create_dividend_payment(
             detail="asset not found",
         )
 
-    data = payload.model_dump()
+    data = _normalize_amount_fields(payload.model_dump())
     if not data.get("currency"):
         data["currency"] = asset.currency
 
@@ -181,11 +240,15 @@ def update_dividend_payment(
         )
 
     updates = payload.model_dump(exclude_unset=True)
-    if "amount" in updates and updates["amount"] is not None and updates["amount"] <= 0:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="amount must be greater than zero",
-        )
+    amount_fields = {"amount", "gross_amount", "tax_withheld"}
+    if amount_fields.intersection(updates):
+        merged = payment.model_dump()
+        merged.update(updates)
+        touched = amount_fields.intersection(updates.keys())
+        prefer_amount = touched == {"amount"}
+        merged = _normalize_amount_fields(merged, prefer_amount=prefer_amount)
+        for key in amount_fields:
+            updates[key] = merged[key]
 
     if "portfolio_id" in updates:
         _ensure_portfolio_exists(session, updates["portfolio_id"])

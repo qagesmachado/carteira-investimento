@@ -7,7 +7,7 @@ alwaysApply: true
 
 O desenvolvimento é **completamente guiado a testes**, da documentação até E2E. Não entregar feature “só código” para testar depois.
 
-Complementa [testes.mdc](testes.mdc) (TDD, suítes e execução).
+Complementa [testes.mdc](testes.mdc) (TDD, suítes e execução) e [lucide-icons.mdc](../app/lucide-icons.mdc) (ícones de UI).
 
 ## Ordem obrigatória (feature nova ou mudança relevante)
 
@@ -30,7 +30,7 @@ Ao **começar** uma funcionalidade:
    - `docs/produto/desenvolvido/` — comportamento **implementado** ou em entrega
    - `docs/produto/candidato/` — ideia / tier futuro ainda não codificado
 2. Conteúdo mínimo: objetivo, escopo, regras de negócio, fluxos e **casos de uso funcionais**, rotas/endpoints, dependências entre módulos.
-3. Atualizar índices quando fizer sentido: [`docs/README.md`](../../docs/README.md), [`docs/produto/funcionalidades.md`](../../docs/produto/funcionalidades.md).
+3. Atualizar índices quando fizer sentido: [`docs/README.md`](../../../docs/README.md), [`docs/produto/funcionalidades.md`](../../../docs/produto/funcionalidades.md).
 4. A doc vira **Referência** nos `.md` de E2E e no PR.
 
 ## 2. Casos de uso E2E (`e2e/casos-de-uso/`)
@@ -38,10 +38,10 @@ Ao **começar** uma funcionalidade:
 No **planejamento** (antes de implementar UI/API exposta):
 
 1. Listar cenários BDD (happy path, validação, erros, filtros, etc.).
-2. Um cenário por arquivo — copiar [`e2e/casos-de-uso/_template.md`](../../e2e/casos-de-uso/_template.md) para `ui/<página>/` ou `api/`.
+2. Um cenário por arquivo — copiar [`e2e/casos-de-uso/_template.md`](../../../e2e/casos-de-uso/_template.md) para `ui/<página>/` ou `api/`.
 3. Preencher metadados (ID, rota, dependências, **Arquivo de teste** em `e2e/specs/`).
 4. Prefixos: `UI-AST-`, `UI-PRT-`, `UI-CNS-`, `UI-DASH-`, `UI-PRV-`, `API-*`.
-5. Marcar **`aprovado`** após revisão do cenário; ver [`e2e/casos-de-uso/README.md`](../../e2e/casos-de-uso/README.md) e [`dependencias.md`](../../e2e/casos-de-uso/dependencias.md).
+5. Marcar **`aprovado`** após revisão do cenário; ver [`e2e/casos-de-uso/README.md`](../../../e2e/casos-de-uso/README.md) e [`dependencias.md`](../../../e2e/casos-de-uso/dependencias.md).
 
 ## 3. Specs Playwright na mesma entrega (`e2e/specs/`)
 

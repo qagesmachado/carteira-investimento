@@ -112,7 +112,7 @@
   }
 </script>
 
-<div class="space-y-4" data-testid="average-price-calculator">
+<div class="flex flex-col gap-4" data-testid="average-price-calculator">
   <div role="tablist" class="tabs tabs-boxed w-fit" aria-label="Modo de cálculo">
     <button
       type="button"

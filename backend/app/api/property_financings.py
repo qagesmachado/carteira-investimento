@@ -8,6 +8,9 @@ from app.schemas.property_financing import (
     PropertyFinancingCreate,
     PropertyFinancingEntryCreate,
     PropertyFinancingEntryRead,
+    PropertyFinancingEntryTemplateCreate,
+    PropertyFinancingEntryTemplateRead,
+    PropertyFinancingEntryTemplateUpdate,
     PropertyFinancingEntryUpdate,
     PropertyFinancingRead,
     PropertyFinancingSnapshotRead,
@@ -17,12 +20,16 @@ from app.services.property_financing_service import (
     build_property_financing_snapshot,
     create_property_financing,
     create_property_financing_entry,
+    create_property_financing_entry_template,
     delete_property_financing,
     delete_property_financing_entry,
+    delete_property_financing_entry_template,
     update_property_financing,
     update_property_financing_entry,
+    update_property_financing_entry_template,
     _entry_to_read,
     _financing_to_read,
+    _template_to_read,
 )
 
 router = APIRouter(
@@ -115,3 +122,45 @@ def remove_property_financing_entry(
     session: Annotated[Session, Depends(get_session)],
 ) -> None:
     delete_property_financing_entry(session, portfolio_id, entry_id)
+
+
+@router.post(
+    "/{financing_id}/entry-templates",
+    response_model=PropertyFinancingEntryTemplateRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def post_property_financing_entry_template(
+    portfolio_id: int,
+    financing_id: int,
+    payload: PropertyFinancingEntryTemplateCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> PropertyFinancingEntryTemplateRead:
+    template = create_property_financing_entry_template(
+        session, portfolio_id, financing_id, payload
+    )
+    return _template_to_read(template)
+
+
+@router.patch(
+    "/entry-templates/{template_id}",
+    response_model=PropertyFinancingEntryTemplateRead,
+)
+def patch_property_financing_entry_template(
+    portfolio_id: int,
+    template_id: int,
+    payload: PropertyFinancingEntryTemplateUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> PropertyFinancingEntryTemplateRead:
+    template = update_property_financing_entry_template(
+        session, portfolio_id, template_id, payload
+    )
+    return _template_to_read(template)
+
+
+@router.delete("/entry-templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_property_financing_entry_template(
+    portfolio_id: int,
+    template_id: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    delete_property_financing_entry_template(session, portfolio_id, template_id)

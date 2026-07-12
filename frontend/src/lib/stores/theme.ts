@@ -9,7 +9,13 @@ function canUseStorage(): boolean {
 }
 
 export function parseStoredTheme(raw: string | null): AppTheme {
-  return raw === 'light' || raw === 'dim' ? raw : 'light';
+  if (raw === 'light') {
+    return 'light';
+  }
+  if (raw === 'dark' || raw === 'dim') {
+    return 'dark';
+  }
+  return 'light';
 }
 
 function readStored(): AppTheme {
@@ -38,7 +44,7 @@ export const theme = writable<AppTheme>(readStored());
 
 export function toggleTheme(): void {
   theme.update((current) => {
-    const next: AppTheme = current === 'light' ? 'dim' : 'light';
+    const next: AppTheme = current === 'light' ? 'dark' : 'light';
     writeStored(next);
     applyTheme(next);
     return next;

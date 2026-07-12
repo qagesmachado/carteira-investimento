@@ -67,6 +67,15 @@ export function isApiFxRefreshResponse(response: Response): boolean {
   );
 }
 
+export function isApiRebalanceResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === apiOrigin() &&
+    /\/portfolios\/\d+\/rebalance$/.test(url.pathname) &&
+    response.request().method() === 'GET'
+  );
+}
+
 export function isApiPortfolioExportResponse(response: Response): boolean {
   const url = new URL(response.url());
   return (

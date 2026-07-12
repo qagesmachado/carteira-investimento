@@ -88,7 +88,7 @@
   $: hasTypeFilter = Boolean(filterType);
 </script>
 
-<section class="rounded-box bg-base-100 p-4 shadow" data-testid="crypto-fee-list">
+<div data-testid="crypto-fee-list">
   <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
     <h2 class="text-lg font-semibold">Histórico de taxas</h2>
     {#if fees.length > 0}
@@ -327,4 +327,4 @@
       />
     {/if}
   {/if}
-</section>
+</div>

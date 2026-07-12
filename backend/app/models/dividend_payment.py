@@ -20,6 +20,8 @@ class DividendPayment(SQLModel, table=True):
     payment_type: DividendPaymentType
     payment_date: date = Field(index=True)
     amount: float
+    gross_amount: float | None = None
+    tax_withheld: float | None = None
     currency: str
     notes: str | None = None
     company_cnpj: str | None = None

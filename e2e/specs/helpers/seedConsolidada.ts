@@ -64,7 +64,9 @@ export async function seedConsolidadaPrincipal(request: APIRequestContext): Prom
   await createPosition(request, portfolio.id, auvpId, { quantity: 50, average_price: 110 });
   await createPosition(request, portfolio.id, rfId, {
     quantity: 1,
-    average_price: 1000
+    average_price: 1000,
+    invested_amount: 10_000,
+    current_value: 11_500
   });
 
   await setActivePortfolio(request, portfolio.id);

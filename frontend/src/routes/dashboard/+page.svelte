@@ -13,12 +13,20 @@
     type Portfolio,
     type Position
   } from '$lib/api/portfolios';
+  import { getPortfolioRebalance, type RebalanceSnapshot } from '$lib/api/rebalance';
+  import { getObjectivesSnapshot, type ObjectivesSnapshot } from '$lib/api/objetivos';
   import { parseApiError } from '$lib/api/parseApiError';
-  import { formatCurrencyCodeForDisplay, formatMoneyAmount } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import AllocationChart from '$lib/features/dashboard/AllocationChart.svelte';
+  import DashboardHeroToolbar from '$lib/features/dashboard/DashboardHeroToolbar.svelte';
+  import DashboardHighlightsRow from '$lib/features/dashboard/DashboardHighlightsRow.svelte';
+  import DashboardPortfolioBar from '$lib/features/dashboard/DashboardPortfolioBar.svelte';
+  import DashboardShortcutBar from '$lib/features/dashboard/DashboardShortcutBar.svelte';
   import DashboardSummaryCards from '$lib/features/dashboard/DashboardSummaryCards.svelte';
-  import DividendSummaryPanel from '$lib/features/dashboard/DividendSummaryPanel.svelte';
+  import Dividends12MonthChart from '$lib/features/dashboard/Dividends12MonthChart.svelte';
   import TopAssetsPanel from '$lib/features/dashboard/TopAssetsPanel.svelte';
   import {
     filterPaymentsInRange,
@@ -28,25 +36,36 @@
   } from '$lib/features/dashboard/dividendDashboard';
   import {
     computeAllocationByDisplayClass,
-    computeDashboardPatrimony
+    computeDashboardPatrimony,
+    computeGrossReturnByDisplayClass,
+    pickTopGrossReturnClasses
   } from '$lib/features/dashboard/portfolioDashboard';
+  import { dashboardPatrimonyFilters } from '$lib/features/dashboard/dashboardPatrimonyFilters';
+  import {
+    computeDashboardPatrimonyFilterAvailability,
+    sanitizeDashboardPatrimonyFilters
+  } from '$lib/features/dashboard/dashboardPatrimonyScope';
   import {
     topAssetsByGrossProfit,
     topAssetsByPositionValue,
     topAssetsByProfitPercent
   } from '$lib/features/dashboard/topAssetsDashboard';
-  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { summarizeDividendPayments } from '$lib/features/proventos/dividendSummary';
 
   let portfolios: Portfolio[] = [];
   let assets: Asset[] = [];
   let positions: Position[] = [];
   let dividendPayments: DividendPayment[] = [];
+  let rebalanceSnapshot: RebalanceSnapshot | null = null;
+  let objectivesSnapshot: ObjectivesSnapshot | null = null;
   let activeId: number | null = null;
   let usdBrlRate: number | null = null;
   let usdBrlRefreshedAt: string | null = null;
+  let quotesRefreshedAt: string | null = null;
+  let dataLoadedAt: string | null = null;
 
   let loading = false;
+  let rebalanceLoading = false;
   let refreshingQuotes = false;
   let refreshingFx = false;
 
@@ -55,10 +74,39 @@
   let fxMessage = '';
   let fxError = '';
   let loadError = '';
+  let rebalanceError = '';
 
   $: assetById = Object.fromEntries(assets.map((a) => [a.id, a]));
-  $: patrimony = computeDashboardPatrimony(positions, assetById, usdBrlRate);
-  $: allocationRows = computeAllocationByDisplayClass(positions, assetById, usdBrlRate);
+  $: activePortfolio = portfolios.find((p) => p.id === activeId) ?? null;
+  $: partitionsByAssetId = Object.fromEntries(
+    (objectivesSnapshot?.asset_partitions ?? []).map((partition) => [partition.asset_id, partition])
+  );
+  $: patrimonyFilters = $dashboardPatrimonyFilters;
+  $: filterAvailability = computeDashboardPatrimonyFilterAvailability(
+    positions,
+    assetById,
+    partitionsByAssetId
+  );
+  $: effectivePatrimonyFilters = sanitizeDashboardPatrimonyFilters(
+    patrimonyFilters,
+    filterAvailability
+  );
+  $: patrimony = computeDashboardPatrimony(
+    positions,
+    assetById,
+    usdBrlRate,
+    partitionsByAssetId,
+    effectivePatrimonyFilters
+  );
+  $: allocationRows = computeAllocationByDisplayClass(
+    positions,
+    assetById,
+    usdBrlRate,
+    partitionsByAssetId,
+    effectivePatrimonyFilters
+  );
+  $: grossReturnRows = computeGrossReturnByDisplayClass(positions, assetById, usdBrlRate);
+  $: featuredClasses = pickTopGrossReturnClasses(grossReturnRows);
 
   $: assetIdsInPortfolio = new Set(
     positions.map((p) => p.asset_id).filter((id) => assetById[id])
@@ -84,28 +132,6 @@
   $: topByProfitPercent = topAssetsByProfitPercent(positions, assetById, 5);
   $: topByPositionValue = topAssetsByPositionValue(positions, assetById, usdBrlRate, 5);
   $: topByGrossProfit = topAssetsByGrossProfit(positions, assetById, usdBrlRate, 5);
-
-  function formatFxTimestamp(iso: string | null): string {
-    if (!iso) {
-      return '';
-    }
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) {
-      return iso;
-    }
-    return new Intl.DateTimeFormat('pt-BR', {
-      dateStyle: 'short',
-      timeStyle: 'short'
-    }).format(d);
-  }
-
-  $: fxStatusLine =
-    usdBrlRate != null && usdBrlRefreshedAt
-      ? `USD/BRL: ${usdBrlRate.toLocaleString('pt-BR', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 4
-        })} — atualizado em ${formatFxTimestamp(usdBrlRefreshedAt)}`
-      : 'Sem taxa USD/BRL armazenada. Use «Atualizar câmbio (USD/BRL)» para converter posições em dólar.';
 
   async function loadFx() {
     try {
@@ -134,6 +160,35 @@
     dividendPayments = await listDividendPayments({ portfolio_id: activeId });
   }
 
+  async function loadObjectivesForActive() {
+    if (activeId == null) {
+      objectivesSnapshot = null;
+      return;
+    }
+    try {
+      objectivesSnapshot = await getObjectivesSnapshot(activeId);
+    } catch {
+      objectivesSnapshot = null;
+    }
+  }
+
+  async function loadRebalanceForActive() {
+    if (activeId == null) {
+      rebalanceSnapshot = null;
+      return;
+    }
+    rebalanceLoading = true;
+    rebalanceError = '';
+    try {
+      rebalanceSnapshot = await getPortfolioRebalance(activeId);
+    } catch (err) {
+      rebalanceSnapshot = null;
+      rebalanceError = parseApiError(err, 'Não foi possível carregar aderência ao rebalanceamento.');
+    } finally {
+      rebalanceLoading = false;
+    }
+  }
+
   async function refresh() {
     const [portfolioList, assetList, active] = await Promise.all([
       listPortfolios(),
@@ -144,8 +199,13 @@
     assets = assetList;
     activeId = active ?? (portfolioList[0]?.id ?? null);
     await loadFx();
-    await loadPositionsForActive();
-    await loadPaymentsForActive();
+    await Promise.all([
+      loadPositionsForActive(),
+      loadPaymentsForActive(),
+      loadRebalanceForActive(),
+      loadObjectivesForActive()
+    ]);
+    dataLoadedAt = new Date().toISOString();
   }
 
   async function handlePortfolioSelect(id: number) {
@@ -156,8 +216,13 @@
     loadError = '';
     try {
       await setActivePortfolioId(id);
-      await loadPositionsForActive();
-      await loadPaymentsForActive();
+      await Promise.all([
+      loadPositionsForActive(),
+      loadPaymentsForActive(),
+      loadRebalanceForActive(),
+      loadObjectivesForActive()
+    ]);
+      dataLoadedAt = new Date().toISOString();
     } catch (err) {
       loadError = parseApiError(err, 'Não foi possível trocar a carteira.');
     }
@@ -172,6 +237,7 @@
     quotesMessage = '';
     try {
       const result = await refreshPortfolioQuotes(activeId);
+      quotesRefreshedAt = result.refreshed_at;
       await refresh();
       quotesMessage = `Cotações atualizadas: ${result.updated}. Ignoradas: ${result.skipped}.`;
     } catch (err) {
@@ -214,54 +280,38 @@
 </svelte:head>
 
 <main class="min-h-screen w-full bg-base-200">
-  <div class="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 px-4 py-8">
-    <section
-      class="w-full rounded-box bg-gradient-to-r from-primary to-secondary px-6 py-10 text-primary-content"
-    >
-      <h1 class="text-4xl font-bold">Dashboard</h1>
-      <p class="mt-2 text-primary-content/90">Visão executiva da carteira selecionada</p>
-    </section>
+  <AppPageShell paddingY="py-4" class="flex w-full min-w-0 flex-col gap-3">
+    <PageHero title="Dashboard" variant="dashboard">
+      <DashboardHeroToolbar
+        slot="actions"
+        {loading}
+        {refreshingQuotes}
+        {refreshingFx}
+        quotesDisabled={activeId == null}
+        onRefreshQuotes={handleRefreshQuotes}
+        onRefreshFx={handleRefreshFx}
+      />
+    </PageHero>
 
     <DismissibleAlert text={loadError} variant="error" on:dismiss={() => (loadError = '')} />
+    <DismissibleAlert text={rebalanceError} variant="error" on:dismiss={() => (rebalanceError = '')} />
     <DismissibleAlert text={quotesMessage} variant="success" on:dismiss={() => (quotesMessage = '')} />
     <DismissibleAlert text={quotesError} variant="error" on:dismiss={() => (quotesError = '')} />
     <DismissibleAlert text={fxMessage} variant="success" on:dismiss={() => (fxMessage = '')} />
     <DismissibleAlert text={fxError} variant="error" on:dismiss={() => (fxError = '')} />
 
-    <div class="card bg-base-100 shadow">
-      <div class="card-body flex flex-col gap-4">
-        <p class="text-sm text-base-content/70">{fxStatusLine}</p>
-        <div class="flex flex-row flex-wrap items-end justify-between gap-4">
-          <div class="form-control min-w-[12rem] flex-1">
-            <span class="label-text text-xs font-semibold">Carteira</span>
-            <PortfolioSelect
-              {portfolios}
-              {activeId}
-              disabled={portfolios.length === 0}
-              on:select={(event) => void handlePortfolioSelect(event.detail)}
-            />
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <button
-              class="btn btn-outline btn-sm"
-              type="button"
-              disabled={loading || !activeId || refreshingQuotes}
-              on:click={handleRefreshQuotes}
-            >
-              {refreshingQuotes ? 'Atualizando cotações…' : 'Atualizar cotações'}
-            </button>
-            <button
-              class="btn btn-primary btn-sm"
-              type="button"
-              disabled={loading || refreshingFx}
-              on:click={handleRefreshFx}
-            >
-              {refreshingFx ? 'Atualizando câmbio…' : 'Atualizar câmbio (USD/BRL)'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <PageSection>
+      <DashboardPortfolioBar
+        {portfolios}
+        {activeId}
+        activePortfolioName={activePortfolio?.name ?? ''}
+        {usdBrlRate}
+        {usdBrlRefreshedAt}
+        quotesRefreshedAt={quotesRefreshedAt ?? dataLoadedAt}
+        disabled={portfolios.length === 0}
+        on:select={(event) => void handlePortfolioSelect(event.detail)}
+      />
+    </PageSection>
 
     {#if !activeId}
       <p class="text-center text-sm text-base-content/60">
@@ -282,28 +332,20 @@
           {patrimony}
           {dividendsMonth}
           {dividendsYear}
+          {filterAvailability}
         />
 
-        {#if patrimony.totalsByCurrency.length > 0}
-          <div class="card bg-base-100 shadow">
-            <div class="card-body">
-              <h2 class="card-title text-lg">Por moeda</h2>
-              <ul class="flex flex-wrap gap-4 text-sm">
-                {#each patrimony.totalsByCurrency as row}
-                  <li>
-                    <span class="font-semibold">{formatCurrencyCodeForDisplay(row.currency)}:</span>
-                    {formatMoneyAmount(row.current, row.currency)} (aplicado
-                    {formatMoneyAmount(row.invested, row.currency)})
-                  </li>
-                {/each}
-              </ul>
-            </div>
-          </div>
-        {/if}
+        <DashboardHighlightsRow
+          rebalance={rebalanceSnapshot}
+          rebalanceLoading={rebalanceLoading}
+          featuredClasses={featuredClasses}
+          payments={allPaymentsForPortfolio}
+          assetSymbolById={Object.fromEntries(assets.map((asset) => [asset.id, asset.symbol]))}
+        />
 
-        <div class="grid gap-6 lg:grid-cols-2">
-          <AllocationChart rows={allocationRows} />
-          <DividendSummaryPanel payments={allPaymentsForPortfolio} {usdBrlRate} />
+        <div class="grid gap-3 lg:grid-cols-2">
+          <AllocationChart rows={allocationRows} {filterAvailability} />
+          <Dividends12MonthChart payments={allPaymentsForPortfolio} {usdBrlRate} />
         </div>
 
         <TopAssetsPanel
@@ -311,8 +353,11 @@
           positionValueRows={topByPositionValue}
           dividendRows={topDividendAssets}
           grossProfitRows={topByGrossProfit}
+          dividendPayments={allPaymentsForPortfolio}
         />
+
+        <DashboardShortcutBar />
       {/if}
     {/if}
-  </div>
+  </AppPageShell>
 </main>

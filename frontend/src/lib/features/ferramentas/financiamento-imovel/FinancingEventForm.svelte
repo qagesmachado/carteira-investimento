@@ -15,8 +15,14 @@
 
   import {
     defaultEventCategoryForType,
-    eventOptionsForType
+    eventOptionsForType,
+    normalizeEventCategoryForType
   } from './eventLabels';
+  import {
+    applyFinancingEntryTemplate,
+    type FinancingEntryTemplateFields
+  } from './financingEntryTemplateApply';
+  import type { FinancingEntryTemplate } from '$lib/api/propertyFinancings';
 
   export let loading = false;
 
@@ -82,6 +88,28 @@
     description = '';
     amountValue = 0;
     formError = '';
+  }
+
+  export function applyTemplate(template: FinancingEntryTemplate | FinancingEntryTemplateFields) {
+    const fields =
+      'name' in template ? applyFinancingEntryTemplate(template) : template;
+    entryType = fields.entry_type;
+    eventCategory = fields.event_category;
+    description = fields.description;
+    amountValue = fields.amount_brl;
+    formError = '';
+  }
+
+  export function getFormFieldsForTemplate() {
+    if (!amountInput?.flush()) {
+      return null;
+    }
+    return {
+      entryType,
+      eventCategory: normalizeEventCategoryForType(entryType, eventCategory),
+      description,
+      amountBrl: amountValue
+    };
   }
 </script>
 

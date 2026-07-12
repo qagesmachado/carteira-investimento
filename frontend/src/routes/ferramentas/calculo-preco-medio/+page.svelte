@@ -13,6 +13,7 @@
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
   import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
@@ -77,7 +78,7 @@
   <title>Cálculo de preço médio · Ferramentas</title>
 </svelte:head>
 
-<div class="space-y-6">
+<div class="flex flex-col gap-3">
   <PageHeader
     title="Cálculo de preço médio"
     subtitle="Combine dois lotes do mesmo ativo e obtenha quantidade total, preço médio ponderado e valor investido."
@@ -100,12 +101,14 @@
   {#if loading}
     <p class="text-sm opacity-70">Carregando…</p>
   {:else}
-    <AveragePriceCalculator
-      {assets}
-      {portfolios}
-      activePortfolioId={activeId}
-      {positions}
-      onPortfolioChange={handlePortfolioChange}
-    />
+    <PageSection>
+      <AveragePriceCalculator
+        {assets}
+        {portfolios}
+        activePortfolioId={activeId}
+        {positions}
+        onPortfolioChange={handlePortfolioChange}
+      />
+    </PageSection>
   {/if}
 </div>

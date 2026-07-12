@@ -12,6 +12,8 @@ class DividendPaymentBase(SQLModel):
     payment_type: DividendPaymentType
     payment_date: date
     amount: float
+    gross_amount: float | None = None
+    tax_withheld: float | None = None
     currency: str
     notes: str | None = None
     company_cnpj: str | None = None
@@ -29,6 +31,8 @@ class DividendPaymentUpdate(SQLModel):
     payment_type: DividendPaymentType | None = None
     payment_date: date | None = None
     amount: float | None = None
+    gross_amount: float | None = None
+    tax_withheld: float | None = None
     currency: str | None = None
     notes: str | None = None
     company_cnpj: str | None = None

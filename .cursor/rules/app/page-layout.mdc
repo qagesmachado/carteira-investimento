@@ -1,0 +1,151 @@
+---
+description: Padrões de layout e shell de página (largura, padding, hierarquia de containers, padrões visuais Hub/Ferramenta)
+globs: frontend/src/routes/**,frontend/src/lib/components/AppPageShell.svelte,frontend/src/lib/components/PageHero.svelte,frontend/src/lib/components/PageSection.svelte,frontend/src/lib/components/PageHeader.svelte,frontend/src/lib/components/AppNavbar.svelte,frontend/src/lib/layout/**
+alwaysApply: false
+---
+
+# Layout de página — área efetiva padronizada
+
+Complementa [locale-br-ui.mdc](locale-br-ui.mdc), [lucide-icons.mdc](lucide-icons.mdc) e [smoke-executavel.mdc](../testes/smoke-executavel.mdc).
+
+Todas as páginas autenticadas compartilham a **mesma largura máxima** e **padding lateral**, alinhadas à navbar e ao footer.
+
+## Fonte de verdade
+
+| Artefato | Caminho |
+| --- | --- |
+| Token Tailwind | `max-w-page` → **112rem** (1792px) em `frontend/tailwind.config.js` |
+| Constantes | `$lib/layout/pageShell.ts` — `PAGE_SHELL_WIDTH_CLASS`, `PAGE_SHELL_PADDING_X_CLASS` |
+| Componente | `$lib/components/AppPageShell.svelte` |
+
+Comportamento de largura: `max-w-none` abaixo de `2xl`; `2xl:max-w-page` a partir de `2xl`.
+
+## Checklist — nova rota ou alteração de layout
+
+- [ ] Largura via `AppPageShell` ou `PAGE_SHELL_WIDTH_CLASS` — **nunca** `max-w-6xl`, `max-w-7xl`, `max-w-3xl`, `90rem` ou `112rem` soltos em `+page.svelte` / `+layout.svelte`?
+- [ ] **Uma** camada de shell por rota (layout da área **ou** página — nunca os dois)?
+- [ ] Navbar e footer usam `PAGE_SHELL_WIDTH_CLASS` (já no root layout)?
+- [ ] **Padrão visual Hub/Ferramenta** aplicado (fundo `bg-base-200`, painéis `PageSection`, hero/cabeçalho correto)?
+- [ ] **Ícones** via Lucide (`LucideIcon` + `lucideIconCatalog.ts`) — ver [lucide-icons.mdc](lucide-icons.mdc)?
+
+## Hierarquia
+
+| Cenário | Onde colocar o shell |
+| --- | --- |
+| Área com `+layout.svelte` (`ferramentas`, `analise`, `financeiro`) | Shell no layout; filhas só com `space-y-*` / `gap-*` |
+| Página isolada com `bg-base-200` | `<main class="min-h-screen w-full bg-base-200">` + `<AppPageShell paddingY="py-4">` |
+| Página isolada sem fundo especial | `<AppPageShell element="main" paddingY="py-2-px-4">` |
+| Landing `/` | Hero full-viewport — **sem** `AppPageShell` |
+
+## Padding vertical (`paddingY`)
+
+| Valor | Uso |
+| --- | --- |
+| `py-4` | Páginas com shell interno e fundo `bg-base-200` (dashboard, assets, dados, portfolios) |
+| `py-2-px-4` | Layouts de área e páginas como rebalanceamento, info |
+| `pb-4` | Layout análise (sem padding superior) |
+| `none` | Só largura + `px-4` (navbar usa constantes diretamente) |
+
+## Evitar
+
+```svelte
+<!-- ❌ max-width manual -->
+<main class="mx-auto max-w-6xl px-4 py-8">
+
+<!-- ❌ shell duplicado -->
+<!-- +layout.svelte --> <AppPageShell>…
+<!-- +page.svelte -->   <div class="mx-auto max-w-6xl px-4">
+```
+
+## Correto
+
+```svelte
+<!-- ✅ página com fundo base-200 -->
+<main class="min-h-screen w-full bg-base-200">
+  <AppPageShell paddingY="py-4" class="flex flex-col gap-3">
+    …
+  </AppPageShell>
+</main>
+```
+
+```svelte
+<!-- ✅ layout de área -->
+<AppPageShell paddingY="py-2-px-4" class="space-y-3">
+  <slot />
+</AppPageShell>
+```
+
+## Exceções permitidas
+
+- **Modais / tooltips:** `max-w-lg`, `max-w-2xl`, etc. em `modal-box` ou popovers.
+- **Campos de formulário:** `max-w-md`, `max-w-xs` nos inputs — não no container da página.
+- **Texto auxiliar:** `max-w-2xl` em parágrafos dentro do shell (subtítulos, hero interno).
+- **Landing `/`:** hero centralizado sem shell de página.
+
+---
+
+## Padrões visuais (2 níveis)
+
+Base comum em todas as rotas autenticadas (exceto landing `/`):
+
+| Token | Valor | Onde |
+| --- | --- | --- |
+| Fundo página | `bg-base-200` em `<main>` | Hub, Ferramenta standalone, layouts de área |
+| Espaçamento vertical | `gap-3` | Shell e filhas de área |
+| Painel conteúdo | `card bg-base-100 shadow` | Seções principais via `PageSection` |
+| Sombra | `shadow` (não `shadow-sm` / `shadow-xl`) | Painéis padronizados |
+
+Constantes em `$lib/layout/pageVisual.ts`: `PAGE_BACKGROUND_CLASS`, `PAGE_SECTION_CLASS`, `PAGE_CONTENT_GAP_CLASS`.
+
+### Quando usar qual padrão
+
+| Padrão | Quando | Topo | Componentes |
+| --- | --- | --- | --- |
+| **Hub** | Destinos principais do menu (dashboard, assets, dados, portfolios, consolidada, proventos) | `PageHero` (`text-4xl`, gradiente) | `PageHero` + `PageSection` |
+| **Ferramenta área** | Análise, Financeiro, Ferramentas | `h1 text-2xl` + tabs no `+layout.svelte` | `PageSection` nas filhas |
+| **Ferramenta standalone** | Rebalanceamento, info, configuracao rebalance | `PageHeader` (`text-2xl`) | `PageSection` |
+| **Exceção** | Landing `/` | Hero DaisyUI full-viewport | Sem shell/padrão |
+
+### API dos componentes
+
+```svelte
+<!-- Hub -->
+<PageHero title="Dashboard" subtitle="…" variant="primary" />
+<!-- variant: primary | secondary | neutral -->
+
+<!-- Painel -->
+<PageSection title="Balanceamento desejado" testId="…">
+  …
+</PageSection>
+
+<!-- Ferramenta standalone -->
+<PageHeader title="Rebalanceamento" subtitle="…">
+  <div slot="actions">…</div>
+</PageHeader>
+```
+
+### Diagrama de decisão
+
+```mermaid
+flowchart TD
+  start[Nova rota autenticada] --> landing{É landing / ?}
+  landing -->|sim| exLanding[Hero DaisyUI — sem AppPageShell]
+  landing -->|não| hub{Destino principal do menu?}
+  hub -->|sim| pHub[main bg-base-200 + PageHero + PageSection]
+  hub -->|não| area{Tem +layout de área?}
+  area -->|sim| pArea[Layout: main bg-base-200 + h1/tabs + filha PageSection]
+  area -->|não| pStandalone[main bg-base-200 + PageHeader + PageSection]
+```
+
+### Proibido após migração
+
+- Conteúdo principal flat no fundo cinza sem card (`PageSection`)
+- `text-3xl` isolado fora de `PageHero`
+- Gradiente manual (`bg-gradient-to-r`) fora de `PageHero`
+- `shadow-sm` / `shadow-xl` em painéis principais
+- `rounded-box bg-base-100 shadow-sm` em blocos de conteúdo (usar `PageSection`)
+
+### Exceções visuais documentadas
+
+- **Landing `/`:** hero full-viewport DaisyUI.
+- **Consolidada:** tiles KPI com gradiente interno (métricas coloridas) — mantidos dentro de cards.

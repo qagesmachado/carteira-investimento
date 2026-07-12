@@ -16,6 +16,7 @@
   import { formatMoneyAmount } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
   import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
   import { buildAnnualIrYearOptions } from '$lib/features/ir/annualIrYears';
@@ -299,7 +300,7 @@
   <title>Conferência anual de IR</title>
 </svelte:head>
 
-<div class="space-y-6">
+<div class="flex flex-col gap-3">
   <PageHeader
     title="Conferência anual de IR"
     subtitle="Proventos discriminados por ativo e tipo, resumo anual e posições congeladas em 31/12."
@@ -321,9 +322,8 @@
     <DismissibleAlert variant="success" on:dismiss={() => (message = '')}>{message}</DismissibleAlert>
   {/if}
 
-  <div class="card bg-base-100 shadow-sm">
-    <div class="card-body gap-4">
-      <div class="flex flex-wrap items-end gap-4">
+  <PageSection>
+  <div class="flex flex-wrap items-end gap-4">
         <label class="form-control w-full max-w-[10rem]">
           <span class="label-text">Ano</span>
           <select
@@ -380,9 +380,9 @@
           </span>
         </div>
       {/if}
-    </div>
-  </div>
+  </PageSection>
 
+  <PageSection>
   <div role="tablist" class="tabs tabs-boxed w-fit">
     <button
       type="button"
@@ -721,4 +721,5 @@
       />
     {/if}
   {/if}
+  </PageSection>
 </div>

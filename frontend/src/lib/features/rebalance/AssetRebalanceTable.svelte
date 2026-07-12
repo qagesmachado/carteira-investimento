@@ -2,7 +2,7 @@
   import type { AssetRebalanceRow } from '$lib/api/rebalance';
   import { formatAssetTypeForDisplay } from '$lib/assetLabels';
   import { formatPercent, formatBrl } from '$lib/features/rebalance/allocationTargets';
-  import { computeProjectedAssetGap } from '$lib/features/rebalance/projectedRebalance';
+  import { computeAssetInvestmentAllocation } from '$lib/features/rebalance/investmentAllocation';
   import UsdPrimaryBrlTooltip from '$lib/features/rebalance/UsdPrimaryBrlTooltip.svelte';
   import {
     sortAssetRebalanceRows,
@@ -14,10 +14,12 @@
   export let rows: AssetRebalanceRow[] = [];
   export let emptyMessage = 'Nenhuma posição nesta carteira.';
   export let showSumColumn = false;
-  /** Patrimônio total após aporte; null ou ≤0 = coluna projetada exibe «—». */
+  /** Patrimônio total após aporte; null ou ≤0 = colunas projetadas exibem «—». */
   export let finalPatrimonyBrl: number | null = null;
   /** Patrimônio atual da carteira (para escalar valor desejável). */
   export let currentPatrimonyBrl: number | null = null;
+  /** Aporte sugerido para a classe da aba ativa. */
+  export let classContributionBrl: number | null = null;
   /** Exibe valores monetários em USD (tooltip em BRL) — aba ETF internacional. */
   export let showUsdPrimary = false;
   export let usdBrlRate: number | null = null;
@@ -25,10 +27,23 @@
   let sortKey: AssetRebalanceSortKey = 'symbol';
   let sortDir: SortDirection = 'asc';
 
-  $: columnCount = (showSumColumn ? 8 : 7) + 1;
+  $: columnCount = (showSumColumn ? 8 : 7) + 2;
+  $: allocationMap =
+    currentPatrimonyBrl != null &&
+    finalPatrimonyBrl != null &&
+    classContributionBrl != null &&
+    classContributionBrl > 0
+      ? computeAssetInvestmentAllocation(
+          rows,
+          classContributionBrl,
+          currentPatrimonyBrl,
+          finalPatrimonyBrl
+        )
+      : null;
   $: displayedRows = sortAssetRebalanceRows(rows, sortKey, sortDir, {
     currentPatrimonyBrl,
-    finalPatrimonyBrl
+    finalPatrimonyBrl,
+    classContributionBrl
   });
 
   $: if (!showSumColumn && sortKey === 'sum_score') {
@@ -47,6 +62,10 @@
       sortKey = key;
       sortDir = 'asc';
     }
+  }
+
+  function allocationFor(assetId: number) {
+    return allocationMap?.get(assetId) ?? null;
   }
 </script>
 
@@ -172,12 +191,26 @@
           <button
             type="button"
             class="btn btn-ghost btn-xs h-auto min-h-0 ml-auto gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
-              'projected_gap'
+              'ideal_target'
             )}"
-            on:click={() => toggleSort('projected_gap')}
+            on:click={() => toggleSort('ideal_target')}
           >
-            Faltando (patrimônio final)
-            {#if sortKey === 'projected_gap'}
+            Deveria ter
+            {#if sortKey === 'ideal_target'}
+              <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
+            {/if}
+          </button>
+        </th>
+        <th class="text-right min-w-[10rem]">
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs h-auto min-h-0 ml-auto gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+              'suggested_contribution'
+            )}"
+            on:click={() => toggleSort('suggested_contribution')}
+          >
+            Aporte sugerido
+            {#if sortKey === 'suggested_contribution'}
               <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
             {/if}
           </button>
@@ -186,12 +219,7 @@
     </thead>
     <tbody>
       {#each displayedRows as row (row.asset_id)}
-        {@const projectedGap = computeProjectedAssetGap(
-          row.current_value_brl,
-          row.target_value_brl,
-          currentPatrimonyBrl,
-          finalPatrimonyBrl
-        )}
+        {@const allocation = allocationFor(row.asset_id)}
         <tr>
           <td>{formatTickerForDisplay(row.symbol)}</td>
           <td>{formatAssetTypeForDisplay(row.asset_type)}</td>
@@ -225,9 +253,19 @@
           </td>
           <td class="text-right">
             {#if showUsdPrimary}
-              <UsdPrimaryBrlTooltip brlValue={projectedGap} {usdBrlRate} />
+              <UsdPrimaryBrlTooltip brlValue={allocation?.idealTargetBrl ?? null} {usdBrlRate} />
             {:else}
-              {formatBrl(projectedGap)}
+              {formatBrl(allocation?.idealTargetBrl ?? null)}
+            {/if}
+          </td>
+          <td class="text-right">
+            {#if showUsdPrimary}
+              <UsdPrimaryBrlTooltip
+                brlValue={allocation?.suggestedContributionBrl ?? null}
+                {usdBrlRate}
+              />
+            {:else}
+              {formatBrl(allocation?.suggestedContributionBrl ?? null)}
             {/if}
           </td>
         </tr>

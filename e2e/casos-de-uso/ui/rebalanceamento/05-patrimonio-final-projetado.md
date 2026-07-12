@@ -1,4 +1,4 @@
-# Projeção com patrimônio final
+# Projeção com valor a investir
 
 ## Metadados
 
@@ -10,12 +10,13 @@
 ## Cenário
 
 **Como** investidor  
-**Quero** informar o patrimônio total após um aporte  
-**Para** ver quanto falta em cada classe em relação a esse valor final
+**Quero** informar quanto vou investir  
+**Para** ver quanto deveria ter em cada classe, o aporte sugerido e o patrimônio final calculado
 
 ### Passo a passo
 
 1. Carteira com posições em várias classes (seed mix).
 2. Abro `/rebalanceamento`.
-3. Preencho «Patrimônio final» na linha TOTAL com valor maior que o patrimônio atual.
-4. A coluna «Faltando (patrimônio final)» exibe valores calculados (não «—») para classes abaixo da meta.
+3. Preencho «Valor a investir» na linha TOTAL.
+4. As colunas «Deveria ter» e «Aporte sugerido» exibem valores calculados (não «—») para classes abaixo da meta.
+5. O resumo exibe «Patrimônio final» derivado do aporte.

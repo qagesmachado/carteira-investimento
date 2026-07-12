@@ -17,6 +17,15 @@ Fluxo completo (doc → casos de uso → specs → código): ver [desenvolviment
 - Não “adiar” teste para depois do merge; o teste guia o desenho da API/UI.
 - **Feature nova:** testes unitários **e** E2E (`e2e/specs/`) na **mesma entrega** — não existe “fase 2” só para Playwright.
 
+## Falhas detectadas — corrigir sempre (obrigatório)
+
+Ao rodar qualquer suíte (`test:unit`, escopo, `test:all`, CI), **toda falha deve ser corrigida antes de concluir a tarefa** — mesmo quando a falha **não** estiver relacionada à mudança em andamento.
+
+- Não classificar falha como “pré-existente” para ignorar na entrega.
+- Não deixar teste vermelho no repositório assumindo que “outro PR resolve”.
+- Se a falha for flake intermitente, tornar o teste determinístico (seletor estável, espera por estado da UI, helper compartilhado) em vez de pular ou comentar.
+- Exceção única: indisponibilidade externa documentada (ex.: yfinance) — registrar no `summary.md` e reexecutar quando estável; ainda assim, não misturar com falhas reproduzíveis de código/spec.
+
 ## DRY e KISS
 
 - **DRY:** extrair helpers compartilhados em vez de copiar passos Playwright ou asserts repetidos.
@@ -135,3 +144,4 @@ Reportar no fim: caminho do relatório, quais suítes rodaram e se passaram. Se 
 - Duplicar seletores/fluxos Playwright; usar helpers existentes.
 - Marcar tarefa como pronta após rodar só `specs/assets/02-….spec.ts` ou `pytest tests/test_foo.py` isolado.
 - Ignorar testes vermelhos ou deixar `test.only` / `describe.only` / `pytest -k` fixo no repositório.
+- Entregar com falhas na suíte completa alegando que “não eram da minha mudança”.

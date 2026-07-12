@@ -81,6 +81,12 @@ export async function seedPatrimonyControlFullMix(
     amount_brl: 500,
     location: 'dinheiro_especie'
   });
+  await createManualPatrimonyItemViaApi(request, portfolioId, {
+    category: 'emergency_reserve',
+    name: 'Caixinha Nubank',
+    amount_brl: 650.89,
+    location: 'banco'
+  });
   return portfolioId;
 }
 

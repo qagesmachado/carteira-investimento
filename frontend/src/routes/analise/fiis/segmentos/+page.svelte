@@ -8,6 +8,7 @@
   } from '$lib/api/analysis';
   import { parseApiError } from '$lib/api/parseApiError';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import { fiiSegmentCatalogValidationError } from '$lib/features/analise/validateFiiSegmentCatalog';
 
   let segments: SegmentCatalogEntry[] = [];
@@ -110,8 +111,7 @@
   <title>Análise FIIs — Segmentos</title>
 </svelte:head>
 
-<section class="card bg-base-100 shadow">
-  <div class="card-body gap-6">
+<PageSection>
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h2 class="card-title">Catálogo de segmentos</h2>
@@ -170,5 +170,4 @@
         {/each}
       </div>
     {/if}
-  </div>
-</section>
+</PageSection>

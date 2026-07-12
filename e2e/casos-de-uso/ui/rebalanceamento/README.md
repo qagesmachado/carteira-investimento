@@ -13,5 +13,6 @@ Prefixo: **UI-REB-**
 | UI-REB-007 | [07-patrimonio-final-por-ativo.md](07-patrimonio-final-por-ativo.md) | `e2e/specs/rebalanceamento/07-patrimonio-final-por-ativo.spec.ts` |
 | UI-REB-008 | [08-percentual-desejado-fii.md](08-percentual-desejado-fii.md) | `e2e/specs/rebalanceamento/08-percentual-desejado-fii.spec.ts` |
 | UI-REB-009 | [09-ordenacao-colunas-por-ativo.md](09-ordenacao-colunas-por-ativo.md) | `e2e/specs/rebalanceamento/09-ordenacao-colunas-por-ativo.spec.ts` |
+| UI-REB-010 | [10-redistribuicao-aporte-classe.md](10-redistribuicao-aporte-classe.md) | `e2e/specs/rebalanceamento/10-redistribuicao-aporte-classe.spec.ts` |
 
 Seed: `e2e/specs/helpers/seedRebalance.ts`

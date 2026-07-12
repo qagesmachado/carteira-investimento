@@ -1,7 +1,7 @@
 import type { AssetRebalanceRow } from '$lib/api/rebalance';
 import { formatAssetTypeForDisplay } from '$lib/assetLabels';
 
-import { computeProjectedAssetGap } from './projectedRebalance';
+import { computeAssetInvestmentAllocation } from './investmentAllocation';
 
 export type AssetRebalanceSortKey =
   | 'symbol'
@@ -12,13 +12,15 @@ export type AssetRebalanceSortKey =
   | 'target_percent'
   | 'target_value_brl'
   | 'gap_brl'
-  | 'projected_gap';
+  | 'ideal_target'
+  | 'suggested_contribution';
 
 export type SortDirection = 'asc' | 'desc';
 
-export type SortProjectedGapContext = {
+export type SortInvestmentContext = {
   currentPatrimonyBrl: number | null;
   finalPatrimonyBrl: number | null;
+  classContributionBrl: number | null;
 };
 
 function compareNullableNumber(
@@ -42,25 +44,55 @@ function compareText(a: string, b: string): number {
   return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
 }
 
-function projectedGap(
-  row: AssetRebalanceRow,
-  context: SortProjectedGapContext
-): number | null {
-  return computeProjectedAssetGap(
-    row.current_value_brl,
-    row.target_value_brl,
+function buildAllocationMap(
+  rows: AssetRebalanceRow[],
+  context: SortInvestmentContext
+): Map<number, { idealTargetBrl: number | null; suggestedContributionBrl: number | null }> | null {
+  if (
+    context.currentPatrimonyBrl == null ||
+    context.finalPatrimonyBrl == null ||
+    context.classContributionBrl == null
+  ) {
+    return null;
+  }
+  return computeAssetInvestmentAllocation(
+    rows,
+    context.classContributionBrl,
     context.currentPatrimonyBrl,
     context.finalPatrimonyBrl
   );
+}
+
+function allocationValue(
+  row: AssetRebalanceRow,
+  allocationMap: Map<
+    number,
+    { idealTargetBrl: number | null; suggestedContributionBrl: number | null }
+  > | null,
+  field: 'idealTargetBrl' | 'suggestedContributionBrl'
+): number | null {
+  if (allocationMap == null) {
+    return null;
+  }
+  return allocationMap.get(row.asset_id)?.[field] ?? null;
 }
 
 export function sortAssetRebalanceRows(
   rows: AssetRebalanceRow[],
   key: AssetRebalanceSortKey,
   direction: SortDirection,
-  context: SortProjectedGapContext = { currentPatrimonyBrl: null, finalPatrimonyBrl: null }
+  context: SortInvestmentContext = {
+    currentPatrimonyBrl: null,
+    finalPatrimonyBrl: null,
+    classContributionBrl: null
+  }
 ): AssetRebalanceRow[] {
   const factor = direction === 'asc' ? 1 : -1;
+  const allocationMap =
+    key === 'ideal_target' || key === 'suggested_contribution'
+      ? buildAllocationMap(rows, context)
+      : null;
+
   return [...rows].sort((a, b) => {
     let cmp = 0;
     switch (key) {
@@ -91,10 +123,17 @@ export function sortAssetRebalanceRows(
       case 'gap_brl':
         cmp = compareNullableNumber(a.gap_brl, b.gap_brl, factor);
         break;
-      case 'projected_gap':
+      case 'ideal_target':
         cmp = compareNullableNumber(
-          projectedGap(a, context),
-          projectedGap(b, context),
+          allocationValue(a, allocationMap, 'idealTargetBrl'),
+          allocationValue(b, allocationMap, 'idealTargetBrl'),
+          factor
+        );
+        break;
+      case 'suggested_contribution':
+        cmp = compareNullableNumber(
+          allocationValue(a, allocationMap, 'suggestedContributionBrl'),
+          allocationValue(b, allocationMap, 'suggestedContributionBrl'),
           factor
         );
         break;
