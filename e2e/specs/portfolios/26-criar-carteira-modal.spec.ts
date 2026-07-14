@@ -25,7 +25,7 @@ test.describe('UI-PRT-026', () => {
       profileLabel: 'Moderado',
       templateLabel: 'Pessoal'
     });
-    await expect(page.getByRole('heading', { name: 'Posições da carteira' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'E2E Modal Principal' })).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`/portfolios/${portfolioId}$`));
   });
 });

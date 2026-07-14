@@ -108,7 +108,24 @@ describe('lucideIconCatalog', () => {
     expect(getLucideIconComponent('ChevronDown')).toBeTruthy();
   });
 
+  it('registra ChevronDown para menus dropdown da navbar', () => {
+    expect(getLucideIconComponent('ChevronDown')).toBeTruthy();
+  });
+
+  it('registra icones da pagina de posicoes da carteira', () => {
+    expect(getLucideIconComponent('ArrowLeft')).toBeTruthy();
+    expect(getLucideIconComponent('Plus')).toBeTruthy();
+    expect(getLucideIconComponent('Search')).toBeTruthy();
+    expect(getLucideIconComponent('Eye')).toBeTruthy();
+    expect(getLucideIconComponent('Tags')).toBeTruthy();
+    expect(getLucideIconComponent('Trash2')).toBeTruthy();
+  });
+
   it('falha para nome desconhecido', () => {
     expect(() => getLucideIconComponent('Unknown' as never)).toThrow(/desconhecido/);
+  });
+
+  it('registra ChevronDown para menus dropdown da navbar', () => {
+    expect(getLucideIconComponent('ChevronDown')).toBeTruthy();
   });
 });

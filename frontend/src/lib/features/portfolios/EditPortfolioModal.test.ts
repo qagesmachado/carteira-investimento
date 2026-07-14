@@ -64,7 +64,24 @@ describe('EditPortfolioModal', () => {
     expect(onSave).toHaveBeenCalledWith({
       name: 'Carteira Gabriel',
       holder: 'Gabriel',
-      objective: 'Patrimônio de longo prazo.'
+      objective: 'Patrimônio de longo prazo.',
+      delete_locked: false
     });
+  });
+
+  it('envia trava de exclusão quando checkbox marcado', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(EditPortfolioModal, {
+      props: { open: true, portfolio, onSave }
+    });
+
+    await fireEvent.click(screen.getByTestId('edit-portfolio-delete-lock'));
+    await fireEvent.click(screen.getByTestId('edit-portfolio-save'));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        delete_locked: true
+      })
+    );
   });
 });

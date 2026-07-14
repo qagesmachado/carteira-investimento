@@ -24,6 +24,7 @@ export type Portfolio = {
   status: PortfolioStatus;
   allocation_targets_json?: string | null;
   notes?: string | null;
+  delete_locked?: boolean;
   created_at: string;
   updated_at: string;
 };

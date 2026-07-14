@@ -20,29 +20,37 @@
     deletePortfolio,
     deletePosition,
     getActivePortfolioId,
+    listPortfolioSummaries,
     listPortfolios,
     listPositions,
     refreshPortfolioQuotes,
     setActivePortfolioId,
     updatePortfolio,
     type Portfolio,
+    type PortfolioSummary,
+    type PortfolioUpdate,
     type Position
   } from '$lib/api/portfolios';
   import { parseApiError } from '$lib/api/parseApiError';
+  import { getUsdBrl } from '$lib/api/fx';
   import {
-    formatAssetTypeForDisplay,
     formatCurrencyCodeForDisplay,
     formatMoneyAmount
   } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
   import PageHero from '$lib/components/PageHero.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
+  import {
+    DASHBOARD_QUOTES_REFRESH_LUCIDE_ICON,
+    PORTFOLIO_POSITIONS_ADD_LUCIDE_ICON,
+    PORTFOLIO_POSITIONS_BACK_LUCIDE_ICON,
+    PORTFOLIO_POSITIONS_SEARCH_LUCIDE_ICON
+  } from '$lib/icons/lucideIconCatalog';
+  import { PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS } from '$lib/layout/pageVisual';
   import {
     computePortfolioSummary,
-    formatPositionProfit,
-    formatQuantityForDisplay,
-    positionCurrentValue,
-    positionInvestedValue,
     usesManualPositionValues
   } from '$lib/features/portfolios/positionMetrics';
   import {
@@ -52,20 +60,22 @@
     type SortKey
   } from '$lib/features/portfolios/positionTableView';
   import AssetAnalysisPanel from '$lib/features/analise/AssetAnalysisPanel.svelte';
-  import PositionDetailPanel from '$lib/features/portfolios/PositionDetailPanel.svelte';
   import { findAssetPartition } from '$lib/features/portfolios/positionPurpose';
   import { getObjectivesSnapshot, type ObjectivesSnapshot } from '$lib/api/objetivos';
   import PositionEditModal from '$lib/features/portfolios/PositionEditModal.svelte';
   import FixedIncomePositionEditModal from '$lib/features/portfolios/FixedIncomePositionEditModal.svelte';
   import PortfolioAddAssetModal from '$lib/features/portfolios/PortfolioAddAssetModal.svelte';
-  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
+  import EditPortfolioModal from '$lib/features/portfolios/EditPortfolioModal.svelte';
+  import PortfolioDetailSummaryPanel from '$lib/features/portfolios/PortfolioDetailSummaryPanel.svelte';
+  import PortfolioPositionsTable from '$lib/features/portfolios/PortfolioPositionsTable.svelte';
+  import PortfolioWorkspaceBarPanel from '$lib/features/portfolios/PortfolioWorkspaceBarPanel.svelte';
   import { confirmPortfolioDelete } from '$lib/features/portfolios/portfolioDelete';
-  import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
   $: routePortfolioId = Number($page.params.portfolioId);
   $: routePortfolioIdValid = Number.isInteger(routePortfolioId) && routePortfolioId > 0;
 
   let portfolios: Portfolio[] = [];
+  let summaries: PortfolioSummary[] = [];
   let assets: Asset[] = [];
   let positions: Position[] = [];
   let activeId: number | null = null;
@@ -76,8 +86,9 @@
   let editingPosition: Position | null = null;
   let editModalOpen = false;
   let addModalOpen = false;
-  let editPortfolioName = '';
-  let editingPortfolioName = false;
+  let editPortfolioModalOpen = false;
+  let editingPortfolio: Portfolio | null = null;
+  let savingPortfolioEdit = false;
   let filterText = '';
   let sortKey: SortKey = 'ticker';
   let sortDir: 'asc' | 'desc' = 'asc';
@@ -91,19 +102,17 @@
   let analysisSaving = false;
   let analysisAsset: AssetAnalysis | null = null;
   let objectivesSnapshot: ObjectivesSnapshot | null = null;
+  let usdBrlRate: number | null = null;
+  let usdBrlRefreshedAt: string | null = null;
+  let quotesRefreshedAt: string | null = null;
+  let dataLoadedAt: string | null = null;
 
+  $: summaryByPortfolioId = Object.fromEntries(
+    summaries.map((summary) => [summary.portfolio_id, summary])
+  );
   $: activePortfolio = portfolios.find((p) => p.id === activeId) ?? null;
-  $: if (activePortfolio && !editingPortfolioName) {
-    editPortfolioName = activePortfolio.name;
-  } else if (!activePortfolio) {
-    editPortfolioName = '';
-    editingPortfolioName = false;
-  }
-  $: canSavePortfolioName =
-    editingPortfolioName &&
-    !!activePortfolio &&
-    editPortfolioName.trim().length > 0 &&
-    editPortfolioName.trim() !== activePortfolio.name;
+  $: activeSummary = activeId != null ? summaryByPortfolioId[activeId] : undefined;
+  $: heroSubtitle = buildPortfolioSubtitle(activePortfolio);
   $: assetById = Object.fromEntries(assets.map((a) => [a.id, a]));
   $: editingAsset = editingPosition ? (assetById[editingPosition.asset_id] ?? null) : null;
   $: editingPositionUsesManualValues = editingAsset
@@ -118,6 +127,20 @@
     expandedPositionId = null;
   }
 
+  function buildPortfolioSubtitle(portfolio: Portfolio | null): string {
+    if (!portfolio) {
+      return 'Carregando…';
+    }
+    const parts: string[] = [];
+    if (portfolio.holder?.trim()) {
+      parts.push(`Titular: ${portfolio.holder.trim()}`);
+    }
+    if (portfolio.objective?.trim()) {
+      parts.push(portfolio.objective.trim());
+    }
+    return parts.length > 0 ? parts.join(' · ') : 'Gerenciar posições desta carteira';
+  }
+
   function togglePositionDetails(positionId: number) {
     expandedPositionId = expandedPositionId === positionId ? null : positionId;
   }
@@ -125,6 +148,7 @@
   function positionDetailPanelId(positionId: number): string {
     return `position-detail-${positionId}`;
   }
+
   $: positionRows = buildPositionRows(positions, assetById);
   $: filteredRows = filterPositionRows(positionRows, filterText);
   $: displayedRows = sortPositionRows(filteredRows, sortKey, sortDir);
@@ -132,19 +156,6 @@
     displayedRows.map((r) => r.position),
     assetById
   );
-
-  function headerSortClass(key: SortKey): string {
-    return sortKey === key ? 'font-bold' : 'font-normal';
-  }
-
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-    } else {
-      sortKey = key;
-      sortDir = 'asc';
-    }
-  }
 
   function formatOptionalMoney(value: number | null, currency: string | undefined): string {
     if (value == null || !currency) {
@@ -190,18 +201,31 @@
     return findAssetPartition(objectivesSnapshot?.asset_partitions ?? [], assetId) ?? null;
   }
 
+  async function loadFx() {
+    try {
+      const fx = await getUsdBrl();
+      usdBrlRate = fx.rate;
+      usdBrlRefreshedAt = fx.refreshed_at;
+    } catch {
+      usdBrlRate = null;
+      usdBrlRefreshedAt = null;
+    }
+  }
+
   async function refresh() {
     loading = true;
     error = '';
-    portfolios = await listPortfolios();
     try {
-      assets = await listAssets();
-    } catch {
-      assets = [];
-      error = 'Não foi possível carregar a base de ativos.';
-    }
-    try {
+      [portfolios, summaries] = await Promise.all([listPortfolios(), listPortfolioSummaries()]);
+      try {
+        assets = await listAssets();
+      } catch {
+        assets = [];
+        error = 'Não foi possível carregar a base de ativos.';
+      }
+      await loadFx();
       await syncActiveAndPositions();
+      dataLoadedAt = new Date().toISOString();
     } catch (err) {
       positions = [];
       if (!error) {
@@ -219,18 +243,29 @@
     await goto(`/portfolios/${id}`);
   }
 
-  function startEditPortfolioName() {
-    if (!activePortfolio) {
-      return;
-    }
-    editingPortfolioName = true;
-    editPortfolioName = activePortfolio.name;
+  function openEditPortfolioModal(portfolio: Portfolio) {
+    error = '';
+    editingPortfolio = portfolio;
+    editPortfolioModalOpen = true;
   }
 
-  function cancelEditPortfolioName() {
-    editingPortfolioName = false;
-    if (activePortfolio) {
-      editPortfolioName = activePortfolio.name;
+  async function handleSavePortfolioEdit(payload: PortfolioUpdate) {
+    if (!editingPortfolio) {
+      return;
+    }
+    savingPortfolioEdit = true;
+    error = '';
+    try {
+      await updatePortfolio(editingPortfolio.id, payload);
+      editPortfolioModalOpen = false;
+      editingPortfolio = null;
+      message = 'Carteira atualizada.';
+      await refresh();
+    } catch (err) {
+      error = parseApiError(err, 'Não foi possível atualizar a carteira.');
+      throw err;
+    } finally {
+      savingPortfolioEdit = false;
     }
   }
 
@@ -315,6 +350,7 @@
     error = '';
     try {
       const result = await refreshPortfolioQuotes(activeId);
+      quotesRefreshedAt = result.refreshed_at;
       await refresh();
       const failedCount = result.failed.length;
       message = `Cotações atualizadas: ${result.updated}. Ignoradas (sem mercado): ${result.skipped}.${
@@ -337,6 +373,9 @@
   }
 
   async function handleDeletePortfolio(portfolio: Portfolio) {
+    if (portfolio.delete_locked) {
+      return;
+    }
     if (!confirmPortfolioDelete(portfolio.name)) {
       return;
     }
@@ -351,32 +390,18 @@
     message = 'Carteira excluída.';
   }
 
-  async function handleSavePortfolioName() {
-    if (!activeId || !activePortfolio || !editingPortfolioName) {
-      return;
+  function handleTableSort(event: CustomEvent<SortKey>) {
+    const key = event.detail;
+    if (sortKey === key) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortKey = key;
+      sortDir = 'asc';
     }
-    const trimmed = editPortfolioName.trim();
-    if (!trimmed || trimmed === activePortfolio.name) {
-      return;
-    }
-    const confirmed = confirm(
-      `Renomear a carteira «${activePortfolio.name}» para «${trimmed}»?`
-    );
-    if (!confirmed) {
-      return;
-    }
-    loading = true;
-    error = '';
-    try {
-      await updatePortfolio(activeId, { name: trimmed });
-      editingPortfolioName = false;
-      await refresh();
-      message = 'Nome da carteira atualizado.';
-    } catch (err) {
-      error = parseApiError(err, 'Não foi possível atualizar o nome da carteira.');
-    } finally {
-      loading = false;
-    }
+  }
+
+  function positionById(positionId: number): Position | undefined {
+    return positions.find((p) => p.id === positionId);
   }
 
   onMount(() => {
@@ -399,29 +424,50 @@
 </svelte:head>
 
 <main class="min-h-screen w-full bg-base-200">
-
   <AppPageShell paddingY="py-4" class="flex w-full min-w-0 flex-col gap-3">
     <PageHero
-      title="Posições da carteira"
-      subtitle={activePortfolio?.name ?? 'Carregando…'}
-      variant="secondary"
-    />
+      title={activePortfolio?.name ?? 'Posições da carteira'}
+      subtitle={heroSubtitle}
+      variant="dashboard"
+    >
+      <svelte:fragment slot="actions">
+        <a
+          class={PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS}
+          href="/portfolios"
+          data-testid="portfolio-positions-back"
+        >
+          <LucideIcon name={PORTFOLIO_POSITIONS_BACK_LUCIDE_ICON} size="md" />
+          Todas as carteiras
+        </a>
+        <button
+          class={PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS}
+          type="button"
+          disabled={loading || refreshingQuotes || !activeId}
+          data-testid="portfolio-positions-refresh-quotes"
+          on:click={handleRefreshQuotes}
+        >
+          <LucideIcon name={DASHBOARD_QUOTES_REFRESH_LUCIDE_ICON} size="md" />
+          {refreshingQuotes ? 'Atualizando…' : 'Atualizar cotações'}
+        </button>
+      </svelte:fragment>
+    </PageHero>
 
     <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
     <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
 
-    <div class="flex flex-wrap items-center gap-3">
-      <a class="btn btn-ghost btn-sm" href="/portfolios">← Todas as carteiras</a>
-      {#if portfolios.length > 0}
-        <PortfolioSelect
-          {portfolios}
-          activeId={activeId}
-          disabled={loading}
-          testId="portfolio-positions-select"
-          on:select={(event) => handleSelectActive(event.detail)}
-        />
-      {/if}
-    </div>
+    {#if portfolios.length > 0}
+      <PortfolioWorkspaceBarPanel
+        {portfolios}
+        activeId={activeId}
+        activePortfolioName={activePortfolio?.name ?? ''}
+        {usdBrlRate}
+        {usdBrlRefreshedAt}
+        quotesRefreshedAt={quotesRefreshedAt ?? dataLoadedAt}
+        disabled={loading}
+        portfolioSelectTestId="portfolio-positions-select"
+        on:select={(event) => handleSelectActive(event.detail)}
+      />
+    {/if}
 
     {#if !routePortfolioIdValid}
       <div class="alert alert-warning">
@@ -434,275 +480,89 @@
         <a class="link link-primary" href="/portfolios">Voltar ao hub de carteiras</a>
       </div>
     {:else if activePortfolio}
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <h2 class="card-title">Carteira ativa</h2>
-          <label class="form-control mt-2">
-            <span class="label-text">Nome</span>
-            <div class="flex flex-wrap items-center gap-2">
-              <input
-                class="input input-bordered min-w-[12rem] flex-1"
-                bind:value={editPortfolioName}
-                disabled={!editingPortfolioName || loading}
-                aria-readonly={!editingPortfolioName}
-                aria-label="Nome"
-              />
-              {#if editingPortfolioName}
-                <button
-                  class="btn btn-primary btn-sm"
-                  type="button"
-                  disabled={loading || !canSavePortfolioName}
-                  on:click={handleSavePortfolioName}
-                >
-                  Salvar
-                </button>
-                <button
-                  class="btn btn-ghost btn-sm"
-                  type="button"
-                  disabled={loading}
-                  on:click={cancelEditPortfolioName}
-                >
-                  Cancelar
-                </button>
-              {:else}
-                <button
-                  class="btn btn-outline btn-sm"
-                  type="button"
-                  disabled={loading}
-                  on:click={startEditPortfolioName}
-                >
-                  Editar
-                </button>
-              {/if}
-            </div>
-          </label>
-          <button
-            class="btn btn-error btn-outline btn-sm mt-2"
-            type="button"
-            on:click={() => handleDeletePortfolio(activePortfolio)}
-          >
-            Excluir carteira
-          </button>
-        </div>
-      </div>
+      <PortfolioDetailSummaryPanel
+        portfolio={activePortfolio}
+        summary={activeSummary}
+        deleteLocked={activePortfolio.delete_locked ?? false}
+        onEdit={() => openEditPortfolioModal(activePortfolio)}
+        onDelete={() => handleDeletePortfolio(activePortfolio)}
+      />
     {/if}
 
     {#if activeId}
-      <div class="card bg-base-100 shadow">
-        <div class="card-body">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="card-title mb-0">Posições</h2>
-            <div class="flex flex-wrap items-center gap-2">
-              <button
-                class="btn btn-primary btn-sm"
-                type="button"
-                disabled={loading}
-                on:click={openAddAssetModal}
-              >
-                Adicionar ativo à carteira
-              </button>
-              <button
-                class="btn btn-outline btn-sm"
-                type="button"
-                disabled={loading || refreshingQuotes}
-                on:click={handleRefreshQuotes}
-              >
-                {refreshingQuotes ? 'Atualizando…' : 'Atualizar cotações'}
-              </button>
-            </div>
-          </div>
+      <PageSection
+        title="Posições ({positions.length})"
+        testId="portfolio-positions-section"
+        actionsTestId="portfolio-positions-actions"
+      >
+        <svelte:fragment slot="actions">
+          <button
+            class="btn btn-primary btn-sm gap-2"
+            type="button"
+            disabled={loading || !activeId}
+            data-testid="portfolio-positions-add"
+            on:click={openAddAssetModal}
+          >
+            <LucideIcon name={PORTFOLIO_POSITIONS_ADD_LUCIDE_ICON} size="sm" />
+            Adicionar ativo
+          </button>
+        </svelte:fragment>
 
-          {#if positions.length === 0}
-            <p class="mt-4 text-sm text-base-content/60">Sem posições nesta carteira.</p>
-          {:else}
-            <label class="form-control mt-4 max-w-md">
-              <span class="label-text">Buscar</span>
+        {#if positions.length === 0}
+          <p class="text-sm text-base-content/60">Sem posições nesta carteira.</p>
+        {:else}
+          <label class="form-control max-w-md">
+            <span class="label-text">Buscar</span>
+            <label class="input input-bordered input-sm flex items-center gap-2">
+              <LucideIcon name={PORTFOLIO_POSITIONS_SEARCH_LUCIDE_ICON} size="sm" class="text-base-content/50" />
               <input
-                class="input input-bordered input-sm"
+                class="grow"
                 type="search"
                 aria-label="Buscar"
                 placeholder="Ticker ou nome do ativo"
                 bind:value={filterText}
               />
             </label>
-            {#if displayedRows.length === 0}
-              <p class="mt-4 text-sm text-base-content/60">Nenhuma posição corresponde à busca.</p>
-            {:else}
-            <div class="mt-4 overflow-x-auto">
-              <table class="table table-zebra w-full min-w-[58rem]">
-                <thead>
-                  <tr>
-                    <th>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass('ticker')}"
-                        on:click={() => toggleSort('ticker')}
-                      >
-                        Ativo
-                        {#if sortKey === 'ticker'}
-                          <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                        {/if}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass('asset_type')}"
-                        on:click={() => toggleSort('asset_type')}
-                      >
-                        Tipo
-                        {#if sortKey === 'asset_type'}
-                          <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                        {/if}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass('currency')}"
-                        on:click={() => toggleSort('currency')}
-                      >
-                        Moeda
-                        {#if sortKey === 'currency'}
-                          <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                        {/if}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-0 font-normal normal-case {headerSortClass('quantity')}"
-                        on:click={() => toggleSort('quantity')}
-                      >
-                        Qtd
-                        {#if sortKey === 'quantity'}
-                          <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                        {/if}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass('invested')}"
-                        on:click={() => toggleSort('invested')}
-                      >
-                        Valor aplicado
-                        {#if sortKey === 'invested'}
-                          <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                        {/if}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass('current')}"
-                        on:click={() => toggleSort('current')}
-                      >
-                        Valor atual
-                        {#if sortKey === 'current'}
-                          <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                        {/if}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass('yield')}"
-                        on:click={() => toggleSort('yield')}
-                      >
-                        Rendimento
-                        {#if sortKey === 'yield'}
-                          <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                        {/if}
-                      </button>
-                    </th>
-                    <th>
-                      <button
-                        type="button"
-                        class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass('profit')}"
-                        on:click={() => toggleSort('profit')}
-                      >
-                        Lucro
-                        {#if sortKey === 'profit'}
-                          <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                        {/if}
-                      </button>
-                    </th>
-                    <th class="min-w-[18rem] whitespace-nowrap">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each displayedRows as row (row.position.id)}
-                    {@const position = row.position}
-                    {@const asset = row.asset}
-                    <tr>
-                      <td>{formatTickerForDisplay(asset.symbol)}</td>
-                      <td>{formatAssetTypeForDisplay(asset.asset_type)}</td>
-                      <td>{asset.currency}</td>
-                      <td>
-                        {usesManualPositionValues(asset)
-                          ? '—'
-                          : formatQuantityForDisplay(position.quantity)}
-                      </td>
-                      <td>
-                        {formatOptionalMoney(positionInvestedValue(position, asset), asset.currency)}
-                      </td>
-                      <td>
-                        {formatOptionalMoney(positionCurrentValue(position, asset), asset.currency)}
-                      </td>
-                      <td>{usesManualPositionValues(asset) ? position.contracted_yield || '—' : '—'}</td>
-                      <td>{formatPositionProfit(position, asset)}</td>
-                      <td class="min-w-[18rem] space-x-1 whitespace-nowrap">
-                        <button
-                          class="btn btn-ghost btn-xs"
-                          type="button"
-                          aria-expanded={expandedPositionId === position.id}
-                          aria-controls={positionDetailPanelId(position.id)}
-                          on:click={() => togglePositionDetails(position.id)}>Detalhes</button
-                        >
-                        <button
-                          class="btn btn-ghost btn-xs"
-                          type="button"
-                          on:click={() => handleEditPosition(position)}>Editar</button
-                        >
-                        {#if asset.display_class === 'stocks' || asset.display_class === 'funds'}
-                          <button
-                            class="btn btn-ghost btn-xs"
-                            type="button"
-                            on:click={() => handleClassifyAsset(asset)}>Classificar</button
-                          >
-                        {/if}
-                        <button
-                          class="btn btn-ghost btn-xs text-error"
-                          type="button"
-                          on:click={() => handleDeletePosition(position)}>Remover</button
-                        >
-                      </td>
-                    </tr>
-                    {#if expandedPositionId === position.id}
-                      <tr class="bg-base-200/50">
-                        <td colspan="9">
-                          <PositionDetailPanel
-                            {position}
-                            {asset}
-                            assetPartition={assetPartitionFor(asset.id)}
-                            panelId={positionDetailPanelId(position.id)}
-                          />
-                        </td>
-                      </tr>
-                    {/if}
-                  {/each}
-                </tbody>
-              </table>
-            </div>
+          </label>
+
+          {#if displayedRows.length === 0}
+            <p class="text-sm text-base-content/60">Nenhuma posição corresponde à busca.</p>
+          {:else}
+            <PortfolioPositionsTable
+              rows={displayedRows}
+              {sortKey}
+              {sortDir}
+              {expandedPositionId}
+              {formatOptionalMoney}
+              {assetPartitionFor}
+              {positionDetailPanelId}
+              on:sort={handleTableSort}
+              on:toggleDetails={(event) => togglePositionDetails(event.detail)}
+              on:edit={(event) => {
+                const position = positionById(event.detail);
+                if (position) handleEditPosition(position);
+              }}
+              on:classify={(event) => {
+                const asset = assetById[event.detail];
+                if (asset) handleClassifyAsset(asset);
+              }}
+              on:remove={(event) => {
+                const position = positionById(event.detail);
+                if (position) handleDeletePosition(position);
+              }}
+            />
+
             {#if portfolioSummary.countByType.length > 0}
-              <div class="mt-4 space-y-3 border-t border-base-300 pt-4 text-sm">
-                <p>
-                  <span class="font-medium">Por tipo:</span>
-                  {portfolioSummary.countByType
-                    .map((item) => `${item.label}: ${item.count}`)
-                    .join(' · ')}
-                </p>
+              <div class="space-y-3 border-t border-base-300 pt-4">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-sm font-medium">Por tipo:</span>
+                  {#each portfolioSummary.countByType as item}
+                    <span class="badge badge-ghost badge-sm">
+                      {item.label}: {item.count}
+                    </span>
+                  {/each}
+                </div>
+              <div class="space-y-2 text-sm text-base-content/80">
                 {#each portfolioSummary.totalsByCurrency as totals}
                   <p>
                     <span class="font-medium">{formatCurrencyCodeForDisplay(totals.currency)}:</span>
@@ -712,11 +572,11 @@
                   </p>
                 {/each}
               </div>
-            {/if}
+              </div>
             {/if}
           {/if}
-        </div>
-      </div>
+        {/if}
+      </PageSection>
     {/if}
   </AppPageShell>
 
@@ -729,6 +589,16 @@
       await refresh();
       message = 'Ativo adicionado à carteira.';
     }}
+  />
+
+  <EditPortfolioModal
+    bind:open={editPortfolioModalOpen}
+    portfolio={editingPortfolio}
+    loading={savingPortfolioEdit}
+    onClose={() => {
+      editingPortfolio = null;
+    }}
+    onSave={handleSavePortfolioEdit}
   />
 
   {#if editingPositionUsesManualValues}

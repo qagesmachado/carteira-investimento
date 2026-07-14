@@ -30,14 +30,23 @@ export async function gotoPortfoliosPage(page: Page): Promise<void> {
   await gotoPortfoliosHub(page);
 }
 
-export async function gotoPortfolioPositions(page: Page, portfolioId: number): Promise<void> {
+export async function gotoPortfolioPositions(
+  page: Page,
+  portfolioId: number,
+  options: { portfolioName?: string } = {}
+): Promise<void> {
   await page.goto(`/portfolios/${portfolioId}`);
-  await expect(page.getByRole('heading', { name: 'Posições da carteira' })).toBeVisible({
-    timeout: 15_000
-  });
-  await expect(page.getByRole('heading', { name: 'Carteira ativa' })).toBeVisible({
-    timeout: 15_000
-  });
+  await expect(page.getByTestId('page-hero')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('portfolio-workspace-bar')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('portfolio-detail-summary')).toBeVisible({ timeout: 15_000 });
+  if (options.portfolioName) {
+    await expect(page.getByRole('heading', { name: options.portfolioName })).toBeVisible();
+  }
+}
+
+export async function clickBackToPortfoliosHub(page: Page): Promise<void> {
+  await page.getByTestId('portfolio-positions-back').click();
+  await expect(page).toHaveURL(/\/portfolios$/);
 }
 
 export function acceptDialogs(page: Page): void {
@@ -103,7 +112,7 @@ export async function createPortfolioViaUI(
   const created = await createResponse;
   const body = (await created.json()) as { id: number };
   await page.waitForURL(new RegExp(`/portfolios/${body.id}$`));
-  await expect(page.getByRole('heading', { name: 'Posições da carteira' })).toBeVisible();
+  await expect(page.getByTestId('portfolio-detail-summary')).toBeVisible();
   return body.id;
 }
 
@@ -114,7 +123,7 @@ export async function openPortfolioFromHubByName(page: Page, name: string): Prom
     .catch(() => null);
   await card.getByRole('button', { name: 'Gerenciar posições' }).click();
   await positionsWait;
-  await expect(page.getByRole('heading', { name: 'Posições da carteira' })).toBeVisible();
+  await expect(page.getByRole('heading', { name })).toBeVisible();
 }
 
 export async function selectPortfolioByName(page: Page, name: string): Promise<void> {
@@ -142,36 +151,39 @@ export async function expectPortfolioActive(page: Page, name: string): Promise<v
 }
 
 export async function startRenamePortfolio(page: Page): Promise<void> {
-  await page.getByRole('heading', { name: 'Carteira ativa' }).locator('..').getByRole('button', { name: 'Editar' }).click();
+  await page.getByTestId('portfolio-detail-edit').click();
+  await expect(page.getByTestId('edit-portfolio-modal')).toBeVisible();
 }
 
 export async function saveRenamePortfolio(page: Page, newName: string): Promise<void> {
+  const modal = page.getByTestId('edit-portfolio-modal');
   const patchResponse = page.waitForResponse(
     (r) => r.request().method() === 'PATCH' && r.url().includes('/portfolios/') && r.ok()
   );
-  await page.getByRole('heading', { name: 'Carteira ativa' }).locator('..').getByLabel('Nome').fill(newName);
-  await page.getByRole('button', { name: 'Salvar' }).click();
+  await modal.getByLabel('Nome da carteira').fill(newName);
+  await modal.getByTestId('edit-portfolio-save').click();
   await patchResponse;
+  await expect(modal).toHaveCount(0);
 }
 
 export async function deleteActivePortfolio(page: Page): Promise<void> {
   const deleteResponse = page.waitForResponse(
     (r) => r.request().method() === 'DELETE' && /\/portfolios\/\d+$/.test(new URL(r.url()).pathname)
   );
-  await page.getByRole('button', { name: 'Excluir carteira' }).click();
+  await page.getByTestId('portfolio-positions-delete').click();
   await deleteResponse;
 }
 
 export function positionsSection(page: Page) {
-  return page.locator('.card').filter({ has: page.getByRole('heading', { name: 'Posições' }) });
+  return page.getByTestId('portfolio-positions-section');
 }
 
 export function positionsTable(page: Page) {
-  return positionsSection(page).locator('table tbody');
+  return page.getByTestId('portfolio-positions-table').locator('tbody');
 }
 
 export function positionDataRows(page: Page) {
-  return positionsTable(page).locator('tr');
+  return positionsTable(page).locator('tr[data-testid^="portfolio-position-row-"]');
 }
 
 export async function filterPositionsByText(page: Page, text: string): Promise<void> {
@@ -196,9 +208,7 @@ export function addAssetModal(page: Page): Locator {
 }
 
 export async function openAddAssetModal(page: Page): Promise<void> {
-  await positionsSection(page)
-    .getByRole('button', { name: 'Adicionar ativo à carteira' })
-    .click();
+  await page.getByTestId('portfolio-positions-section').getByTestId('portfolio-positions-add').click();
   await expect(addAssetModal(page)).toBeVisible();
 }
 
@@ -280,7 +290,7 @@ export async function clickRefreshQuotes(page: Page): Promise<void> {
     (r) => isApiQuoteRefreshResponse(r) && r.ok(),
     { timeout: 60_000 }
   );
-  await positionsSection(page).getByRole('button', { name: 'Atualizar cotações' }).click();
+  await page.getByTestId('portfolio-positions-refresh-quotes').click();
   await refreshResponse;
 }
 
@@ -354,7 +364,12 @@ export async function expectHubPortfolioCardMetrics(page: Page, name: string): P
 export async function editPortfolioFromHub(
   page: Page,
   name: string,
-  fields: { holder?: string; objective?: string; newName?: string }
+  fields: {
+    holder?: string;
+    objective?: string;
+    newName?: string;
+    deleteLocked?: boolean;
+  }
 ): Promise<void> {
   const card = page.getByTestId('portfolio-hub-card').filter({ hasText: name });
   await card.getByTestId('portfolio-hub-edit').click();
@@ -369,6 +384,14 @@ export async function editPortfolioFromHub(
   }
   if (fields.objective != null) {
     await modal.getByLabel('Objetivo').fill(fields.objective);
+  }
+  if (fields.deleteLocked != null) {
+    const lock = modal.getByTestId('edit-portfolio-delete-lock');
+    if (fields.deleteLocked) {
+      await lock.check();
+    } else {
+      await lock.uncheck();
+    }
   }
 
   const patchResponse = page.waitForResponse(

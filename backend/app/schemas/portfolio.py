@@ -18,6 +18,7 @@ class PortfolioBase(SQLModel):
     status: PortfolioStatus = PortfolioStatus.ACTIVE
     allocation_targets_json: str | None = None
     notes: str | None = None
+    delete_locked: bool = False
 
 
 class PortfolioCreate(PortfolioBase):
@@ -33,6 +34,7 @@ class PortfolioUpdate(SQLModel):
     status: PortfolioStatus | None = None
     allocation_targets_json: str | None = None
     notes: str | None = None
+    delete_locked: bool | None = None
 
 
 class PortfolioRead(PortfolioBase):
@@ -172,6 +174,7 @@ class PortfolioExportMeta(SQLModel):
     status: PortfolioStatus = PortfolioStatus.ACTIVE
     allocation_targets_json: str | None = None
     notes: str | None = None
+    delete_locked: bool = False
 
 
 class PositionExportItem(SQLModel):

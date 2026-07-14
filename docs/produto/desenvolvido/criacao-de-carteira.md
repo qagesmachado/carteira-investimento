@@ -54,8 +54,8 @@ Campos sugeridos:
   - **Demais perfis:** preview com ícones e barras estáticas conforme o preset escolhido.
   - **Tipo de carteira:** Pessoal, Cônjuge, Filhos, Aposentadoria, Reserva de emergência, Longo prazo, Simulação.
 - **Gerenciar posições** abre `/portfolios/{id}` e define a carteira como ativa.
-- **Editar** no card abre modal para atualizar nome, titular e objetivo (útil em carteiras antigas sem metadados).
-- **Excluir** no card pede confirmação («Excluir carteira … e todas as posições?») e remove a carteira com cascade (posições e proventos vinculados).
+- **Editar** no card abre modal para atualizar nome, titular, objetivo e **trava de exclusão** (útil em carteiras antigas sem metadados).
+- **Excluir** no card pede confirmação («Excluir carteira … e todas as posições?») e remove a carteira com cascade (posições e proventos vinculados), salvo se a trava estiver ativa.
 
 ### Posições (`/portfolios/{id}`)
 

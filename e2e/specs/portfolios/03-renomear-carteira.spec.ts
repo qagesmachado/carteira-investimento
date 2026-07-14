@@ -27,7 +27,7 @@ test.describe('UI-PRT-003', () => {
     await gotoPortfolioPositions(page, portfolioId);
     await startRenamePortfolio(page);
     await saveRenamePortfolio(page, 'E2E Aux Renomeada');
-    await expect(page.getByRole('alert').filter({ hasText: 'Nome da carteira atualizado.' })).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: 'Carteira atualizada.' })).toBeVisible();
     await expect(
       page.locator('[data-testid="portfolio-positions-select"] option:checked')
     ).toHaveText('E2E Aux Renomeada');

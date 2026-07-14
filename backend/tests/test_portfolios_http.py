@@ -378,3 +378,22 @@ def test_refresh_portfolio_quotes_updates_quoted_assets(client: TestClient) -> N
     stock = next(a for a in asset if a["id"] == stock_id)
     assert stock["current_quote"] == 38.5
     assert stock["quote_source"] == "yfinance"
+
+
+def test_patch_portfolio_delete_locked(client: TestClient) -> None:
+    created = client.post("/portfolios", json={"name": "Com trava"}).json()
+    patched = client.patch(
+        f"/portfolios/{created['id']}",
+        json={"delete_locked": True},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["delete_locked"] is True
+
+
+def test_delete_portfolio_rejected_when_locked(client: TestClient) -> None:
+    created = client.post("/portfolios", json={"name": "Bloqueada"}).json()
+    portfolio_id = created["id"]
+    client.patch(f"/portfolios/{portfolio_id}", json={"delete_locked": True})
+    deleted = client.delete(f"/portfolios/{portfolio_id}?cascade=all")
+    assert deleted.status_code == 403
+    assert client.get(f"/portfolios/{portfolio_id}").status_code == 200

@@ -38,7 +38,8 @@ Cada spec em `e2e/specs/portfolios/` é **autocontido** (`beforeEach` com seed v
 | `UI-PRT-027` | [27-editar-carteira-hub.md](27-editar-carteira-hub.md) | `e2e/specs/portfolios/27-editar-carteira-hub.spec.ts` |
 | `UI-PRT-028` | [28-criar-carteira-perfil-personalizado.md](28-criar-carteira-perfil-personalizado.md) | `e2e/specs/portfolios/28-criar-carteira-perfil-personalizado.spec.ts` |
 | `UI-PRT-029` | [29-excluir-carteira-hub.md](29-excluir-carteira-hub.md) | `e2e/specs/portfolios/29-excluir-carteira-hub.spec.ts` |
+| `UI-PRT-030` | [30-trava-exclusao-carteira-hub.md](30-trava-exclusao-carteira-hub.md) | `e2e/specs/portfolios/30-trava-exclusao-carteira-hub.spec.ts` |
 
 Cadastro unificado de renda fixa/previdência: `UI-PRT-006` (renda fixa), `UI-PRT-017` (previdência), `UI-PRT-018` (edição) e `UI-PRT-024` (validação) usam o modal **Adicionar ativo à carteira** (produto + posição numa ação). Ver [doc](../../../../docs/produto/desenvolvido/cadastro-rf-previdencia-na-carteira.md).
 
-**Total:** 29 casos · **Comando:** `npm run test:ui -- specs/portfolios` · **Próxima página:** [`../consolidada/README.md`](../consolidada/README.md)
+**Total:** 30 casos · **Comando:** `npm run test:ui -- specs/portfolios` · **Próxima página:** [`../consolidada/README.md`](../consolidada/README.md)

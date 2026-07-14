@@ -34,6 +34,38 @@ describe('PortfolioHubAllocationSummary', () => {
     expect(screen.queryByTestId('portfolio-allocation-stocks-split')).toBeNull();
   });
 
+  it('modo inlineMedium exibe classes em linha com tamanho medio na pagina de posicoes', () => {
+    render(PortfolioHubAllocationSummary, {
+      props: {
+        allocationTargetsJson: allocationTargetsJsonForProfile('moderate'),
+        variant: 'inlineMedium'
+      }
+    });
+
+    const section = screen.getByTestId('portfolio-hub-allocation');
+    expect(section.getAttribute('data-allocation-variant')).toBe('inlineMedium');
+    expect(screen.getByTestId('portfolio-allocation-inline-medium')).toBeTruthy();
+    expect(screen.getByTestId('portfolio-allocation-stocks')).toBeTruthy();
+    expect(screen.getByTestId('portfolio-hub-rebalance-link')).toBeTruthy();
+    expect(screen.queryByTestId('portfolio-allocation-compact-grid')).toBeNull();
+    expect(screen.queryByText(/Rebalanceamento → Configuração/)).toBeNull();
+  });
+
+  it('modo inline exibe classes em linha com link na pagina de posicoes', () => {
+    render(PortfolioHubAllocationSummary, {
+      props: {
+        allocationTargetsJson: allocationTargetsJsonForProfile('moderate'),
+        variant: 'inline'
+      }
+    });
+
+    const section = screen.getByTestId('portfolio-hub-allocation');
+    expect(section.getAttribute('data-allocation-variant')).toBe('inline');
+    expect(screen.getByTestId('portfolio-allocation-stocks')).toBeTruthy();
+    expect(screen.getByTestId('portfolio-hub-rebalance-link')).toBeTruthy();
+    expect(screen.queryByText(/Rebalanceamento → Configuração/)).toBeNull();
+  });
+
   it('modo detailed exibe cards por classe com link no editar', () => {
     render(PortfolioHubAllocationSummary, {
       props: {

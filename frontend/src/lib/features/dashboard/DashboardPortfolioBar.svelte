@@ -19,6 +19,7 @@
   export let usdBrlRefreshedAt: string | null = null;
   export let quotesRefreshedAt: string | null = null;
   export let disabled = false;
+  export let portfolioSelectTestId = 'dashboard-portfolio-select';
 
   const dispatch = createEventDispatcher<{ select: number }>();
 
@@ -67,7 +68,7 @@
           {activeId}
           {disabled}
           selectClass="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-          testId="dashboard-portfolio-select"
+          testId={portfolioSelectTestId}
           on:select={(event) => dispatch('select', event.detail)}
         />
       </div>

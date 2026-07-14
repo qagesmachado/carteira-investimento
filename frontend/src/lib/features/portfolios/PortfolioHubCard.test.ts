@@ -72,4 +72,19 @@ describe('PortfolioHubCard', () => {
     fireEvent.click(screen.getByTestId('portfolio-hub-delete'));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
+
+  it('desabilita Excluir quando trava está ativa', () => {
+    render(PortfolioHubCard, {
+      props: {
+        portfolio: { ...portfolio, delete_locked: true },
+        summary,
+        onOpen: () => undefined,
+        onEdit: () => undefined,
+        onDelete: () => undefined,
+        deleteLocked: true
+      }
+    });
+
+    expect((screen.getByTestId('portfolio-hub-delete') as HTMLButtonElement).disabled).toBe(true);
+  });
 });

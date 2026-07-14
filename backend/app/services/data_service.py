@@ -147,6 +147,7 @@ def export_full_backup(session: Session) -> FullBackupDocument:
                 status=p.status,
                 allocation_targets_json=p.allocation_targets_json,
                 notes=p.notes,
+                delete_locked=p.delete_locked,
             )
             for p in portfolios
         ],

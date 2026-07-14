@@ -76,6 +76,20 @@ export function formatPositionProfit(position: Position, asset: Asset | undefine
   })}%)`;
 }
 
+export function positionProfitColorClass(amount: number | null): string {
+  if (amount == null) {
+    return '';
+  }
+  return amount >= 0 ? 'text-success' : 'text-error';
+}
+
+export function positionProfitBadgeClass(amount: number | null): string {
+  if (amount == null) {
+    return 'bg-base-200 text-base-content/60';
+  }
+  return amount >= 0 ? 'bg-success/15 text-success' : 'bg-error/15 text-error';
+}
+
 export type CurrencyTotals = {
   currency: string;
   invested: number;

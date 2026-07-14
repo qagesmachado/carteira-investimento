@@ -184,6 +184,7 @@ def build_export_document(
             status=portfolio.status,
             allocation_targets_json=portfolio.allocation_targets_json,
             notes=portfolio.notes,
+            delete_locked=portfolio.delete_locked,
         ),
         assets=asset_creates,
         positions=position_items,
@@ -400,9 +401,10 @@ def confirm_import(
                     objective=meta.objective,
                     base_currency=meta.base_currency,
                     status=meta.status,
-                    allocation_targets_json=meta.allocation_targets_json,
-                    notes=meta.notes,
-                ),
+                allocation_targets_json=meta.allocation_targets_json,
+                notes=meta.notes,
+                delete_locked=meta.delete_locked,
+            ),
             )
             portfolio_created = True
         else:

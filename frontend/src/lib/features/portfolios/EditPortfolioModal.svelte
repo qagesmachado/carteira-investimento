@@ -15,6 +15,7 @@
   let name = '';
   let holder = '';
   let objective = '';
+  let deleteLocked = false;
   let error = '';
   let saving = false;
 
@@ -25,6 +26,7 @@
     name = portfolio.name;
     holder = portfolio.holder?.trim() ?? '';
     objective = portfolio.objective?.trim() ?? '';
+    deleteLocked = portfolio.delete_locked ?? false;
     error = '';
     prevPortfolioId = portfolio.id;
     prevOpen = true;
@@ -54,7 +56,8 @@
       await onSave({
         name: trimmedName,
         holder: holder.trim() || null,
-        objective: objective.trim() || null
+        objective: objective.trim() || null,
+        delete_locked: deleteLocked
       });
     } catch (err) {
       error = err instanceof Error ? err.message : 'Não foi possível salvar a carteira.';
@@ -112,19 +115,31 @@
         <p class="mt-4 text-sm text-error" role="alert">{error}</p>
       {/if}
 
-      <div class="modal-action">
-        <button class="btn btn-ghost" type="button" disabled={saving || loading} on:click={handleClose}>
-          Cancelar
-        </button>
-        <button
-          class="btn btn-primary"
-          type="button"
-          disabled={saving || loading}
-          data-testid="edit-portfolio-save"
-          on:click={handleSubmit}
-        >
-          {saving ? 'Salvando…' : 'Salvar'}
-        </button>
+      <div class="modal-action flex w-full items-center justify-between gap-4">
+        <label class="label cursor-pointer justify-start gap-2 py-0">
+          <input
+            class="checkbox checkbox-sm checkbox-primary"
+            type="checkbox"
+            bind:checked={deleteLocked}
+            data-testid="edit-portfolio-delete-lock"
+            aria-label="Bloquear exclusão desta carteira no hub"
+          />
+          <span class="label-text text-sm">Bloquear exclusão desta carteira</span>
+        </label>
+        <div class="flex shrink-0 gap-2">
+          <button class="btn btn-ghost" type="button" disabled={saving || loading} on:click={handleClose}>
+            Cancelar
+          </button>
+          <button
+            class="btn btn-primary"
+            type="button"
+            disabled={saving || loading}
+            data-testid="edit-portfolio-save"
+            on:click={handleSubmit}
+          >
+            {saving ? 'Salvando…' : 'Salvar'}
+          </button>
+        </div>
       </div>
     </div>
     <button class="modal-backdrop" type="button" aria-label="Fechar" on:click={handleClose}></button>

@@ -20,6 +20,7 @@ class Portfolio(SQLModel, table=True):
     status: PortfolioStatus = PortfolioStatus.ACTIVE
     allocation_targets_json: str | None = None
     notes: str | None = None
+    delete_locked: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

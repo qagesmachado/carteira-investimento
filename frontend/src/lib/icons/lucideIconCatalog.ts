@@ -1,6 +1,7 @@
 import type { ComponentType } from 'svelte';
 import {
   ArrowDown,
+  ArrowLeft,
   ArrowRight,
   ArrowUp,
   BadgeDollarSign,
@@ -20,6 +21,7 @@ import {
   CircleX,
   Coins,
   DollarSign,
+  Eye,
   Globe,
   HandCoins,
   Landmark,
@@ -28,11 +30,15 @@ import {
   Medal,
   Pencil,
   PiggyBank,
+  Plus,
   Receipt,
   RotateCw,
   Scale,
   ScrollText,
+  Search,
   SlidersHorizontal,
+  Tags,
+  Trash2,
   TrendingDown,
   TrendingUp,
   TriangleAlert,
@@ -49,6 +55,7 @@ import {
  */
 export const LUCIDE_ICON_ENTRIES = [
   { name: 'ArrowDown', label: 'Seta para baixo', component: ArrowDown },
+  { name: 'ArrowLeft', label: 'Seta para esquerda', component: ArrowLeft },
   { name: 'ArrowRight', label: 'Seta para direita', component: ArrowRight },
   { name: 'ArrowUp', label: 'Seta para cima', component: ArrowUp },
   { name: 'HandCoins', label: 'Mão com moedas', component: HandCoins },
@@ -57,6 +64,7 @@ export const LUCIDE_ICON_ENTRIES = [
   { name: 'BadgeDollarSign', label: 'Selo com cifrão', component: BadgeDollarSign },
   { name: 'BadgePercent', label: 'Selo com percentual', component: BadgePercent },
   { name: 'DollarSign', label: 'Cifrão', component: DollarSign },
+  { name: 'Eye', label: 'Olho', component: Eye },
   { name: 'Banknote', label: 'Cédula', component: Banknote },
   { name: 'BanknoteArrowUp', label: 'Cédula com seta para cima', component: BanknoteArrowUp },
   { name: 'Bitcoin', label: 'Bitcoin', component: Bitcoin },
@@ -76,11 +84,15 @@ export const LUCIDE_ICON_ENTRIES = [
   { name: 'Medal', label: 'Medalha', component: Medal },
   { name: 'Pencil', label: 'Lápis', component: Pencil },
   { name: 'PiggyBank', label: 'Cofrinho', component: PiggyBank },
+  { name: 'Plus', label: 'Adicionar', component: Plus },
   { name: 'Receipt', label: 'Recibo', component: Receipt },
   { name: 'RotateCw', label: 'Atualizar (sentido horário)', component: RotateCw },
   { name: 'Scale', label: 'Balança', component: Scale },
   { name: 'ScrollText', label: 'Pergaminho com texto', component: ScrollText },
+  { name: 'Search', label: 'Buscar', component: Search },
   { name: 'SlidersHorizontal', label: 'Controles deslizantes', component: SlidersHorizontal },
+  { name: 'Tags', label: 'Etiquetas', component: Tags },
+  { name: 'Trash2', label: 'Lixeira', component: Trash2 },
   { name: 'TrendingDown', label: 'Tendência de baixa', component: TrendingDown },
   { name: 'TrendingUp', label: 'Tendência de alta', component: TrendingUp },
   { name: 'TriangleAlert', label: 'Alerta triangular', component: TriangleAlert },
@@ -122,6 +134,24 @@ export const DASHBOARD_FX_REFRESH_LUCIDE_ICON: LucideIconName = 'Banknote';
 
 /** Ícone do botão «Atualizar cotações» na toolbar do hero do dashboard. */
 export const DASHBOARD_QUOTES_REFRESH_LUCIDE_ICON: LucideIconName = 'RotateCw';
+
+/** Ícone do botão voltar no hero da página de posições. */
+export const PORTFOLIO_POSITIONS_BACK_LUCIDE_ICON: LucideIconName = 'ArrowLeft';
+
+/** Ícone do botão adicionar ativo na página de posições. */
+export const PORTFOLIO_POSITIONS_ADD_LUCIDE_ICON: LucideIconName = 'Plus';
+
+/** Ícone da busca na tabela de posições. */
+export const PORTFOLIO_POSITIONS_SEARCH_LUCIDE_ICON: LucideIconName = 'Search';
+
+/** Ícone do botão Detalhes na tabela de posições. */
+export const PORTFOLIO_POSITIONS_DETAILS_LUCIDE_ICON: LucideIconName = 'Eye';
+
+/** Ícone do botão Classificar na tabela de posições. */
+export const PORTFOLIO_POSITIONS_CLASSIFY_LUCIDE_ICON: LucideIconName = 'Tags';
+
+/** Ícone do botão Remover na tabela de posições. */
+export const PORTFOLIO_POSITIONS_REMOVE_LUCIDE_ICON: LucideIconName = 'Trash2';
 
 /** Ícone do badge «Cotações · …» no painel da carteira do dashboard. */
 export const DASHBOARD_QUOTES_LUCIDE_ICON: LucideIconName = 'CircleDollarSign';

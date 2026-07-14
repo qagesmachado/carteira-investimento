@@ -139,6 +139,11 @@ def delete_portfolio(
     cascade: bool = False,
 ) -> None:
     portfolio = get_portfolio(session, portfolio_id)
+    if portfolio.delete_locked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="portfolio delete is locked",
+        )
     positions = session.exec(
         select(Position).where(Position.portfolio_id == portfolio_id),
     ).all()

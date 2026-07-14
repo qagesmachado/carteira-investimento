@@ -10,7 +10,6 @@
 
   export let portfolio: Portfolio;
   export let summary: PortfolioSummary | undefined = undefined;
-  export let onOpen: () => void = () => undefined;
   export let onEdit: () => void = () => undefined;
   export let onDelete: () => void = () => undefined;
   export let deleteLocked = false;
@@ -33,25 +32,15 @@
   class="card bg-base-100 shadow {summary?.is_active
     ? 'ring-2 ring-primary ring-offset-2 ring-offset-base-200'
     : ''}"
-  data-testid="portfolio-hub-card"
+  data-testid="portfolio-detail-summary"
   data-portfolio-id={portfolio.id}
-  data-active={summary?.is_active ? 'true' : 'false'}
 >
   <div class="card-body gap-4">
-    <div class="flex flex-wrap items-start justify-between gap-2">
-      <div class="min-w-0">
-        <h2 class="card-title text-lg">{portfolio.name}</h2>
-        {#if portfolio.holder?.trim()}
-          <p class="text-sm text-base-content/70">Titular: {portfolio.holder}</p>
-        {/if}
-        {#if portfolio.objective?.trim()}
-          <p class="text-sm text-base-content/60">{portfolio.objective}</p>
-        {/if}
-      </div>
-      {#if portfolio.status !== 'active'}
+    {#if portfolio.status !== 'active'}
+      <div class="flex flex-wrap items-start justify-end gap-2">
         <span class="badge badge-ghost">{statusLabel(portfolio.status)}</span>
-      {/if}
-    </div>
+      </div>
+    {/if}
 
     <div class="grid gap-3 sm:grid-cols-3">
       <div>
@@ -86,13 +75,16 @@
       </div>
     </div>
 
-    <PortfolioHubAllocationSummary allocationTargetsJson={portfolio.allocation_targets_json} />
+    <PortfolioHubAllocationSummary
+      allocationTargetsJson={portfolio.allocation_targets_json}
+      variant="inlineMedium"
+    />
 
     <div class="card-actions justify-between gap-2">
       <button
         class="btn btn-outline btn-error btn-sm"
         type="button"
-        data-testid="portfolio-hub-delete"
+        data-testid="portfolio-positions-delete"
         disabled={deleteLocked}
         title={deleteLocked ? 'Exclusão bloqueada nas configurações da carteira.' : undefined}
         aria-disabled={deleteLocked}
@@ -100,19 +92,14 @@
       >
         Excluir
       </button>
-      <div class="flex flex-wrap justify-end gap-2">
-        <button
-          class="btn btn-outline btn-sm"
-          type="button"
-          data-testid="portfolio-hub-edit"
-          on:click={onEdit}
-        >
-          Editar
-        </button>
-        <button class="btn btn-primary btn-sm" type="button" on:click={onOpen}>
-          Gerenciar posições
-        </button>
-      </div>
+      <button
+        class="btn btn-outline btn-sm"
+        type="button"
+        data-testid="portfolio-detail-edit"
+        on:click={onEdit}
+      >
+        Editar
+      </button>
     </div>
   </div>
 </article>

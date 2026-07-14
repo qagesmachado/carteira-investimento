@@ -109,6 +109,9 @@
   }
 
   async function handleDeletePortfolio(portfolio: Portfolio) {
+    if (portfolio.delete_locked) {
+      return;
+    }
     if (!confirmPortfolioDelete(portfolio.name)) {
       return;
     }
@@ -183,6 +186,7 @@
             onOpen={() => openPortfolio(portfolio.id)}
             onEdit={() => openEditModal(portfolio)}
             onDelete={() => handleDeletePortfolio(portfolio)}
+            deleteLocked={portfolio.delete_locked ?? false}
           />
         {/each}
       </div>

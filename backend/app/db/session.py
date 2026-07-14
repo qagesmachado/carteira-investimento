@@ -100,6 +100,10 @@ POSITION_OPTIONAL_COLUMNS = {
     "contracted_yield": "VARCHAR",
 }
 
+PORTFOLIO_OPTIONAL_COLUMNS = {
+    "delete_locked": "BOOLEAN NOT NULL DEFAULT 0",
+}
+
 ASSET_OPTIONAL_COLUMNS = {
     "fixed_income_indexer": "VARCHAR",
     "fixed_income_yield_description": "TEXT",
@@ -203,6 +207,19 @@ def _migrate_objective_flags_to_allocations(engine_param: Engine) -> None:
                 is_emergency_reserve = 0
             """
         )
+
+
+def _ensure_portfolio_columns(engine_param: Engine) -> None:
+    with engine_param.begin() as connection:
+        existing = {
+            row[1]
+            for row in connection.exec_driver_sql("PRAGMA table_info(portfolio)").fetchall()
+        }
+        for column, sql_type in PORTFOLIO_OPTIONAL_COLUMNS.items():
+            if column not in existing:
+                connection.exec_driver_sql(
+                    f"ALTER TABLE portfolio ADD COLUMN {column} {sql_type}",
+                )
 
 
 def _ensure_position_columns(engine_param: Engine) -> None:
@@ -476,6 +493,7 @@ def init_db() -> None:
     migrate_legacy_databases(engine)
     _ensure_asset_columns(engine)
     _ensure_asset_analysis_score_columns(engine)
+    _ensure_portfolio_columns(engine)
     _ensure_position_columns(engine)
     _ensure_objective_columns(engine)
     _migrate_objective_allocation_slices(engine)
