@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-014`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** filtro de classe Nacional
 - **Depende de:** mix nacional e internacional na carteira
 - **Arquivo de teste:** `e2e/specs/consolidada/14-filtro-classe-nacional.spec.ts`

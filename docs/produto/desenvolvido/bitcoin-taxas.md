@@ -54,7 +54,7 @@ Card **Conferência Ledger** na página `/ferramentas/bitcoin`: exibe a soma par
 
 ## Visão consolidada
 
-Na página **`/portfolios/consolidada`**, ao expandir **Detalhes** de uma posição cripto (ex.: `BTC-USD`), o bloco **Totais da posição** inclui **Lucro − taxas** (mesmo cálculo do snapshot), à direita do lucro bruto, com equivalente em reais e referência às taxas pagas quando houver lançamentos.
+Na página **`/consolidada`**, ao expandir **Detalhes** de uma posição cripto (ex.: `BTC-USD`), o bloco **Totais da posição** inclui **Lucro − taxas** (mesmo cálculo do snapshot), à direita do lucro bruto, com equivalente em reais e referência às taxas pagas quando houver lançamentos.
 
 ## Fora de escopo
 

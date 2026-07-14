@@ -42,8 +42,26 @@ Campos sugeridos:
 
 ## Interface web (implementado)
 
-- Criar carteira em `/portfolios` (campo «Nova carteira»).
-- **Alterar o nome** da carteira ativa no card «Carteira ativa» → **Salvar nome** (`PATCH /portfolios/{id}`). Nomes devem ser únicos; se já existir outra carteira com o mesmo nome, a API retorna erro 409.
+### Hub (`/portfolios`)
+
+- Lista carteiras em **cards** com total aplicado, total atual, lucro (BRL) e **perfil de balanceamento** (texto + link para Rebalanceamento).
+- Detalhe das metas por classe (com ícones) aparece no modal **Editar**; sub-divisão ETF/Ação só em Rebalanceamento → Configuração.
+- A carteira **em uso** no app (dashboard, consolidada, etc.) aparece com **borda destacada** no card — sem badge «Ativa» repetido.
+- Carteiras de **simulação** ou **arquivadas** exibem badge de status.
+- Botão **Nova carteira** abre modal guiado:
+  - **Perfil de investidor:** Conservador, Moderado, Arrojado, Personalizado (define `allocation_targets_json`).
+  - **Personalizado:** sliders editáveis por classe (soma deve ser 100%); ponto de partida = metas Moderado (55/20/15/7/3); split ETF/Ação permanece 70/30 (padrão) e só é ajustável em Rebalanceamento → Configuração.
+  - **Demais perfis:** preview com ícones e barras estáticas conforme o preset escolhido.
+  - **Tipo de carteira:** Pessoal, Cônjuge, Filhos, Aposentadoria, Reserva de emergência, Longo prazo, Simulação.
+- **Gerenciar posições** abre `/portfolios/{id}` e define a carteira como ativa.
+- **Editar** no card abre modal para atualizar nome, titular e objetivo (útil em carteiras antigas sem metadados).
+- **Excluir** no card pede confirmação («Excluir carteira … e todas as posições?») e remove a carteira com cascade (posições e proventos vinculados).
+
+### Posições (`/portfolios/{id}`)
+
+- Conferir e gerenciar posições da carteira (tabela, modais, resumos).
+- **Alterar o nome** no card «Carteira ativa» → **Salvar** (`PATCH /portfolios/{id}`). Nomes únicos; conflito → 409.
+- Seletor de carteira + link «Todas as carteiras» de volta ao hub.
 
 ## Configurações da carteira
 
@@ -106,12 +124,11 @@ A base de ativos (`carteira.db` / `DATABASE_URL`) é o catálogo compartilhado d
 - **Importar:** envia o JSON; ativos ausentes na base podem ser criados (com lookup); divergências exibem tabela de conferência campo a campo (manter base / usar arquivo).
 - Detalhes da API: [Carteiras, posições e import/export](desenvolvido/carteiras-posicoes-import-export.md).
 
-## Interface web (`/portfolios`)
+## Interface web
 
-- Criar carteira, listar, selecionar carteira ativa (`PUT /portfolios/active`).
-- **Renomear** a carteira ativa (campo Nome + **Salvar nome**).
-- Exportar carteira ativa para download JSON.
-- Wizard de importação com pré-visualização, sufixo automático em nome duplicado e mensagens de erro da API.
+- **Hub:** `/portfolios` — cards, modal de criação, `GET /portfolios/summaries`.
+- **Posições:** `/portfolios/{id}` — listar posições, renomear/excluir carteira, import/export (ver [Carteiras, posições e import/export](desenvolvido/carteiras-posicoes-import-export.md)).
+- Carteira ativa: `PUT /portfolios/active`.
 
 ## Critérios de aceite
 

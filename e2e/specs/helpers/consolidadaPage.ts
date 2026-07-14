@@ -17,18 +17,18 @@ export async function gotoConsolidadaPage(page: Page): Promise<void> {
   );
   const fxResponse = page.waitForResponse((r) => isApiFxGetResponse(r) && r.ok()).catch(() => null);
 
-  await page.goto('/portfolios/consolidada');
+  await page.goto('/consolidada');
   await portfoliosResponse;
   await assetsResponse;
   await fxResponse;
 }
 
 export function activePortfolioSelect(page: Page) {
-  return page.locator('span.label-text', { hasText: 'Carteira ativa' }).locator('..').locator('select');
+  return page.getByTestId('dashboard-portfolio-select');
 }
 
 export function positionsTable(page: Page) {
-  return page.locator('table.table tbody');
+  return page.getByTestId('consolidada-positions-table').locator('tbody');
 }
 
 export function dataRows(page: Page) {
@@ -36,31 +36,27 @@ export function dataRows(page: Page) {
 }
 
 export async function filterByText(page: Page, text: string): Promise<void> {
-  await page.getByLabel('Buscar').fill(text);
+  await page.getByTestId('consolidada-filter-text').fill(text);
 }
 
 export async function filterByAssetType(page: Page, label: string): Promise<void> {
-  await page.getByLabel('Tipo').selectOption({ label });
+  await page.getByTestId('consolidada-filter-asset-type').selectOption({ label });
 }
 
 export async function filterByDisplayClass(page: Page, label: string): Promise<void> {
-  await page.getByLabel('Classe de exibição').selectOption({ label });
+  await page.getByTestId('consolidada-filter-display-class').selectOption({ label });
 }
 
 export async function filterByCurrency(page: Page, text: string): Promise<void> {
-  await page
-    .locator('label.form-control')
-    .filter({ has: page.locator('span.label-text', { hasText: 'Moeda' }) })
-    .getByRole('textbox')
-    .fill(text);
+  await page.getByTestId('consolidada-filter-currency').fill(text);
 }
 
 export async function clearTextFilter(page: Page): Promise<void> {
-  await page.getByLabel('Buscar').fill('');
+  await page.getByTestId('consolidada-filter-text').fill('');
 }
 
 export async function clickRefreshFx(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Atualizar câmbio (USD/BRL)' }).click();
+  await page.getByRole('button', { name: 'Atualizar câmbio' }).click();
 }
 
 export async function clickRefreshQuotes(page: Page): Promise<void> {
@@ -87,12 +83,30 @@ export async function expectRowHidden(page: Page, ticker: string): Promise<void>
 }
 
 export async function expectSummaryCardsVisible(page: Page): Promise<void> {
-  await expect(page.getByText('Totais do filtro atual (BRL nativo + internacional USD)')).toBeVisible();
+  await expect(page.getByTestId('consolidada-filter-totals')).toBeVisible();
   await expect(page.getByText('Total aplicado (filtro atual)')).toBeVisible();
 }
 
 export async function expectSummaryCardsHidden(page: Page): Promise<void> {
-  await expect(page.getByText('Total aplicado (filtro atual)')).not.toBeVisible();
+  await expect(page.getByTestId('consolidada-filter-totals')).not.toBeVisible();
+}
+
+export async function clearConsolidadaFilters(page: Page): Promise<void> {
+  await page.getByTestId('consolidada-clear-filters').click();
+}
+
+export async function toggleConsolidadaPensionFilter(page: Page, checked: boolean): Promise<void> {
+  const input = page.getByTestId('consolidada-filter-pension');
+  if (checked) {
+    await input.check();
+  } else {
+    await input.uncheck();
+  }
+}
+
+export async function expectTickerPillVisible(page: Page, ticker: string): Promise<void> {
+  await expect(page.getByTestId('consolidada-positions-table')).toBeVisible();
+  await expect(page.getByTestId(`consolidada-ticker-pill-${ticker}`)).toBeVisible();
 }
 
 export async function expectEmptyPortfolioMessage(page: Page): Promise<void> {

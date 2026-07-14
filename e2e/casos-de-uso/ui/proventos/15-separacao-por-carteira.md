@@ -4,7 +4,7 @@
 
 - **ID:** `UI-PRV-015`
 - **Status:** aprovado
-- **Pagina:** `/proventos` e `/portfolios/consolidada`
+- **Pagina:** `/proventos` e `/consolidada`
 - **Funcionalidade:** vincular cada provento a uma carteira; visao consolidada e dashboard so somam proventos da carteira ativa
 - **Depende de:** duas carteiras criadas (`Carteira A`, `Carteira B`) com posicoes no mesmo ticker BBSE3
 - **Arquivo de teste:** `e2e/specs/proventos/15-separacao-por-carteira.spec.ts`
@@ -28,9 +28,9 @@
 1. Existem duas carteiras `Carteira A` (id `A`) e `Carteira B` (id `B`), ambas com posicao do ativo BBSE3.
 2. Em `/proventos`, troco a carteira ativa para `Carteira A` e cadastro um provento de BBSE3 no valor de R$ 50,00.
 3. Volto a `/proventos` e troco a carteira ativa para `Carteira B`; cadastro outro provento de BBSE3 no valor de R$ 12,00.
-4. Em `/portfolios/consolidada` com `Carteira A` ativa, expando os detalhes de BBSE3.
+4. Em `/consolidada` com `Carteira A` ativa, expando os detalhes de BBSE3.
 5. **Verifico:** o resumo de "Dividendos recebidos" mostra R$ 50,00 (1 lancamento) — apenas o provento da carteira A.
-6. Troco a carteira ativa para `Carteira B` em `/portfolios/consolidada` e expando BBSE3 novamente.
+6. Troco a carteira ativa para `Carteira B` em `/consolidada` e expando BBSE3 novamente.
 7. **Verifico:** o resumo de "Dividendos recebidos" mostra R$ 12,00 (1 lancamento) — apenas o provento da carteira B.
 
 ## Notas para automacao

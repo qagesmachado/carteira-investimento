@@ -1,7 +1,7 @@
 import { expect, test } from '../fixtures/test';
 
 
-import { gotoPortfoliosPage } from '../helpers/portfoliosPage';
+import { gotoPortfoliosHub } from '../helpers/portfoliosPage';
 import { seedPortfoliosEmptyAssetsOnly } from '../helpers/seedPortfolios';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
 
@@ -16,11 +16,10 @@ test.describe('UI-PRT-001', () => {
     await seedPortfoliosEmptyAssetsOnly(request);
   });
 
-  test('página carrega sem carteiras na base de teste', async ({ page }) => {
-    await gotoPortfoliosPage(page);
-    await expect(page.getByRole('heading', { name: 'Carteiras e posições' })).toBeVisible();
-    await expect(page.getByText('Nenhuma carteira ainda.')).toBeVisible();
-    await expect(page.getByText('Selecione ou crie uma carteira.')).toBeVisible();
+  test('página hub carrega sem carteiras na base de teste', async ({ page }) => {
+    await gotoPortfoliosHub(page);
+    await expect(page.getByRole('heading', { name: 'Carteiras' })).toBeVisible();
+    await expect(page.getByText('Nenhuma carteira ainda')).toBeVisible();
     await expect(page.locator('[role="alert"].alert-error')).toHaveCount(0);
   });
 });

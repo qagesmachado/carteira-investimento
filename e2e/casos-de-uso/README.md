@@ -26,7 +26,7 @@ Formato padrão: **um cenário por arquivo** — BDD (**Como / Quero / Para**) n
 | - | ---- | -------------- | ------------- |
 | 1 | `/assets` | [`ui/assets/`](ui/assets/README.md) | 18 |
 | 2 | `/portfolios` | [`ui/portfolios/`](ui/portfolios/README.md) | 23 |
-| 3 | `/portfolios/consolidada` | [`ui/consolidada/`](ui/consolidada/README.md) | 16 |
+| 3 | `/consolidada` | [`ui/consolidada/`](ui/consolidada/README.md) | 16 |
 
 **Total UI documentado:** 57 arquivos de caso + 3 READMEs de índice.
 

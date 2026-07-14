@@ -31,9 +31,9 @@
 4. Colo um CSV com duas linhas validas para BBSE3 (R$ 10,00 em datas diferentes) e clico em "Pre-visualizar".
 5. Confirmo a importacao das duas linhas selecionadas.
 6. Mudo a carteira ativa para `Carteira A`.
-7. **Verifico** em `/portfolios/consolidada` que o resumo de BBSE3 da carteira A nao traz os dois proventos importados (continua igual ao anterior).
+7. **Verifico** em `/consolidada` que o resumo de BBSE3 da carteira A nao traz os dois proventos importados (continua igual ao anterior).
 8. Mudo a carteira ativa para `Carteira B`.
-9. **Verifico** em `/portfolios/consolidada` que o resumo de BBSE3 da carteira B passou a contar 2 lancamentos novos somando R$ 20,00.
+9. **Verifico** em `/consolidada` que o resumo de BBSE3 da carteira B passou a contar 2 lancamentos novos somando R$ 20,00.
 
 ## Notas para automacao
 

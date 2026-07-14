@@ -42,7 +42,7 @@ flowchart LR
 | ----- | ---- | -------------------------------- | ------------------------ |
 | **1 — Assets** | `/assets` | Catálogo de ativos de **mercado** em `carteira.db` de teste | BRL: `BBSE3`, FII, ETF RF `AUVP11`; USD: `VOO`, `BTC-USD` (renda fixa tradicional e previdência **não** ficam aqui) |
 | **2 — Portfolios** | `/portfolios` | Carteira ativa com posições no banco único | Carteira «E2E Principal»; posições de mercado ligadas aos ativos da etapa 1; renda fixa/previdência cadastradas direto no modal **Adicionar ativo à carteira** (produto + posição numa ação) |
-| **3 — Consolidada** | `/portfolios/consolidada` | Mesma carteira ativa, cotações e FX | Filtros, cartões BRL/USD, ícone `$` em USD, consolidado em reais |
+| **3 — Consolidada** | `/consolidada` | Mesma carteira ativa, cotações e FX | Filtros, cartões BRL/USD, ícone `$` em USD, consolidado em reais |
 
 ## Estado compartilhado entre casos
 
@@ -58,7 +58,7 @@ flowchart LR
 | ------- | ------ | ------- |
 | `UI-AST-` | `/assets` | `UI-AST-002` |
 | `UI-PRT-` | `/portfolios` | `UI-PRT-005` |
-| `UI-CNS-` | `/portfolios/consolidada` | `UI-CNS-007` |
+| `UI-CNS-` | `/consolidada` | `UI-CNS-007` |
 | `UI-PRV-` | `/proventos` | `UI-PRV-002` |
 | `UI-DASH-` | `/dashboard` | `UI-DASH-002` |
 | `UI-ANL-` | `/analise` | `UI-ANL-002` |

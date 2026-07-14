@@ -3,7 +3,7 @@ import { expect, test } from '../fixtures/test';
 
 import {
   clickPositionsColumnSort,
-  gotoPortfoliosPage,
+  gotoPortfolioPositions,
   positionDataRows
 } from '../helpers/portfoliosPage';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
@@ -14,14 +14,16 @@ import { seedPortfoliosFullMix } from '../helpers/seedPortfolios';
  * @see ../../../casos-de-uso/ui/portfolios/22-ordenacao-colunas-posicoes.md
  */
 test.describe('UI-PRT-022', () => {
+  let portfolioId = 0;
+
   test.beforeEach(async ({ request }) => {
     test.setTimeout(90_000);
     await assertYfinanceLookupBackend(request);
-    await seedPortfoliosFullMix(request);
+    portfolioId = await seedPortfoliosFullMix(request);
   });
 
   test('ordena coluna Ativo ao clicar no cabeçalho', async ({ page }) => {
-    await gotoPortfoliosPage(page);
+    await gotoPortfolioPositions(page, portfolioId);
     const rows = positionDataRows(page);
     await expect(rows).not.toHaveCount(0);
 

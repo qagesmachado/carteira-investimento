@@ -27,7 +27,7 @@
 ### Passo a passo
 
 1. Backend e frontend de teste estão no ar; `carteira.db` foi recriada pelo `pretest:ui`.
-2. Navego para `/dados` (menu Cadastro → Dados).
+2. Navego para `/dados` (menu Banco de dados → Dados).
 3. Aguardo o fim do carregamento da página.
 4. **Verifico:** a seção **Backup completo** está visível, com ações de exportar e importar backup JSON.
 5. **Verifico:** a seção **Carteira** está visível, com export/import da carteira ativa (JSON).

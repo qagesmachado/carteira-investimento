@@ -31,6 +31,17 @@ describe('PageHero', () => {
     expect(screen.getByTestId('page-hero').className).toContain('from-secondary');
   });
 
+  it('renderiza variant dashboard', () => {
+    render(PageHero, {
+      props: {
+        title: 'Visão consolidada',
+        variant: 'dashboard'
+      }
+    });
+
+    expect(screen.getByTestId('page-hero').className).toContain('from-indigo-700');
+  });
+
   it('alinha actions à direita e centraliza verticalmente no hero', () => {
     render(PageHeroActionsHarness);
 

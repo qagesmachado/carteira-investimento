@@ -30,6 +30,20 @@ A visão consolidada complementa a tela atual de **posições por carteira** ([c
 
 A nova tela organiza esses mesmos dados num formato de **exploração** (filtro, ordenação, colunas de conversão), não substitui obrigatoriamente o fluxo de edição de posições.
 
+### Layout Hub (revamp visual)
+
+A rota `/consolidada` segue o padrão **Hub** alinhado ao dashboard:
+
+- `PageHero` com gradiente `variant="dashboard"`, subtítulo e toolbar (cotações / câmbio)
+- `DashboardPortfolioBar` — seletor de carteira e badges USD/BRL e cotações
+- Seções `PageSection`: **Explorar posições** (filtros + chips + ajuda colapsável), **Totais do filtro** (4 cartões com gradiente e ícones Lucide), **Posições (N)** (tabela enriquecida)
+- Faixa contextual: contagem de posições visíveis, filtros ativos e ordenação
+- `ConsolidadaShortcutBar` — atalhos para Dashboard, Editar posições, Rebalanceamento e Proventos
+
+Tabela: ticker em pill, ícones Lucide por tipo/classe, badge de % no lucro, botão **Detalhes** outline.
+
+**Escopo patrimonial (igual ao dashboard):** por padrão, **previdência** e parcelas marcadas como **«não investimento»** (objetivos) ficam **fora** da grade e dos totais. Checkboxes **Previdência** e **Ativos que não são investimento** aparecem só quando a carteira tem posições desse tipo; marcá-los **inclui** na visão.
+
 ## O que a tela deve entregar (produto)
 
 ### Tabela única

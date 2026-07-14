@@ -41,8 +41,11 @@ test.describe('UI-DASH-007', () => {
     await expect(section.locator('th', { hasText: 'Ticker' })).toBeVisible();
     await expect(section.locator('th', { hasText: 'Nome do ativo' })).toBeVisible();
     await expect(section.locator('th', { hasText: 'Tipo' })).toBeVisible();
-    await expect(section.locator('th', { hasText: 'Evolução 12M' })).toBeVisible();
     await expect(section.locator('th', { hasText: '#' })).toBeVisible();
+
+    await expect(section.getByTestId('lucide-icon-TrendingUp')).toBeVisible();
+    await expect(section.getByTestId('dashboard-top-rank-1')).toBeVisible();
+    await expect(section.locator('tbody tr')).toHaveCount(3);
 
     await expect(section.locator('tbody tr').filter({ hasText: TICKER_BBSE3 })).toBeVisible();
     await expect(section.locator('tbody tr').filter({ hasText: `${TICKER_BBSE3}.SA` })).toHaveCount(0);
@@ -51,7 +54,7 @@ test.describe('UI-DASH-007', () => {
     await expect(section.locator('tbody tr').first()).toContainText(/\(/);
     await expect(section.getByTestId('dashboard-top-see-all')).toHaveAttribute(
       'href',
-      '/portfolios/consolidada'
+      '/consolidada'
     );
   });
 });

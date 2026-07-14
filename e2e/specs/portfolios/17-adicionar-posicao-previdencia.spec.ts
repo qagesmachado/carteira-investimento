@@ -8,7 +8,7 @@ import {
 } from '../helpers/e2eFixtures';
 import {
   createPortfolioViaUI,
-  gotoPortfoliosPage,
+  gotoPortfoliosHub,
   expectPositionRow
 } from '../helpers/portfoliosPage';
 import { addPensionViaModal } from '../helpers/fixedIncomePositionForm';
@@ -27,7 +27,7 @@ test.describe('UI-PRT-017', () => {
   });
 
   test('cadastra previdência (produto + valores) numa única ação', async ({ page }) => {
-    await gotoPortfoliosPage(page);
+    await gotoPortfoliosHub(page);
     await createPortfolioViaUI(page, E2E_PORTFOLIO_PRINCIPAL);
 
     await addPensionViaModal(page, {

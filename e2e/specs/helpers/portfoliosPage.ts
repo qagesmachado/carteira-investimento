@@ -6,48 +6,139 @@ import {
   isApiImportConfirmResponse,
   isApiImportPreviewResponse,
   isApiPortfolioExportResponse,
+  isApiPortfolioSummariesResponse,
   isApiPortfoliosListResponse,
   isApiPositionsResponse,
   isApiQuoteRefreshResponse
 } from './apiResponses';
 import { pickAssetViaTrigger } from './assetPicker';
 
-export async function gotoPortfoliosPage(page: Page): Promise<void> {
+export async function gotoPortfoliosHub(page: Page): Promise<void> {
   const portfoliosResponse = page.waitForResponse(
     (r) => isApiPortfoliosListResponse(r, 'GET') && r.ok()
   );
-  const assetsResponse = page.waitForResponse(
-    (r) => isApiAssetsListResponse(r, 'GET') && r.ok()
+  const summariesResponse = page.waitForResponse(
+    (r) => isApiPortfolioSummariesResponse(r) && r.ok()
   );
   await page.goto('/portfolios');
   await portfoliosResponse;
-  await assetsResponse;
+  await summariesResponse;
+}
+
+/** @deprecated Prefer `gotoPortfoliosHub` ou `gotoPortfolioPositions`. */
+export async function gotoPortfoliosPage(page: Page): Promise<void> {
+  await gotoPortfoliosHub(page);
+}
+
+export async function gotoPortfolioPositions(page: Page, portfolioId: number): Promise<void> {
+  await page.goto(`/portfolios/${portfolioId}`);
+  await expect(page.getByRole('heading', { name: 'Posições da carteira' })).toBeVisible({
+    timeout: 15_000
+  });
+  await expect(page.getByRole('heading', { name: 'Carteira ativa' })).toBeVisible({
+    timeout: 15_000
+  });
 }
 
 export function acceptDialogs(page: Page): void {
   page.on('dialog', (dialog) => dialog.accept());
 }
 
-export async function createPortfolioViaUI(page: Page, name: string): Promise<void> {
+export function createPortfolioModal(page: Page): Locator {
+  return page.getByTestId('create-portfolio-modal');
+}
+
+export async function openCreatePortfolioModal(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Nova carteira' }).click();
+  await expect(createPortfolioModal(page)).toBeVisible();
+}
+
+const INVESTOR_PROFILE_TEST_ID_BY_LABEL: Record<string, string> = {
+  Conservador: 'conservative',
+  Moderado: 'moderate',
+  Arrojado: 'bold',
+  Personalizado: 'custom'
+};
+
+export async function createPortfolioViaUI(
+  page: Page,
+  name: string,
+  options: {
+    profileLabel?: string;
+    templateLabel?: string;
+    customAllocation?: Partial<Record<'stocks' | 'funds' | 'international' | 'fixed_income' | 'crypto', number>>;
+  } = {}
+): Promise<number> {
+  await openCreatePortfolioModal(page);
+  const modal = createPortfolioModal(page);
+
+  if (options.profileLabel) {
+    const profileId = INVESTOR_PROFILE_TEST_ID_BY_LABEL[options.profileLabel];
+    if (profileId) {
+      await modal.getByTestId(`investor-profile-${profileId}`).click();
+    } else {
+      await modal.getByText(options.profileLabel, { exact: true }).click();
+    }
+  }
+  if (options.customAllocation) {
+    for (const [key, value] of Object.entries(options.customAllocation)) {
+      const slider = modal.getByTestId(`custom-allocation-slider-${key}`);
+      await slider.evaluate((el, nextValue) => {
+        const input = el as HTMLInputElement;
+        input.value = String(nextValue);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }, value);
+    }
+  }
+  if (options.templateLabel) {
+    await modal.getByRole('button').filter({ hasText: options.templateLabel }).first().click();
+  }
+
+  await modal.getByLabel('Nome da carteira').fill(name);
+
   const createResponse = page.waitForResponse(
     (r) => isApiPortfoliosListResponse(r, 'POST') && r.ok()
   );
-  await page.getByRole('heading', { name: 'Nova carteira' }).locator('..').getByPlaceholder('Nome').fill(name);
-  await page.getByRole('button', { name: 'Criar' }).click();
-  await createResponse;
+  await modal.getByRole('button', { name: 'Criar carteira' }).click();
+  const created = await createResponse;
+  const body = (await created.json()) as { id: number };
+  await page.waitForURL(new RegExp(`/portfolios/${body.id}$`));
+  await expect(page.getByRole('heading', { name: 'Posições da carteira' })).toBeVisible();
+  return body.id;
+}
+
+export async function openPortfolioFromHubByName(page: Page, name: string): Promise<void> {
+  const card = page.getByTestId('portfolio-hub-card').filter({ hasText: name });
+  const positionsWait = page
+    .waitForResponse((r) => isApiPositionsResponse(r, 'GET') && r.ok(), { timeout: 15_000 })
+    .catch(() => null);
+  await card.getByRole('button', { name: 'Gerenciar posições' }).click();
+  await positionsWait;
+  await expect(page.getByRole('heading', { name: 'Posições da carteira' })).toBeVisible();
 }
 
 export async function selectPortfolioByName(page: Page, name: string): Promise<void> {
   const positionsWait = page
-    .waitForResponse((r) => isApiPositionsResponse(r) && r.ok(), { timeout: 15_000 })
+    .waitForResponse((r) => isApiPositionsResponse(r, 'GET') && r.ok(), { timeout: 15_000 })
     .catch(() => null);
-  await page.getByRole('button', { name, exact: true }).click();
+  await page.getByTestId('portfolio-positions-select').selectOption({ label: name });
   await positionsWait;
+  await page.waitForURL(/\/portfolios\/\d+$/);
+}
+
+export async function expectPortfolioActiveOnHub(page: Page, name: string): Promise<void> {
+  const card = page.getByTestId('portfolio-hub-card').filter({ hasText: name });
+  await expect(card).toHaveAttribute('data-active', 'true');
 }
 
 export async function expectPortfolioActive(page: Page, name: string): Promise<void> {
-  const button = page.getByRole('button').filter({ hasText: name });
-  await expect(button.locator('.badge', { hasText: 'ativa' })).toBeVisible();
+  if (!page.url().endsWith('/portfolios') && page.url().includes('/portfolios/')) {
+    await expect(
+      page.locator('[data-testid="portfolio-positions-select"] option:checked')
+    ).toHaveText(name);
+    return;
+  }
+  await expectPortfolioActiveOnHub(page, name);
 }
 
 export async function startRenamePortfolio(page: Page): Promise<void> {
@@ -249,4 +340,50 @@ export async function clickExportJson(page: Page): Promise<Download> {
   await page.getByRole('button', { name: 'Exportar JSON' }).click();
   await exportResponse;
   return downloadPromise;
+}
+
+export async function expectHubPortfolioCardMetrics(page: Page, name: string): Promise<void> {
+  const card = page.getByTestId('portfolio-hub-card').filter({ hasText: name });
+  await expect(card.getByText('Total aplicado')).toBeVisible();
+  await expect(card.getByText('Total atual')).toBeVisible();
+  await expect(card.getByText('Lucro')).toBeVisible();
+  await expect(card.getByTestId('portfolio-hub-allocation')).toBeVisible();
+  await expect(card.getByText('Balanceamento sugerido')).toBeVisible();
+}
+
+export async function editPortfolioFromHub(
+  page: Page,
+  name: string,
+  fields: { holder?: string; objective?: string; newName?: string }
+): Promise<void> {
+  const card = page.getByTestId('portfolio-hub-card').filter({ hasText: name });
+  await card.getByTestId('portfolio-hub-edit').click();
+  const modal = page.getByTestId('edit-portfolio-modal');
+  await expect(modal).toBeVisible();
+
+  if (fields.newName != null) {
+    await modal.getByLabel('Nome da carteira').fill(fields.newName);
+  }
+  if (fields.holder != null) {
+    await modal.getByLabel('Titular').fill(fields.holder);
+  }
+  if (fields.objective != null) {
+    await modal.getByLabel('Objetivo').fill(fields.objective);
+  }
+
+  const patchResponse = page.waitForResponse(
+    (r) => r.request().method() === 'PATCH' && r.url().includes('/portfolios/') && r.ok()
+  );
+  await modal.getByTestId('edit-portfolio-save').click();
+  await patchResponse;
+  await expect(modal).toHaveCount(0);
+}
+
+export async function deletePortfolioFromHub(page: Page, name: string): Promise<void> {
+  const card = page.getByTestId('portfolio-hub-card').filter({ hasText: name });
+  const deleteResponse = page.waitForResponse(
+    (r) => r.request().method() === 'DELETE' && /\/portfolios\/\d+/.test(new URL(r.url()).pathname)
+  );
+  await card.getByTestId('portfolio-hub-delete').click();
+  await deleteResponse;
 }

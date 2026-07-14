@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-007`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** cartões de patrimônio e total em reais
 - **Depende de:** `UI-CNS-003`, `UI-PRT-012`
 - **Arquivo de teste:** `e2e/specs/consolidada/07-cartoes-resumo-brl-usd-consolidado.spec.ts`

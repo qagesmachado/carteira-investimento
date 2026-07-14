@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-003`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** linha de status FX, refresh, recálculo em BRL
 - **Depende de:** `UI-PRT-015` (posição `VOO`)
 - **Arquivo de teste:** `e2e/specs/consolidada/03-atualizar-cambio-usd-brl.spec.ts`
@@ -25,7 +25,7 @@
 ### Passo a passo
 
 1. Carteira ativa contém posição em `VOO` (USD).
-2. Estou em `/portfolios/consolidada`.
+2. Estou em `/consolidada`.
 3. Observo a linha de status com taxa USD/BRL.
 4. Clico em atualizar câmbio (refresh FX) e aguardo conclusão.
 5. A taxa exibida é atualizada ou confirmada pelo modo fake.

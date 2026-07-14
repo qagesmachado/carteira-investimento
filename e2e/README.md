@@ -51,7 +51,7 @@ Specs importam `test`/`expect` de [`specs/fixtures/test.ts`](specs/fixtures/test
 | ----- | ---- | ----- | ------- |
 | `specs/assets/` | `/assets` | UI-AST 001–018 | `npm run test:ui -- specs/assets` |
 | `specs/portfolios/` | `/portfolios` | UI-PRT 001–023 | `npm run test:ui -- specs/portfolios` |
-| `specs/consolidada/` | `/portfolios/consolidada` | UI-CNS 001–016 | `npm run test:ui -- specs/consolidada` |
+| `specs/consolidada/` | `/consolidada` | UI-CNS 001–016 | `npm run test:ui -- specs/consolidada` |
 | `specs/dashboard/` | `/dashboard` | UI-DASH 001–007 | `npm run test:ui -- specs/dashboard` |
 | `specs/proventos/` | `/proventos` | UI-PRV 001–014 | `npm run test:ui -- specs/proventos` |
 

@@ -26,7 +26,7 @@ test.describe('UI-DASH-010', () => {
     await expect(featured.getByTestId('lucide-icon-ChartPie').first()).toBeVisible();
     await expect(featured.getByTestId('dashboard-featured-class-row-1')).toHaveAttribute(
       'href',
-      /\/portfolios\/consolidada/
+      /\/consolidada/
     );
 
     const recentDividends = highlights.getByTestId('dashboard-highlight-recent-dividends');

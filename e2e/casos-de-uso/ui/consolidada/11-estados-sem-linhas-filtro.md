@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-011`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** filtro zera linhas — ocultar cartões e mensagem na tabela
 - **Depende de:** carteira com posições
 - **Arquivo de teste:** `e2e/specs/consolidada/11-estados-sem-linhas-filtro.spec.ts`

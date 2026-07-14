@@ -19,6 +19,7 @@ export type TopAssetDividendRow = {
   symbol: string;
   assetName: string;
   typeLabel: string;
+  displayClass: DisplayClass;
   amountBrl: number;
   currency: string;
 };
@@ -466,7 +467,8 @@ export function topAssetsByDividendAmount(
   payments: DividendPayment[],
   assetIdsInPortfolio: Set<number>,
   assetById: Record<number, Asset>,
-  limit: number
+  limit: number,
+  scopedAssetIds?: Set<number>
 ): TopAssetDividendRow[] {
   const byAsset = new Map<
     number,
@@ -475,6 +477,9 @@ export function topAssetsByDividendAmount(
 
   for (const payment of payments) {
     if (!assetIdsInPortfolio.has(payment.asset_id)) {
+      continue;
+    }
+    if (scopedAssetIds && !scopedAssetIds.has(payment.asset_id)) {
       continue;
     }
     const asset = assetById[payment.asset_id];
@@ -499,6 +504,7 @@ export function topAssetsByDividendAmount(
         typeLabel: asset
           ? formatDisplayClassForDisplay(asset.display_class)
           : formatDisplayClassForDisplay(data.displayClass),
+        displayClass: asset?.display_class ?? data.displayClass,
         amountBrl: data.amount,
         currency: data.currency
       };

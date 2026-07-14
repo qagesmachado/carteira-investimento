@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-005`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** busca por texto na tabela
 - **Depende de:** `UI-PRT-012` (carteira com várias posições)
 - **Arquivo de teste:** `e2e/specs/consolidada/05-filtro-texto-busca.spec.ts`

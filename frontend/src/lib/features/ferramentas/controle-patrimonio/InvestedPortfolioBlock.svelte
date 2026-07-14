@@ -1,6 +1,7 @@
 <script lang="ts">
   import { formatBrl } from '$lib/features/rebalance/allocationTargets';
   import { PAGE_SECTION_CLASS } from '$lib/layout/pageVisual';
+  import { CONSOLIDADA_PATH } from '$lib/routes/appRoutes';
 
   export let investedPortfolioBrl: number;
 </script>
@@ -20,7 +21,7 @@
     </p>
   </div>
   <p class="mt-3 text-sm">
-    <a class="link link-primary" href="/portfolios/consolidada">Ver posições na visão consolidada</a>
+    <a class="link link-primary" href={CONSOLIDADA_PATH}>Ver posições na visão consolidada</a>
   </p>
   </div>
 </section>

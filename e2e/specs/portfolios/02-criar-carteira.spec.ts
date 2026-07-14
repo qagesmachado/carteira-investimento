@@ -5,7 +5,7 @@ import { E2E_PORTFOLIO_PRINCIPAL } from '../helpers/e2eFixtures';
 import {
   createPortfolioViaUI,
   expectPortfolioActive,
-  gotoPortfoliosPage
+  gotoPortfoliosHub
 } from '../helpers/portfoliosPage';
 import { seedPortfoliosPrincipalOnly } from '../helpers/seedPortfolios';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
@@ -22,12 +22,12 @@ test.describe('UI-PRT-002', () => {
   });
 
   test('cria carteira e torna ativa', async ({ page }) => {
-    await gotoPortfoliosPage(page);
-    await createPortfolioViaUI(page, E2E_PORTFOLIO_PRINCIPAL);
-    await expect(page.getByRole('button', { name: E2E_PORTFOLIO_PRINCIPAL })).toBeVisible();
+    await gotoPortfoliosHub(page);
+    const portfolioId = await createPortfolioViaUI(page, E2E_PORTFOLIO_PRINCIPAL);
     await expectPortfolioActive(page, E2E_PORTFOLIO_PRINCIPAL);
 
     await page.reload();
-    await expect(page.getByRole('button', { name: E2E_PORTFOLIO_PRINCIPAL })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/portfolios/${portfolioId}$`));
+    await expectPortfolioActive(page, E2E_PORTFOLIO_PRINCIPAL);
   });
 });

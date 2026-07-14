@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-015`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** limpar filtros e restaurar visão completa
 - **Depende de:** `UI-CNS-011` (filtro ativo sem linhas)
 - **Arquivo de teste:** `e2e/specs/consolidada/15-limpar-filtro-restaura-linhas.spec.ts`

@@ -37,7 +37,7 @@ test.describe('UI-PRV-017', () => {
     await importSection.getByRole('button', { name: 'Pré-visualizar no servidor' }).click();
     await expect(importSection.getByRole('button', { name: /Importar selecionados/ })).toBeVisible();
     await importSection.getByRole('button', { name: /Importar selecionados/ }).click();
-    await expect(importSection.getByText(/Importação concluída/)).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: /Importação concluída/ })).toBeVisible();
 
     const section = paymentsListSection(page);
     await gotoProventosPage(page);

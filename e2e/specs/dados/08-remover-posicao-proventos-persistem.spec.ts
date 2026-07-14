@@ -4,7 +4,7 @@ import { expect, test } from '../fixtures/test';
 import {
   acceptDialogs,
   clickRemovePosition,
-  gotoPortfoliosPage,
+  gotoPortfolioPositions,
   positionsTable
 } from '../helpers/portfoliosPage';
 import { TICKER_KLBN } from '../helpers/e2eFixtures';
@@ -20,16 +20,16 @@ test.describe('UI-DAD-008', () => {
   test.beforeEach(async ({ request }) => {
     test.setTimeout(90_000);
     await assertYfinanceLookupBackend(request);
-    await seedDadosKlbnPositionWithDividend(request);
   });
 
-  test('proventos permanecem após remover posição KLBN4', async ({ page }) => {
+  test('proventos permanecem após remover posição KLBN4', async ({ page, request }) => {
     acceptDialogs(page);
+    const portfolioId = await seedDadosKlbnPositionWithDividend(request);
 
     await gotoProventosPage(page);
     await expectPaymentRow(page, TICKER_KLBN, { amountPattern: /25[,.]00|25\.00/ });
 
-    await gotoPortfoliosPage(page);
+    await gotoPortfolioPositions(page, portfolioId);
     await clickRemovePosition(page, TICKER_KLBN);
     await expect(positionsTable(page).locator('tr').filter({ hasText: TICKER_KLBN })).toHaveCount(0);
 

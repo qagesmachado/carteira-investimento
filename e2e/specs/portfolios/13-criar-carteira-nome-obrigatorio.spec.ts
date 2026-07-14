@@ -1,22 +1,31 @@
 import { expect, test } from '../fixtures/test';
 
 
-import { gotoPortfoliosPage } from '../helpers/portfoliosPage';
-import { seedPortfoliosEmpty } from '../helpers/seedPortfolios';
+import { E2E_PORTFOLIO_PRINCIPAL } from '../helpers/e2eFixtures';
+import {
+  createPortfolioViaUI,
+  gotoPortfoliosHub,
+  openCreatePortfolioModal
+} from '../helpers/portfoliosPage';
+import { seedPortfoliosPrincipalOnly } from '../helpers/seedPortfolios';
+import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
 
 /**
- * UI-PRT-013 — Criar carteira sem nome
+ * UI-PRT-013 — Criar carteira nome obrigatório
  * @see ../../../casos-de-uso/ui/portfolios/13-criar-carteira-nome-obrigatorio.md
  */
 test.describe('UI-PRT-013', () => {
   test.beforeEach(async ({ request }) => {
-    await seedPortfoliosEmpty(request);
+    test.setTimeout(90_000);
+    await assertYfinanceLookupBackend(request);
+    await seedPortfoliosPrincipalOnly(request);
   });
 
-  test('não cria carteira com nome vazio', async ({ page }) => {
-    await gotoPortfoliosPage(page);
-    await page.getByRole('heading', { name: 'Nova carteira' }).locator('..').getByRole('button', { name: 'Criar' }).click();
-    await expect(page.getByRole('alert').filter({ hasText: 'Informe o nome da carteira.' })).toBeVisible();
-    await expect(page.getByText('Nenhuma carteira ainda.')).toBeVisible();
+  test('modal exige nome da carteira', async ({ page }) => {
+    await gotoPortfoliosHub(page);
+    await openCreatePortfolioModal(page);
+    await page.getByLabel('Nome da carteira').fill('');
+    await page.getByRole('button', { name: 'Criar carteira' }).click();
+    await expect(page.getByRole('alert')).toHaveText('Informe o nome da carteira.');
   });
 });

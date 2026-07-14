@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-013`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** filtros de tipo ETF e moeda USD
 - **Depende de:** carteira com linhas BRL e USD
 - **Arquivo de teste:** `e2e/specs/consolidada/13-filtro-tipo-moeda.spec.ts`

@@ -10,7 +10,7 @@ Registrar proventos recebidos (dividendos, JCP, créditos, etc.) por ativo, com 
 - API **`/dividend-payments`**: CRUD com filtros; **`/dividend-payments/bulk/preview`** e **`/bulk`** para importação.
 - Persistência em `carteira.db` (banco único); cada lançamento tem **FK** `portfolio_id` → `portfolio.id`.
 - Rótulos da interface em **português**; API e enums em **inglês**.
-- Total de proventos por ativo na **visão consolidada** (`/portfolios/consolidada`, painel Detalhes), **filtrado pela carteira ativa**.
+- Total de proventos por ativo na **visão consolidada** (`/consolidada`, painel Detalhes), **filtrado pela carteira ativa**.
 
 ## Vínculo com carteira
 
@@ -20,7 +20,7 @@ Todo provento **pertence a uma carteira**. A regra é:
 - No formulário, o seletor de carteira inicia com a **carteira ativa** (top-bar) mas pode ser alterado.
 - A listagem `/proventos` exibe a **coluna Carteira** e oferece **filtro por carteira** (default: carteira ativa).
 - A importação em lote (CSV/XLSX) usa **um seletor único de carteira** aplicado a todas as linhas; o arquivo não precisa conter coluna de carteira.
-- A visão consolidada (`/portfolios/consolidada`) e o dashboard (`/dashboard`) chamam `/dividend-payments?portfolio_id=<ativa>` — proventos de outras carteiras **não** vazam para o totalizador por ativo.
+- A visão consolidada (`/consolidada`) e o dashboard (`/dashboard`) chamam `/dividend-payments?portfolio_id=<ativa>` — proventos de outras carteiras **não** vazam para o totalizador por ativo.
 - O backfill da migração coloca todos os lançamentos legados (sem `portfolio_id`) na carteira chamada **`Controle investimento`** (match case-insensitive). Se essa carteira não existir, os lançamentos legados ficam órfãos e são listados apenas pelo endpoint sem filtro até serem reatribuídos via PATCH.
 
 ## Fora do escopo (fases posteriores)
@@ -68,7 +68,7 @@ Arquivos: `.csv`, `.txt`, `.xlsx`. Fluxo: escolher **carteira de destino** → a
 
 ## Interface
 
-- Menu **Cadastro → Proventos**.
+- Menu **Carteira → Proventos**.
 - Formulário: **carteira** (default = ativa), ativo (picker), tipo, data, valor, moeda, observações, dados fiscais opcionais.
 - Tabela: filtros por texto, **carteira** (default = ativa), tipo, mercado, período; ordenação por coluna; coluna **Carteira** visível.
 - Coluna **Tipo** exibe rótulos PT («Dividendo», «JCP»), nunca slugs da API.

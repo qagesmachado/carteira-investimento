@@ -4,7 +4,7 @@
 
 - **ID:** `UI-AST-000` ou `UI-PRT-000` ou `UI-CNS-000` ou `API-XXX-000`
 - **Status:** rascunho
-- **Página:** `/assets` ou `/portfolios` ou `/portfolios/consolidada` ou endpoint API
+- **Página:** `/assets` ou `/portfolios` ou `/consolidada` ou endpoint API
 - **Funcionalidade:** descrição curta
 - **Depende de:** `UI-AST-000` ou «nenhum» / «base de teste vazia após globalSetup»
 - **Arquivo de teste:** `e2e/specs/{pagina}/….spec.ts`

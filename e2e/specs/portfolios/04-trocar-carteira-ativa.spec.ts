@@ -4,7 +4,7 @@ import { test } from '../fixtures/test';
 import { E2E_PORTFOLIO_SECONDARY } from '../helpers/e2eFixtures';
 import {
   expectPortfolioActive,
-  gotoPortfoliosPage,
+  gotoPortfolioPositions,
   selectPortfolioByName
 } from '../helpers/portfoliosPage';
 import { seedPortfoliosTwoPortfolios } from '../helpers/seedPortfolios';
@@ -18,11 +18,11 @@ test.describe('UI-PRT-004', () => {
   test.beforeEach(async ({ request }) => {
     test.setTimeout(90_000);
     await assertYfinanceLookupBackend(request);
-    await seedPortfoliosTwoPortfolios(request);
   });
 
-  test('ativa carteira secundária pelo menu', async ({ page }) => {
-    await gotoPortfoliosPage(page);
+  test('ativa carteira secundária pelo seletor', async ({ page, request }) => {
+    const { principalId } = await seedPortfoliosTwoPortfolios(request);
+    await gotoPortfolioPositions(page, principalId);
     await selectPortfolioByName(page, E2E_PORTFOLIO_SECONDARY);
     await expectPortfolioActive(page, E2E_PORTFOLIO_SECONDARY);
   });

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { formatMoneyAmount } from '$lib/assetLabels';
+  import { consolidadaHref } from '$lib/routes/appRoutes';
 
   import {
     allocationBarClassForDisplayClass,
@@ -136,7 +137,7 @@
                       ></span>
                       <a
                         class="link link-hover font-medium"
-                        href="/portfolios/consolidada?display_class={row.displayClass}"
+                        href={consolidadaHref(row.displayClass)}
                       >
                         {row.label}
                       </a>

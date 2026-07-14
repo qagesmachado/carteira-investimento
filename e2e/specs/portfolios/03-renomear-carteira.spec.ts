@@ -4,7 +4,7 @@ import { expect, test } from '../fixtures/test';
 import { E2E_PORTFOLIO_AUX } from '../helpers/e2eFixtures';
 import {
   acceptDialogs,
-  gotoPortfoliosPage,
+  gotoPortfolioPositions,
   saveRenamePortfolio,
   startRenamePortfolio
 } from '../helpers/portfoliosPage';
@@ -19,15 +19,17 @@ test.describe('UI-PRT-003', () => {
   test.beforeEach(async ({ request }) => {
     test.setTimeout(90_000);
     await assertYfinanceLookupBackend(request);
-    await seedPortfoliosAuxForRename(request);
   });
 
-  test('renomeia carteira ativa', async ({ page }) => {
+  test('renomeia carteira ativa', async ({ page, request }) => {
     acceptDialogs(page);
-    await gotoPortfoliosPage(page);
+    const portfolioId = await seedPortfoliosAuxForRename(request);
+    await gotoPortfolioPositions(page, portfolioId);
     await startRenamePortfolio(page);
     await saveRenamePortfolio(page, 'E2E Aux Renomeada');
     await expect(page.getByRole('alert').filter({ hasText: 'Nome da carteira atualizado.' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'E2E Aux Renomeada' })).toBeVisible();
+    await expect(
+      page.locator('[data-testid="portfolio-positions-select"] option:checked')
+    ).toHaveText('E2E Aux Renomeada');
   });
 });

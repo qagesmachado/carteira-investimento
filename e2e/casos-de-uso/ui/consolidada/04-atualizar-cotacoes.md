@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-004`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** refresh de cotações da carteira ativa
 - **Depende de:** `UI-PRT-009`
 - **Arquivo de teste:** `e2e/specs/consolidada/04-atualizar-cotacoes.spec.ts`
@@ -25,7 +25,7 @@
 ### Passo a passo
 
 1. Carteira `E2E Principal` ativa com `BBSE3` e `VOO`.
-2. Estou em `/portfolios/consolidada`.
+2. Estou em `/consolidada`.
 3. Clico em atualizar cotações e aguardo o fim da operação.
 4. Mensagem de resumo (updated/skipped/failed) é exibida.
 5. Colunas de valor na tabela refletem cotações do modo fake.

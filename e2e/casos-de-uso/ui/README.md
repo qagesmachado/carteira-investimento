@@ -5,13 +5,13 @@ Documentação organizada pela hierarquia de menus do app:
 | Menu | Pasta | Rota |
 | ---- | ----- | ---- |
 | Dashboard | [`dashboard/`](dashboard/README.md) | `/dashboard` |
-| Visão consolidada | [`consolidada/`](consolidada/README.md) | `/portfolios/consolidada` |
-| Alocação → Rebalanceamento | [`rebalanceamento/`](rebalanceamento/README.md) | `/rebalanceamento` |
-| Alocação → Análise de ativos | [`analise/`](analise/README.md) | `/analise` |
-| Cadastro → Ativos | [`assets/`](assets/README.md) | `/assets` |
-| Cadastro → Carteiras | [`portfolios/`](portfolios/README.md) | `/portfolios` |
-| Cadastro → Proventos | [`proventos/`](proventos/README.md) | `/proventos` |
-| Cadastro → Dados | [`dados/`](dados/README.md) | `/dados` |
+| Visão consolidada | [`consolidada/`](consolidada/README.md) | `/consolidada` |
+| Carteira → Carteiras | [`portfolios/`](portfolios/README.md) | `/portfolios` |
+| Carteira → Rebalanceamento | [`rebalanceamento/`](rebalanceamento/README.md) | `/rebalanceamento` |
+| Carteira → Análise de ativos | [`analise/`](analise/README.md) | `/analise` |
+| Carteira → Proventos | [`proventos/`](proventos/README.md) | `/proventos` |
+| Banco de dados → Ativos | [`assets/`](assets/README.md) | `/assets` |
+| Banco de dados → Dados | [`dados/`](dados/README.md) | `/dados` |
 | Ferramentas → Gerenciamento de objetivos | [`ferramentas/objetivos/`](ferramentas/objetivos/README.md) | `/ferramentas/objetivos` |
 | Ferramentas → Taxas bitcoin | [`ferramentas/bitcoin/`](ferramentas/bitcoin/README.md) | `/ferramentas/bitcoin` |
 | Ferramentas → Financiamento imóvel | [`ferramentas/financiamento-imovel/`](ferramentas/financiamento-imovel/README.md) | `/ferramentas/financiamento-imovel` |

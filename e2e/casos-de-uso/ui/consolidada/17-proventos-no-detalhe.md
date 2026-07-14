@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-017`
 - **Status:** rascunho
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** total de proventos do ativo no painel Detalhes
 - **Depende de:** `UI-CNS-016`, proventos cadastrados em `/proventos`
 - **Referência:** `dividendSummary.ts`, `PositionDetailPanel.svelte`
@@ -24,7 +24,7 @@
 ### Passo a passo
 
 1. Existe provento cadastrado para o ativo `CAML3` (ou ticker equivalente no seed).
-2. Abro `/portfolios/consolidada` e expando **Detalhes** da linha desse ativo.
+2. Abro `/consolidada` e expando **Detalhes** da linha desse ativo.
 3. Na seção **Proventos**, o rótulo «Dividendos recebidos» exibe valor formatado (ex.: `R$ 150,50`) em vez de «Em breve».
 4. Se houver mais de um lançamento, o texto inclui a contagem (ex.: `(2 lançamentos)`).
 5. Para ativo sem proventos, exibe «Nenhum provento cadastrado».

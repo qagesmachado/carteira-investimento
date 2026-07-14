@@ -137,6 +137,16 @@ describe('dividendDashboard', () => {
     expect(top[0].amountBrl).toBe(200);
   });
 
+  it('topAssetsByDividendAmount respeita scopedAssetIds', () => {
+    const payments = [
+      payment({ asset_id: 1, amount: 50, symbol: 'A' }),
+      payment({ id: 2, asset_id: 2, amount: 200, symbol: 'B' })
+    ];
+    const top = topAssetsByDividendAmount(payments, new Set([1, 2]), {}, 5, new Set([2]));
+    expect(top).toHaveLength(1);
+    expect(top[0].symbol).toBe('B');
+  });
+
   it('dividendRowAmountBrl soma BRL e converte USD com taxa', () => {
     const row = {
       label: 'Internacional',

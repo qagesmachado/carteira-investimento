@@ -6,6 +6,7 @@ import type { Position } from '$lib/api/portfolios';
 
 import {
   computeDashboardPatrimonyFilterAvailability,
+  computeScopedAssetIdsForDashboard,
   isPensionAsset,
   resolvePositionCurrentBrlForDashboard,
   resolvePositionInvestedBrlForDashboard,
@@ -182,5 +183,27 @@ describe('dashboardPatrimonyScope', () => {
         { hasNonInvestment: false, hasPension: true }
       )
     ).toEqual({ includeNonInvestment: false, includePension: true });
+  });
+
+  it('computeScopedAssetIdsForDashboard exclui previdencia por padrao', () => {
+    const ids = computeScopedAssetIdsForDashboard(
+      [stockPosition, pensionPosition],
+      { 1: stockAsset, 2: pensionAsset },
+      {},
+      null
+    );
+    expect(ids.has(1)).toBe(true);
+    expect(ids.has(2)).toBe(false);
+  });
+
+  it('computeScopedAssetIdsForDashboard inclui previdencia quando marcado', () => {
+    const ids = computeScopedAssetIdsForDashboard(
+      [pensionPosition],
+      { 2: pensionAsset },
+      {},
+      null,
+      { includeNonInvestment: false, includePension: true }
+    );
+    expect(ids.has(2)).toBe(true);
   });
 });

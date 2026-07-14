@@ -1,39 +1,52 @@
 <script lang="ts">
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
   import { formatMoneyAmount } from '$lib/assetLabels';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
-  import type { DividendPayment } from '$lib/api/dividendPayments';
+  import {
+    TOP_ASSET_DIVIDENDS_TAB_LUCIDE_ICON,
+    TOP_ASSET_GROSS_PROFIT_TAB_LUCIDE_ICON,
+    TOP_ASSET_POSITION_VALUE_TAB_LUCIDE_ICON,
+    TOP_ASSET_PROFIT_PERCENT_TAB_LUCIDE_ICON,
+    TOP_ASSET_SEE_ALL_LUCIDE_ICON,
+    type LucideIconName
+  } from '$lib/icons/lucideIconCatalog';
+  import { CONSOLIDADA_PATH } from '$lib/routes/appRoutes';
 
   import type { TopAssetDividendRow } from './dividendDashboard';
+  import DashboardPatrimonyFilterCheckboxes from './DashboardPatrimonyFilterCheckboxes.svelte';
+  import type { DashboardPatrimonyFilterAvailability } from './dashboardPatrimonyScope';
+  import { hasDashboardPatrimonyFilterOptions } from './dashboardPatrimonyScope';
+  import {
+    displayClassIconFgClass,
+    lucideIconForDisplayClass
+  } from './displayClassLucideIcons';
+  import TopAssetRankBadge from './TopAssetRankBadge.svelte';
   import {
     formatProfitPercentWithNominal,
     TOP_ASSET_METRIC_HEADERS,
     type TopAssetMetric,
-    type TopAssetRow,
-    buildAssetMonthlyDividendAmounts,
-    sparklinePointsFromAmounts,
-    sparklinePolyline
+    type TopAssetRow
   } from './topAssetsDashboard';
 
   export let profitPercentRows: TopAssetRow[] = [];
   export let positionValueRows: TopAssetRow[] = [];
   export let dividendRows: TopAssetDividendRow[] = [];
   export let grossProfitRows: TopAssetRow[] = [];
-  export let dividendPayments: DividendPayment[] = [];
+  export let filterAvailability: DashboardPatrimonyFilterAvailability = {
+    hasNonInvestment: false,
+    hasPension: false
+  };
 
   let activeTab: TopAssetMetric = 'profit_percent';
 
-  const TABS: { id: TopAssetMetric; label: string }[] = [
-    { id: 'profit_percent', label: 'Maior lucro (%)' },
-    { id: 'position_value', label: 'Maior posição' },
-    { id: 'dividends', label: 'Proventos (total)' },
-    { id: 'gross_profit', label: 'Retorno bruto' }
-  ];
+  $: showPatrimonyFilters = hasDashboardPatrimonyFilterOptions(filterAvailability);
 
-  const rankClass: Record<number, string> = {
-    1: 'text-warning font-bold',
-    2: 'text-base-content/70 font-semibold',
-    3: 'text-accent font-semibold'
-  };
+  const TABS: { id: TopAssetMetric; label: string; icon: LucideIconName }[] = [
+    { id: 'profit_percent', label: 'Maior lucro (%)', icon: TOP_ASSET_PROFIT_PERCENT_TAB_LUCIDE_ICON },
+    { id: 'position_value', label: 'Maior posição', icon: TOP_ASSET_POSITION_VALUE_TAB_LUCIDE_ICON },
+    { id: 'dividends', label: 'Proventos (total)', icon: TOP_ASSET_DIVIDENDS_TAB_LUCIDE_ICON },
+    { id: 'gross_profit', label: 'Retorno bruto', icon: TOP_ASSET_GROSS_PROFIT_TAB_LUCIDE_ICON }
+  ];
 
   $: rowsForTab =
     activeTab === 'profit_percent'
@@ -81,27 +94,32 @@
     return (value / maxMetricValue) * 100;
   }
 
-  function sparklineForAsset(assetId: number): string {
-    const amounts = buildAssetMonthlyDividendAmounts(dividendPayments, assetId);
-    return sparklinePolyline(sparklinePointsFromAmounts(amounts));
+  function metricBarClass(): string {
+    return activeTab === 'dividends' ? 'bg-success' : 'bg-primary';
   }
 </script>
 
 <section class="card bg-base-100 shadow" aria-label="Top ativos" data-testid="dashboard-top-assets">
   <div class="card-body gap-4">
-    <h2 class="card-title text-lg">Top ativos</h2>
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <h2 class="card-title text-lg">Top ativos</h2>
+      {#if showPatrimonyFilters}
+        <DashboardPatrimonyFilterCheckboxes {filterAvailability} compact />
+      {/if}
+    </div>
 
     <div class="tabs tabs-boxed w-fit" role="tablist" aria-label="Critérios de ranking">
       {#each TABS as tab}
         <button
           type="button"
           role="tab"
-          class="tab tab-sm {activeTab === tab.id ? 'tab-active' : ''}"
+          class="tab tab-sm inline-flex items-center gap-1.5 {activeTab === tab.id ? 'tab-active' : ''}"
           aria-selected={activeTab === tab.id}
           data-testid="dashboard-top-tab-{tab.id}"
           on:click={() => (activeTab = tab.id)}
         >
-          {tab.label}
+          <LucideIcon name={tab.icon} size="sm" />
+          <span>{tab.label}</span>
         </button>
       {/each}
     </div>
@@ -122,41 +140,48 @@
           <table class="table table-sm">
             <thead>
               <tr>
-                <th class="w-10">#</th>
+                <th class="w-12">#</th>
                 <th>Ticker</th>
                 <th>Nome do ativo</th>
                 <th>Tipo</th>
                 <th class="text-right">{metricHeader}</th>
-                <th class="w-24">Evolução 12M</th>
               </tr>
             </thead>
             <tbody>
               {#each dividendRows as item, index}
                 <tr>
-                  <td class={rankClass[index + 1] ?? ''}>{index + 1}</td>
-                  <td class="font-medium">{formatTickerForDisplay(item.symbol)}</td>
+                  <td>
+                    <TopAssetRankBadge rank={index + 1} />
+                  </td>
+                  <td>
+                    <span
+                      class="inline-flex rounded-md bg-base-200 px-2 py-0.5 font-mono text-xs font-semibold"
+                      data-testid="dashboard-top-ticker-{item.assetId}"
+                    >
+                      {formatTickerForDisplay(item.symbol)}
+                    </span>
+                  </td>
                   <td>{item.assetName}</td>
-                  <td>{item.typeLabel}</td>
+                  <td>
+                    <span class="inline-flex items-center gap-1.5">
+                      <LucideIcon
+                        name={lucideIconForDisplayClass(item.displayClass)}
+                        size="sm"
+                        class={displayClassIconFgClass(item.displayClass)}
+                      />
+                      <span>{item.typeLabel}</span>
+                    </span>
+                  </td>
                   <td class="text-right">
                     <div class="flex flex-col items-end gap-1">
                       <span>{formatDividendMetric(item)}</span>
                       <div class="h-1.5 w-24 overflow-hidden rounded-full bg-base-200">
                         <div
-                          class="h-full rounded-full bg-success"
+                          class="h-full rounded-full {metricBarClass()}"
                           style="width: {metricBarPercent(item.amountBrl)}%"
                         ></div>
                       </div>
                     </div>
-                  </td>
-                  <td>
-                    <svg viewBox="0 0 72 24" class="h-6 w-full text-success" aria-hidden="true">
-                      <polyline
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        points={sparklineForAsset(item.assetId)}
-                      />
-                    </svg>
                   </td>
                 </tr>
               {/each}
@@ -171,41 +196,48 @@
         <table class="table table-sm">
           <thead>
             <tr>
-              <th class="w-10">#</th>
+              <th class="w-12">#</th>
               <th>Ticker</th>
               <th>Nome do ativo</th>
               <th>Tipo</th>
               <th class="text-right">{metricHeader}</th>
-              <th class="w-24">Evolução 12M</th>
             </tr>
           </thead>
           <tbody>
             {#each rowsForTab as item, index}
               <tr>
-                <td class={rankClass[index + 1] ?? ''}>{index + 1}</td>
-                <td class="font-medium">{formatTickerForDisplay(item.symbol)}</td>
+                <td>
+                  <TopAssetRankBadge rank={index + 1} />
+                </td>
+                <td>
+                  <span
+                    class="inline-flex rounded-md bg-base-200 px-2 py-0.5 font-mono text-xs font-semibold"
+                    data-testid="dashboard-top-ticker-{item.assetId}"
+                  >
+                    {formatTickerForDisplay(item.symbol)}
+                  </span>
+                </td>
                 <td>{item.assetName}</td>
-                <td>{item.typeLabel}</td>
+                <td>
+                  <span class="inline-flex items-center gap-1.5">
+                    <LucideIcon
+                      name={lucideIconForDisplayClass(item.displayClass)}
+                      size="sm"
+                      class={displayClassIconFgClass(item.displayClass)}
+                    />
+                    <span>{item.typeLabel}</span>
+                  </span>
+                </td>
                 <td class="text-right">
                   <div class="flex flex-col items-end gap-1">
                     <span>{formatPositionMetric(item)}</span>
                     <div class="h-1.5 w-24 overflow-hidden rounded-full bg-base-200">
                       <div
-                        class="h-full rounded-full bg-primary"
+                        class="h-full rounded-full {metricBarClass()}"
                         style="width: {metricBarPercent(item.sortValue)}%"
                       ></div>
                     </div>
                   </div>
-                </td>
-                <td>
-                  <svg viewBox="0 0 72 24" class="h-6 w-full text-success" aria-hidden="true">
-                    <polyline
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      points={sparklineForAsset(item.assetId)}
-                    />
-                  </svg>
                 </td>
               </tr>
             {/each}
@@ -215,8 +247,13 @@
     {/if}
 
     <div class="text-center">
-      <a class="link link-primary text-sm" href="/portfolios/consolidada" data-testid="dashboard-top-see-all">
-        Ver todos os ativos →
+      <a
+        class="btn btn-outline btn-sm gap-1.5"
+        href={CONSOLIDADA_PATH}
+        data-testid="dashboard-top-see-all"
+      >
+        <span>Ver todos os ativos</span>
+        <LucideIcon name={TOP_ASSET_SEE_ALL_LUCIDE_ICON} size="sm" />
       </a>
     </div>
   </div>

@@ -35,7 +35,7 @@ Paralelismo: **4 workers** por padrão (`E2E_WORKERS`). Serial: `npm run test:ui
 | Pasta | Rota | Casos |
 | ----- | ---- | ----- |
 | `e2e/specs/assets/` | `/assets` | UI-AST-001 … 018 |
-| `e2e/specs/consolidada/` | `/portfolios/consolidada` | UI-CNS-001 … 015 |
+| `e2e/specs/consolidada/` | `/consolidada` | UI-CNS-001 … 015 |
 | `e2e/specs/helpers/` | — | código compartilhado (não executável) |
 
 ## Metadados nos `.md` de casos de uso

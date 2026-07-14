@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-006`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** tipo «Renda fixa» inclui ETFs de subtipo RF
 - **Depende de:** `UI-AST-005`, posição em `AUVP11`
 - **Arquivo de teste:** `e2e/specs/consolidada/06-filtro-renda-fixa-inclui-etf-rf.spec.ts`
@@ -26,7 +26,7 @@
 
 1. `AUVP11` está cadastrado como ETF com subtipo Renda fixa e há posição na carteira ativa.
 2. Existe também RF manual na mesma carteira.
-3. Em `/portfolios/consolidada`, seleciono filtro de tipo «Renda fixa».
+3. Em `/consolidada`, seleciono filtro de tipo «Renda fixa».
 4. A linha do ETF `AUVP11` permanece visível.
 5. A linha de RF manual permanece visível.
 6. Linhas de tipo Ação (ex.: `BBSE3`) não aparecem.

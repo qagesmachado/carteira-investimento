@@ -12,6 +12,11 @@ import {
   DASHBOARD_QUOTES_LUCIDE_ICON,
   DASHBOARD_QUOTES_REFRESH_LUCIDE_ICON,
   FEATURED_CLASS_LUCIDE_ICON,
+  TOP_ASSET_DIVIDENDS_TAB_LUCIDE_ICON,
+  TOP_ASSET_GROSS_PROFIT_TAB_LUCIDE_ICON,
+  TOP_ASSET_POSITION_VALUE_TAB_LUCIDE_ICON,
+  TOP_ASSET_PROFIT_PERCENT_TAB_LUCIDE_ICON,
+  TOP_ASSET_SEE_ALL_LUCIDE_ICON,
   getLucideIconComponent,
   LAST_DIVIDEND_LUCIDE_ICON,
   LUCIDE_ICON_ENTRIES
@@ -81,6 +86,26 @@ describe('lucideIconCatalog', () => {
   it('usa CircleDollarSign no badge de cotações do dashboard', () => {
     expect(DASHBOARD_QUOTES_LUCIDE_ICON).toBe('CircleDollarSign');
     expect(getLucideIconComponent(DASHBOARD_QUOTES_LUCIDE_ICON)).toBeTruthy();
+  });
+
+  it('usa icones semanticos nas abas do painel Top ativos', () => {
+    expect(TOP_ASSET_PROFIT_PERCENT_TAB_LUCIDE_ICON).toBe('TrendingUp');
+    expect(TOP_ASSET_POSITION_VALUE_TAB_LUCIDE_ICON).toBe('Layers');
+    expect(TOP_ASSET_DIVIDENDS_TAB_LUCIDE_ICON).toBe('HandCoins');
+    expect(TOP_ASSET_GROSS_PROFIT_TAB_LUCIDE_ICON).toBe('BadgePercent');
+    expect(TOP_ASSET_SEE_ALL_LUCIDE_ICON).toBe('ArrowRight');
+    expect(getLucideIconComponent(TOP_ASSET_SEE_ALL_LUCIDE_ICON)).toBeTruthy();
+  });
+
+  it('registra icones da visao consolidada', () => {
+    expect(getLucideIconComponent('LayoutDashboard')).toBeTruthy();
+    expect(getLucideIconComponent('ChartLine')).toBeTruthy();
+    expect(getLucideIconComponent('TrendingDown')).toBeTruthy();
+    expect(getLucideIconComponent('SlidersHorizontal')).toBeTruthy();
+  });
+
+  it('registra ChevronDown para menus dropdown da navbar', () => {
+    expect(getLucideIconComponent('ChevronDown')).toBeTruthy();
   });
 
   it('falha para nome desconhecido', () => {

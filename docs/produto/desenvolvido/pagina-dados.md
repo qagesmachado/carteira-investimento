@@ -7,7 +7,7 @@ Centralizar exportação e importação de backup completo, carteiras, catálogo
 ## Rota
 
 - **UI:** `/dados`
-- **Navbar:** menu Cadastro → Dados
+- **Navbar:** menu Banco de dados → Dados
 
 ## Seções
 

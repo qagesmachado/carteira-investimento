@@ -6,16 +6,16 @@ import {
 } from './consolidadaInvestmentDisplay';
 
 describe('consolidadaInvestmentDisplay', () => {
-  it('retorna 1 quando filtro desligado', () => {
-    expect(computeInvestmentShare(false, 24_884.4, 19_651.2)).toBe(1);
+  it('retorna 1 quando parcelas não investimento estão incluídas', () => {
+    expect(computeInvestmentShare(true, 24_884.4, 19_651.2)).toBe(1);
   });
 
-  it('calcula fração investível com filtro ativo', () => {
-    expect(computeInvestmentShare(true, 24_884.4, 19_651.2)).toBeCloseTo(19_651.2 / 24_884.4, 6);
+  it('calcula fração investível quando não investimento está fora do escopo', () => {
+    expect(computeInvestmentShare(false, 24_884.4, 19_651.2)).toBeCloseTo(19_651.2 / 24_884.4, 6);
   });
 
   it('retorna 0 quando não há parte investível', () => {
-    expect(computeInvestmentShare(true, 10_000, 0)).toBe(0);
+    expect(computeInvestmentShare(false, 10_000, 0)).toBe(0);
   });
 
   it('escala valor nativo pela fração', () => {

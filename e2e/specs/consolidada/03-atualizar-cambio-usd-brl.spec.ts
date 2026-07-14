@@ -2,6 +2,7 @@ import { expect, test } from '../fixtures/test';
 
 
 import { isApiFxRefreshResponse } from '../helpers/apiResponses';
+import { dashboardFxBadge } from '../helpers/dashboardPage';
 import { clickRefreshFx, gotoConsolidadaPage } from '../helpers/consolidadaPage';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
 import { seedConsolidadaPrincipal } from '../helpers/seedConsolidada';
@@ -30,6 +31,6 @@ test.describe('UI-CNS-003', () => {
     await expect(
       page.getByRole('alert').filter({ hasText: /Câmbio USD\/BRL atualizado|USD\/BRL/ })
     ).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText(/USD\/BRL:/)).toBeVisible();
+    await expect(dashboardFxBadge(page)).toContainText(/USD\/BRL \d/);
   });
 });

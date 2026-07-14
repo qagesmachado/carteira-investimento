@@ -1,19 +1,26 @@
-import type { DividendPayment } from '$lib/api/dividendPayments';
-
-import {
-  parsePaymentMonth,
-  parsePaymentYear
-} from './dividendDashboard';
+import type { Asset } from '$lib/api/assets';
+import type { AssetPartition } from '$lib/api/objetivos';
 import type { Position } from '$lib/api/portfolios';
 import { formatAssetTypeForDisplay, formatMoneyAmount } from '$lib/assetLabels';
 
 import {
-  computePositionProfit,
   positionCurrentValue,
   positionInvestedValue,
   valueInBrl
 } from '$lib/features/portfolios/positionMetrics';
 import { allocationColorIndexForDisplayClass } from './allocationChartColors';
+import type { DashboardPatrimonyFilters } from './dashboardPatrimonyFilters';
+import { DEFAULT_DASHBOARD_PATRIMONY_FILTERS } from './dashboardPatrimonyFilters';
+import {
+  resolvePositionCurrentBrlForDashboard,
+  resolvePositionInvestedBrlForDashboard
+} from './dashboardPatrimonyScope';
+
+export type TopAssetsScopeOptions = {
+  partitionsByAssetId?: Record<number, AssetPartition>;
+  filters?: DashboardPatrimonyFilters;
+  usdBrlRate?: number | null;
+};
 
 export type TopAssetMetric =
   | 'profit_percent'
@@ -26,6 +33,7 @@ export type TopAssetRow = {
   symbol: string;
   assetName: string;
   typeLabel: string;
+  displayClass: Asset['display_class'];
   /** Valor numérico usado na ordenação. */
   sortValue: number;
   /** Moeda para formatação do valor exibido. */
@@ -42,6 +50,9 @@ export const TOP_ASSET_METRIC_HEADERS: Record<TopAssetMetric, string> = {
   dividends: 'Proventos',
   gross_profit: 'Retorno bruto'
 };
+
+/** Quantidade máxima de ativos exibidos no painel Top ativos (todas as abas). */
+export const TOP_ASSETS_PANEL_LIMIT = 3;
 
 export function formatProfitPercentWithNominal(
   profitPercent: number,
@@ -68,6 +79,7 @@ function buildRow(
     symbol: asset.symbol,
     assetName: asset.name,
     typeLabel: formatAssetTypeForDisplay(asset.asset_type),
+    displayClass: asset.display_class,
     sortValue,
     currency,
     displayAmount,
@@ -79,11 +91,71 @@ function rankedRows(rows: TopAssetRow[], limit: number): TopAssetRow[] {
   return rows.sort((a, b) => b.sortValue - a.sortValue).slice(0, limit);
 }
 
+function resolveScopedMetrics(
+  position: Position,
+  asset: Asset,
+  scope: TopAssetsScopeOptions
+): {
+  sortCurrentBrl: number;
+  currentDisplay: number;
+  profitDisplay: number;
+  profitPercent: number;
+  profitBrl: number;
+} | null {
+  const partitionsByAssetId = scope.partitionsByAssetId ?? {};
+  const filters = scope.filters ?? DEFAULT_DASHBOARD_PATRIMONY_FILTERS;
+  const usdBrlRate = scope.usdBrlRate;
+
+  const scopedCurrentBrl = resolvePositionCurrentBrlForDashboard(
+    position,
+    asset,
+    usdBrlRate,
+    partitionsByAssetId[position.asset_id],
+    filters
+  );
+  if (scopedCurrentBrl == null || scopedCurrentBrl <= 0) {
+    return null;
+  }
+
+  const fullCurrent = positionCurrentValue(position, asset);
+  if (fullCurrent == null || fullCurrent <= 0) {
+    return null;
+  }
+
+  const fullCurrentBrl = valueInBrl(fullCurrent, asset.currency, usdBrlRate) ?? fullCurrent;
+  const ratio = fullCurrentBrl > 0 ? scopedCurrentBrl / fullCurrentBrl : 0;
+  const currentDisplay = fullCurrent * ratio;
+
+  const scopedInvestedBrl =
+    resolvePositionInvestedBrlForDashboard(
+      position,
+      asset,
+      usdBrlRate,
+      partitionsByAssetId[position.asset_id],
+      filters
+    ) ?? 0;
+
+  const fullInvested = positionInvestedValue(position, asset) ?? 0;
+  const investedDisplay = fullInvested * ratio;
+  const profitDisplay = currentDisplay - investedDisplay;
+  const profitPercent = investedDisplay > 0 ? (profitDisplay / investedDisplay) * 100 : 0;
+  const profitBrl = scopedCurrentBrl - scopedInvestedBrl;
+
+  return {
+    sortCurrentBrl: scopedCurrentBrl,
+    currentDisplay,
+    profitDisplay,
+    profitPercent,
+    profitBrl
+  };
+}
+
 /** Maior lucro em porcentagem sobre o valor investido. */
 export function topAssetsByProfitPercent(
   positions: Position[],
   assetById: Record<number, Asset>,
-  limit: number
+  limit: number,
+  scope: TopAssetsScopeOptions = {}
 ): TopAssetRow[] {
   const rows: TopAssetRow[] = [];
 
@@ -92,18 +164,18 @@ export function topAssetsByProfitPercent(
     if (!asset) {
       continue;
     }
-    const profit = computePositionProfit(position, asset);
-    if (!profit || profit.percent <= 0) {
+    const metrics = resolveScopedMetrics(position, asset, scope);
+    if (!metrics || metrics.profitPercent <= 0) {
       continue;
     }
     rows.push(
       buildRow(
         position,
         asset,
-        profit.percent,
-        profit.profit,
+        metrics.profitPercent,
+        metrics.profitDisplay,
         asset.currency,
-        profit.percent
+        metrics.profitPercent
       )
     );
   }
@@ -116,21 +188,24 @@ export function topAssetsByPositionValue(
   positions: Position[],
   assetById: Record<number, Asset>,
   usdBrlRate: number | null | undefined,
-  limit: number
+  limit: number,
+  scope: TopAssetsScopeOptions = {}
 ): TopAssetRow[] {
   const rows: TopAssetRow[] = [];
+  const mergedScope = { ...scope, usdBrlRate };
 
   for (const position of positions) {
     const asset = assetById[position.asset_id];
     if (!asset) {
       continue;
     }
-    const current = positionCurrentValue(position, asset);
-    if (current == null || current <= 0) {
+    const metrics = resolveScopedMetrics(position, asset, mergedScope);
+    if (!metrics) {
       continue;
     }
-    const sortValue = valueInBrl(current, asset.currency, usdBrlRate) ?? current;
-    rows.push(buildRow(position, asset, sortValue, current, asset.currency));
+    rows.push(
+      buildRow(position, asset, metrics.sortCurrentBrl, metrics.currentDisplay, asset.currency)
+    );
   }
 
   return rankedRows(rows, limit);
@@ -141,22 +216,30 @@ export function topAssetsByGrossProfit(
   positions: Position[],
   assetById: Record<number, Asset>,
   usdBrlRate: number | null | undefined,
-  limit: number
+  limit: number,
+  scope: TopAssetsScopeOptions = {}
 ): TopAssetRow[] {
   const rows: TopAssetRow[] = [];
+  const mergedScope = { ...scope, usdBrlRate };
 
   for (const position of positions) {
     const asset = assetById[position.asset_id];
     if (!asset) {
       continue;
     }
-    const profit = computePositionProfit(position, asset);
-    if (!profit || profit.profit <= 0) {
+    const metrics = resolveScopedMetrics(position, asset, mergedScope);
+    if (!metrics || metrics.profitBrl <= 0) {
       continue;
     }
-    const sortValue = valueInBrl(profit.profit, asset.currency, usdBrlRate) ?? profit.profit;
     rows.push(
-      buildRow(position, asset, sortValue, profit.profit, asset.currency, profit.percent)
+      buildRow(
+        position,
+        asset,
+        metrics.profitBrl,
+        metrics.profitDisplay,
+        asset.currency,
+        metrics.profitPercent
+      )
     );
   }
 
@@ -276,64 +359,4 @@ export function donutSegmentLabelPoint(
 
 export function shouldShowDonutSegmentLabel(percent: number, sweep: number): boolean {
   return percent >= 4 && sweep >= 14;
-}
-
-export type SparklinePoint = { x: number; y: number };
-
-/** Série mensal de proventos do ativo nos últimos 12 meses (valores brutos). */
-export function buildAssetMonthlyDividendAmounts(
-  payments: DividendPayment[],
-  assetId: number,
-  reference: Date = new Date()
-): number[] {
-  const amounts: number[] = [];
-  for (let offset = 11; offset >= 0; offset -= 1) {
-    const monthDate = new Date(reference.getFullYear(), reference.getMonth() - offset, 1);
-    const year = monthDate.getFullYear();
-    const month = monthDate.getMonth() + 1;
-    let total = 0;
-    for (const payment of payments) {
-      if (payment.asset_id !== assetId) {
-        continue;
-      }
-      if (parsePaymentYear(payment.payment_date) !== year) {
-        continue;
-      }
-      if (parsePaymentMonth(payment.payment_date) !== month) {
-        continue;
-      }
-      total += payment.amount;
-    }
-    amounts.push(total);
-  }
-  return amounts;
-}
-
-export function sparklinePointsFromAmounts(
-  amounts: number[],
-  width = 72,
-  height = 24,
-  padding = 2
-): SparklinePoint[] {
-  if (amounts.length === 0) {
-    return [];
-  }
-  const max = Math.max(...amounts, 0);
-  const min = Math.min(...amounts, 0);
-  const range = max - min;
-  const innerWidth = width - padding * 2;
-  const innerHeight = height - padding * 2;
-  const step = amounts.length > 1 ? innerWidth / (amounts.length - 1) : 0;
-
-  return amounts.map((value, index) => {
-    const normalized = range > 0 ? (value - min) / range : 0.5;
-    return {
-      x: padding + index * step,
-      y: padding + innerHeight - normalized * innerHeight
-    };
-  });
-}
-
-export function sparklinePolyline(points: SparklinePoint[]): string {
-  return points.map((point) => `${point.x},${point.y}`).join(' ');
 }

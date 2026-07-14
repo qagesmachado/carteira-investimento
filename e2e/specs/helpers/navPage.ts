@@ -6,8 +6,8 @@ export const THEME_STORAGE_KEY = 'carteira.theme';
 export const TOP_LEVEL_MENU_ORDER = [
   'Dashboard',
   'Visão consolidada',
-  'Alocação',
-  'Cadastro',
+  'Carteira',
+  'Banco de dados',
   'Ferramentas',
   'Financeiro'
 ] as const;
@@ -33,7 +33,9 @@ export async function expectTopLevelMenuOrder(page: Page): Promise<void> {
 }
 
 export async function openNavMenu(page: Page, label: string): Promise<void> {
-  await page.locator('header').getByRole('button', { name: label, exact: true }).click();
+  const trigger = page.getByTestId(`nav-menu-${label}`);
+  await trigger.hover();
+  await expect(page.locator('header').getByRole('menu', { name: label })).toBeVisible();
 }
 
 export function hideMoneyToggle(page: Page) {

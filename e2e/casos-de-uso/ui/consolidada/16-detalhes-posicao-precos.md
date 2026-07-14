@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-016`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** painel de detalhes por posição
 - **Depende de:** seed consolidada principal (`BBSE3` com cotação)
 - **Arquivo de teste:** `e2e/specs/consolidada/16-detalhes-posicao-precos.spec.ts`

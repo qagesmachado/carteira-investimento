@@ -4,6 +4,16 @@ import { API_BASE_URL } from './config';
 export type PortfolioStatus = 'active' | 'archived' | 'simulation';
 export type PositionStatus = 'active' | 'closed' | 'watching';
 
+export type PortfolioSummary = {
+  portfolio_id: number;
+  invested_brl: number;
+  current_brl: number;
+  profit_brl: number;
+  profit_pct: number | null;
+  position_count: number;
+  is_active: boolean;
+};
+
 export type Portfolio = {
   id: number;
   name: string;
@@ -168,6 +178,13 @@ export async function listPortfolios(fetcher: typeof fetch = fetch): Promise<Por
   return parseResponse<Portfolio[]>(response);
 }
 
+export async function listPortfolioSummaries(
+  fetcher: typeof fetch = fetch
+): Promise<PortfolioSummary[]> {
+  const response = await fetcher(`${API_BASE_URL}/portfolios/summaries`);
+  return parseResponse<PortfolioSummary[]>(response);
+}
+
 export async function createPortfolio(
   payload: PortfolioCreate,
   fetcher: typeof fetch = fetch
@@ -193,8 +210,13 @@ export async function updatePortfolio(
   return parseResponse<Portfolio>(response);
 }
 
-export async function deletePortfolio(id: number, fetcher: typeof fetch = fetch): Promise<void> {
-  const response = await fetcher(`${API_BASE_URL}/portfolios/${id}`, { method: 'DELETE' });
+export async function deletePortfolio(
+  id: number,
+  options: { cascade?: boolean; fetcher?: typeof fetch } = {}
+): Promise<void> {
+  const { cascade = false, fetcher = fetch } = options;
+  const query = cascade ? '?cascade=all' : '';
+  const response = await fetcher(`${API_BASE_URL}/portfolios/${id}${query}`, { method: 'DELETE' });
   if (!response.ok) {
     throw new Error(await response.text());
   }

@@ -41,6 +41,16 @@ class PortfolioRead(PortfolioBase):
     updated_at: datetime
 
 
+class PortfolioSummaryRead(SQLModel):
+    portfolio_id: int
+    invested_brl: float
+    current_brl: float
+    profit_brl: float
+    profit_pct: float | None
+    position_count: int
+    is_active: bool
+
+
 class PositionCreate(SQLModel):
     asset_id: int
     quantity: float = Field(default=0, ge=0)

@@ -160,7 +160,7 @@ Ver [Carteiras, posições e import/export](desenvolvido/carteiras-posicoes-impo
 - **Resumo** abaixo da tabela: contagem por tipo de ativo (ex.: `Ação: 7 · ETF: 4`) e totais por moeda (aplicado, atual e lucro), sem conversão cambial entre moedas. O resumo reflete **apenas as linhas visíveis** após busca ou filtro.
 - **Editar** posição: para renda fixa/previdência reabre o formulário completo (produto + valores) e salva produto e posição juntos; para os demais edita quantidade e preço médio. **Remover** posição.
 - Uma posição por par (carteira, ativo).
-- Menu **Cadastro** no cabeçalho: Ativos e Carteiras.
+- Menu **Carteira** no cabeçalho: Carteiras; catálogo global de ativos em **Banco de dados → Ativos**.
 
 ## Critérios de aceite
 

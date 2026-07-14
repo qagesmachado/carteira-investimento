@@ -9,24 +9,35 @@ import { expectTopLevelMenuOrder, openNavMenu } from '../helpers/navPage';
  * @see ../../../casos-de-uso/ui/nav/02-ordem-menus.md
  */
 test.describe('UI-NAV-002', () => {
-  test('menus na ordem Dashboard → Visão consolidada → Alocação → Cadastro → Ferramentas → Financeiro', async ({
+  test('menus na ordem Dashboard → Visão consolidada → Carteira → Banco de dados → Ferramentas → Financeiro', async ({
     page
   }) => {
     await gotoDashboardPage(page);
     await expectTopLevelMenuOrder(page);
   });
 
-  test('Alocação contém Rebalanceamento e Análise de ativos (sem Objetivos/Bitcoin)', async ({
+  test('Carteira contém Carteiras, Rebalanceamento, Análise e Proventos', async ({
     page
   }) => {
     await gotoDashboardPage(page);
-    await openNavMenu(page, 'Alocação');
+    await openNavMenu(page, 'Carteira');
 
     const header = page.locator('header');
+    await expect(header.getByRole('link', { name: 'Carteiras' })).toBeVisible();
     await expect(header.getByRole('link', { name: 'Rebalanceamento' })).toBeVisible();
     await expect(header.getByRole('link', { name: 'Análise de ativos' })).toBeVisible();
+    await expect(header.getByRole('link', { name: 'Proventos' })).toBeVisible();
     await expect(header.getByRole('link', { name: 'Gerenciamento de objetivos' })).toHaveCount(0);
     await expect(header.getByRole('link', { name: 'Taxas cripto' })).toHaveCount(0);
+  });
+
+  test('Banco de dados contém Ativos e Dados', async ({ page }) => {
+    await gotoDashboardPage(page);
+    await openNavMenu(page, 'Banco de dados');
+
+    const header = page.locator('header');
+    await expect(header.getByRole('link', { name: 'Ativos', exact: true })).toBeVisible();
+    await expect(header.getByRole('link', { name: 'Dados', exact: true })).toBeVisible();
   });
 
   test('Ferramentas abre Gerenciamento de objetivos em /ferramentas/objetivos', async ({ page }) => {

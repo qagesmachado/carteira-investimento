@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-008`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** ordenar colunas asc/desc
 - **Depende de:** múltiplas linhas na tabela
 - **Arquivo de teste:** `e2e/specs/consolidada/08-tabela-ordenacao-colunas.spec.ts`

@@ -4,7 +4,7 @@ import { expect, test } from '../fixtures/test';
 import { E2E_CDB_IDENTIFIER, E2E_CDB_NAME, E2E_PORTFOLIO_PRINCIPAL } from '../helpers/e2eFixtures';
 import {
   createPortfolioViaUI,
-  gotoPortfoliosPage,
+  gotoPortfoliosHub,
   expectPositionRow
 } from '../helpers/portfoliosPage';
 import { addFixedIncomeViaModal } from '../helpers/fixedIncomePositionForm';
@@ -23,7 +23,7 @@ test.describe('UI-PRT-006', () => {
   });
 
   test('cadastra CDB (produto + valores) numa única ação', async ({ page }) => {
-    await gotoPortfoliosPage(page);
+    await gotoPortfoliosHub(page);
     await createPortfolioViaUI(page, E2E_PORTFOLIO_PRINCIPAL);
 
     await addFixedIncomeViaModal(page, {

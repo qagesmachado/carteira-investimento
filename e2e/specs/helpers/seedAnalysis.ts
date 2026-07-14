@@ -51,7 +51,7 @@ export async function seedAnalysisWithBbse3(request: APIRequestContext): Promise
   await setActivePortfolio(request, portfolio.id);
 }
 
-export async function seedAnalysisWithFii(request: APIRequestContext): Promise<void> {
+export async function seedAnalysisWithFii(request: APIRequestContext): Promise<number> {
   await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
   await resetAnalysisConfig(request);
@@ -68,6 +68,7 @@ export async function seedAnalysisWithFii(request: APIRequestContext): Promise<v
   const fiiId = await getAssetIdBySymbol(request, TICKER_HGLG11);
   await createPosition(request, portfolio.id, fiiId, { quantity: 10, average_price: 160 });
   await setActivePortfolio(request, portfolio.id);
+  return portfolio.id;
 }
 
 export async function seedAnalysisWithTwoFiis(request: APIRequestContext): Promise<void> {

@@ -1,13 +1,12 @@
 import { expect, test } from '../fixtures/test';
 
 
-import { E2E_PORTFOLIO_PRINCIPAL } from '../helpers/e2eFixtures';
-import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
+import { E2E_PORTFOLIO_PRINCIPAL, TICKER_BBSE3 } from '../helpers/e2eFixtures';
 import {
   clickAddPosition,
   createPortfolioViaUI,
   fillMarketPosition,
-  gotoPortfoliosPage,
+  gotoPortfoliosHub,
   pickAssetInAddForm,
   expectPositionRow
 } from '../helpers/portfoliosPage';
@@ -26,7 +25,7 @@ test.describe('UI-PRT-005', () => {
   });
 
   test('adiciona posição BBSE3 com preço BR', async ({ page }) => {
-    await gotoPortfoliosPage(page);
+    await gotoPortfoliosHub(page);
     await createPortfolioViaUI(page, E2E_PORTFOLIO_PRINCIPAL);
     await pickAssetInAddForm(page, TICKER_BBSE3);
     await fillMarketPosition(page, { quantity: '100', avgPrice: '32,50' });

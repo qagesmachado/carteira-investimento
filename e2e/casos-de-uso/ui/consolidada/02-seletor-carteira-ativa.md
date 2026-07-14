@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-002`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** select de carteira com valor após load
 - **Depende de:** `UI-PRT-002`
 - **Arquivo de teste:** `e2e/specs/consolidada/02-seletor-carteira-ativa.spec.ts`
@@ -26,7 +26,7 @@
 
 1. Carteira `E2E Principal` está definida como ativa em `portfolios.db`.
 2. Existem posições nesta carteira.
-3. Abro `/portfolios/consolidada` e aguardo o carregamento.
+3. Abro `/consolidada` e aguardo o carregamento.
 4. O seletor exibe `E2E Principal` selecionada (não fica vazio após load).
 5. A tabela reflete posições desta carteira.
 

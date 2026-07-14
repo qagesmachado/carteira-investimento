@@ -29,6 +29,15 @@ export function isApiPortfoliosListResponse(response: Response, method: 'GET' | 
   );
 }
 
+export function isApiPortfolioSummariesResponse(response: Response): boolean {
+  const url = new URL(response.url());
+  return (
+    url.origin === apiOrigin() &&
+    url.pathname.replace(/\/$/, '') === '/portfolios/summaries' &&
+    response.request().method() === 'GET'
+  );
+}
+
 export function isApiPositionsResponse(
   response: Response,
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',

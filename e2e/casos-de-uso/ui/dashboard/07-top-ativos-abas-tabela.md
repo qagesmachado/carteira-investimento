@@ -29,5 +29,7 @@
 4. Tabela exibe colunas Ticker, Nome do ativo, Tipo e métrica.
 5. Ticker aparece sem sufixo `.SA` (ex.: BBSE3).
 6. Na aba «Maior lucro (%)», a métrica inclui percentual e valor nominal entre parênteses.
-7. Tabela exibe colunas #, Evolução 12M e barras proporcionais.
-8. Link «Ver todos os ativos →» aponta para `/portfolios/consolidada`.
+7. Abas exibem ícone Lucide; rank 1 exibe medalha (`dashboard-top-rank-1`).
+8. Tabela exibe no máximo 3 ativos.
+9. Quando a carteira tiver previdência ou ativos não-investimento, painel exibe checkboxes de escopo no cabeçalho (mesma store dos demais painéis).
+10. Link «Ver todos os ativos» aponta para `/consolidada`.

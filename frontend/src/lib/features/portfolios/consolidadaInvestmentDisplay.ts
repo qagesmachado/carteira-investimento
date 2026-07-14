@@ -1,10 +1,10 @@
-/** Fração investível de uma posição (0–1) quando o filtro «Apenas investimento» está ativo. */
+/** Fração investível de uma posição (0–1) quando parcelas «não investimento» estão fora do escopo. */
 export function computeInvestmentShare(
-  filterInvestmentOnly: boolean,
+  includeNonInvestment: boolean,
   currentBrl: number | null,
   investmentCurrentBrl: number | null
 ): number {
-  if (!filterInvestmentOnly) {
+  if (includeNonInvestment) {
     return 1;
   }
   if (investmentCurrentBrl == null || investmentCurrentBrl <= 0) {

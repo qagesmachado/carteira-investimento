@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as dataApi from '$lib/api/data';
+import AppToastStack from '$lib/components/AppToastStack.svelte';
+import { appToast } from '$lib/stores/appToast';
 
 import AssetBulkImport from './AssetBulkImport.svelte';
 
@@ -24,14 +26,20 @@ function makeTxtFile(name: string) {
   return new File([content], name, { type: 'text/plain' });
 }
 
+function renderAssetBulkImport(props: Record<string, unknown> = {}) {
+  render(AppToastStack);
+  return render(AssetBulkImport, { props });
+}
+
 describe('AssetBulkImport', () => {
   beforeEach(() => {
+    appToast.clear();
     vi.mocked(dataApi.previewImportAssets).mockReset();
     vi.mocked(dataApi.confirmImportAssets).mockReset();
   });
 
   it('exibe nome do arquivo após upload', async () => {
-    render(AssetBulkImport);
+    renderAssetBulkImport();
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = makeTxtFile('bulk-import-comma-line.txt');
 
@@ -45,7 +53,7 @@ describe('AssetBulkImport', () => {
   });
 
   it('processa arquivo arrastado com vários tickers na mesma linha', async () => {
-    render(AssetBulkImport);
+    renderAssetBulkImport();
     const file = makeTxtFile('lista.txt');
     const dropZone = screen.getByRole('region', { name: /arrastar arquivo/i });
 
@@ -63,7 +71,7 @@ describe('AssetBulkImport', () => {
   it('remove duplicatas antes de buscar no yfinance', async () => {
     vi.mocked(dataApi.previewImportAssets).mockResolvedValue({ items: [], warnings: [] });
 
-    render(AssetBulkImport);
+    renderAssetBulkImport();
 
     await fireEvent.input(screen.getByPlaceholderText('PETR4, BBSE3, VALE3'), {
       target: { value: 'HSML11\nHGRU11\nHSML11\nHGRU11\nKNRI11' }
@@ -75,7 +83,14 @@ describe('AssetBulkImport', () => {
     });
     const textarea = screen.getByRole('textbox');
     expect(textarea.value).toBe('HSML11\nHGRU11\nKNRI11');
-    expect(screen.getByText(/2 duplicata\(s\) removida\(s\) antes da busca/i)).toBeTruthy();
+    await waitFor(() => {
+      const alerts = screen.getAllByRole('alert');
+      expect(
+        alerts.some((alert) =>
+          /2 duplicata\(s\) removida\(s\) antes da busca/i.test(alert.textContent ?? '')
+        )
+      ).toBe(true);
+    });
   });
 
   it('exibe aviso quando a API retorna tickers não encontrados', async () => {
@@ -114,7 +129,7 @@ describe('AssetBulkImport', () => {
       ]
     });
 
-    render(AssetBulkImport);
+    renderAssetBulkImport();
 
     await fireEvent.input(screen.getByPlaceholderText('PETR4, BBSE3, VALE3'), {
       target: { value: 'GUAR3, BBSE3' }
@@ -122,7 +137,12 @@ describe('AssetBulkImport', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Buscar no yfinance' }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Alguns tickers não foram encontrados/i)).toBeTruthy();
+      const alerts = screen.getAllByRole('alert');
+      expect(
+        alerts.some((alert) =>
+          /Alguns tickers não foram encontrados/i.test(alert.textContent ?? '')
+        )
+      ).toBe(true);
       expect(screen.getByText(/BB Seguridade/)).toBeTruthy();
       expect(screen.getByText('Não encontrado')).toBeTruthy();
     });
@@ -159,7 +179,7 @@ describe('AssetBulkImport', () => {
       results: [{ symbol: 'BBSE3', status: 'created' }]
     });
 
-    render(AssetBulkImport, { onSaved });
+    renderAssetBulkImport({ onSaved });
 
     await fireEvent.input(screen.getByPlaceholderText('PETR4, BBSE3, VALE3'), {
       target: { value: 'BBSE3' }
@@ -222,7 +242,7 @@ describe('AssetBulkImport', () => {
       ]
     });
 
-    render(AssetBulkImport);
+    renderAssetBulkImport();
 
     await fireEvent.input(screen.getByPlaceholderText('PETR4, BBSE3, VALE3'), {
       target: { value: 'ODPV3' }

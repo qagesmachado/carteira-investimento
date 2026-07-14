@@ -6,7 +6,7 @@ import {
   clickAddPosition,
   createPortfolioViaUI,
   fillMarketPosition,
-  gotoPortfoliosPage,
+  gotoPortfoliosHub,
   pickAssetInAddForm,
   positionsTable,
   expectPositionRow
@@ -26,7 +26,7 @@ test.describe('UI-PRT-015', () => {
   });
 
   test('adiciona posição em USD', async ({ page }) => {
-    await gotoPortfoliosPage(page);
+    await gotoPortfoliosHub(page);
     await createPortfolioViaUI(page, E2E_PORTFOLIO_PRINCIPAL);
     await pickAssetInAddForm(page, TICKER_VOO);
     await fillMarketPosition(page, { quantity: '5', avgPrice: '400' });

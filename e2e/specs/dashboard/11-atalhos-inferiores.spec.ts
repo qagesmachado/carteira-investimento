@@ -21,7 +21,7 @@ test.describe('UI-DASH-011', () => {
     await expect(bar).toBeVisible();
     await expect(bar.getByTestId('dashboard-shortcut-consolidada')).toHaveAttribute(
       'href',
-      '/portfolios/consolidada'
+      '/consolidada'
     );
     await expect(bar.getByTestId('dashboard-shortcut-rebalance')).toHaveAttribute(
       'href',

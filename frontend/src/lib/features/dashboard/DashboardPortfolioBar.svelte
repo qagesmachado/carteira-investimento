@@ -38,7 +38,7 @@
 >
   <div class="flex min-w-0 flex-1 items-center gap-4">
     <div
-      class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"
+      class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"
       aria-hidden="true"
     >
       <LucideIcon name={DASHBOARD_PORTFOLIO_LUCIDE_ICON} size="2xl" />

@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-010`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** legibilidade sem sobreposição de colunas
 - **Depende de:** tabela carregada
 - **Arquivo de teste:** `e2e/specs/consolidada/10-tabela-layout-colunas.spec.ts`

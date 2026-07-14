@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-009`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** célula em US$, ícone `$`, tooltip em R$
 - **Depende de:** `UI-PRT-015`, `UI-CNS-003`
 - **Arquivo de teste:** `e2e/specs/consolidada/09-colunas-valores-usd-tooltip.spec.ts`

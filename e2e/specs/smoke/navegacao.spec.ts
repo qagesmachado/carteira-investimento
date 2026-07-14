@@ -17,8 +17,8 @@ type SmokeRoute = { route: string; heading: string };
 const ROUTES: SmokeRoute[] = [
   { route: '/', heading: 'Carteira de Investimentos' },
   { route: '/dashboard', heading: 'Dashboard' },
-  { route: '/portfolios', heading: 'Carteiras e posições' },
-  { route: '/portfolios/consolidada', heading: 'Visão consolidada' },
+  { route: '/portfolios', heading: 'Carteiras' },
+  { route: '/consolidada', heading: 'Visão consolidada' },
   { route: '/assets', heading: 'Cadastro de ativos no banco de dados' },
   { route: '/proventos', heading: 'Proventos' },
   { route: '/dados', heading: 'Dados' },
@@ -49,6 +49,14 @@ test.describe('SMOKE-NAV', () => {
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
     });
   }
+
+  test('URL legada /portfolios/consolidada redireciona para /consolidada', { tag: '@smoke' }, async ({
+    page
+  }) => {
+    await page.goto('/portfolios/consolidada?display_class=acao_br');
+    await expect(page).toHaveURL(/\/consolidada\?display_class=acao_br$/);
+    await expect(page.getByRole('heading', { name: 'Visão consolidada', exact: true })).toBeVisible();
+  });
 
   test('deep-link sobrevive a reload (fallback SPA)', { tag: '@smoke' }, async ({ page }) => {
     await page.goto('/ferramentas/objetivos');

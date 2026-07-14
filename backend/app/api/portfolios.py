@@ -19,6 +19,7 @@ from app.schemas.portfolio import (
     PortfolioCreate,
     PortfolioExportDocument,
     PortfolioRead,
+    PortfolioSummaryRead,
     PortfolioUpdate,
     PositionCreate,
     PositionRead,
@@ -40,6 +41,7 @@ from app.services.import_service import (
     confirm_import,
     preview_import,
 )
+from app.services.portfolio_patrimony import list_portfolio_summaries
 from app.services.quote_refresh_service import refresh_portfolio_quotes
 from app.services.portfolio_service import (
     create_fixed_income_position,
@@ -102,6 +104,24 @@ def put_active_portfolio(
 ) -> ActivePortfolioRead:
     portfolio_id = set_active_portfolio_id(session, payload.portfolio_id)
     return ActivePortfolioRead(portfolio_id=portfolio_id)
+
+
+@router.get("/summaries", response_model=list[PortfolioSummaryRead])
+def get_portfolio_summaries(
+    session: Annotated[Session, Depends(get_session)],
+) -> list[PortfolioSummaryRead]:
+    return [
+        PortfolioSummaryRead(
+            portfolio_id=summary.portfolio_id,
+            invested_brl=summary.invested_brl,
+            current_brl=summary.current_brl,
+            profit_brl=summary.profit_brl,
+            profit_pct=summary.profit_pct,
+            position_count=summary.position_count,
+            is_active=summary.is_active,
+        )
+        for summary in list_portfolio_summaries(session)
+    ]
 
 
 @router.get("/{portfolio_id}", response_model=PortfolioRead)

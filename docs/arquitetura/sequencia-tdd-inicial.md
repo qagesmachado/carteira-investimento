@@ -12,7 +12,7 @@ Primeiros comportamentos a testar:
 - Classificar ETF nacional de renda fixa como renda fixa.
 - Permitir salvar ativo na base sem vinculá-lo a uma carteira.
 
-## 2. Cadastro de carteira
+## 2. Carteiras
 
 Primeiros comportamentos a testar:
 

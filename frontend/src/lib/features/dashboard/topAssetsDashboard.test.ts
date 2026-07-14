@@ -5,14 +5,12 @@ import type { Position } from '$lib/api/portfolios';
 
 import {
   allocationToPieSegments,
-  buildAssetMonthlyDividendAmounts,
   formatProfitPercentWithNominal,
   pieSlicePath,
   donutSlicePath,
   donutSegmentLabelPoint,
   shouldShowDonutSegmentLabel,
-  sparklinePolyline,
-  sparklinePointsFromAmounts,
+  TOP_ASSETS_PANEL_LIMIT,
   topAssetsByGrossProfit,
   topAssetsByPositionValue,
   topAssetsByProfitPercent
@@ -74,24 +72,32 @@ describe('formatProfitPercentWithNominal', () => {
   });
 });
 
+describe('TOP_ASSETS_PANEL_LIMIT', () => {
+  it('limita o painel a 3 ativos', () => {
+    expect(TOP_ASSETS_PANEL_LIMIT).toBe(3);
+  });
+});
+
 describe('topAssetsByProfitPercent', () => {
   it('ordena por maior percentual de lucro', () => {
     const assets = { 1: brAsset, 2: usAsset };
     const rows = topAssetsByProfitPercent(
       [smallProfitPosition, bigProfitPosition],
       assets,
-      5
+      5,
+      { usdBrlRate: 5 }
     );
 
     expect(rows[0].symbol).toBe('BBSE3');
     expect(rows[0].typeLabel).toBeTruthy();
+    expect(rows[0].displayClass).toBe('stocks');
     expect(rows[0].profitPercent).toBeCloseTo(((40 - 30) / 30) * 100);
     expect(rows[1].symbol).toBe('VOO');
   });
 
   it('ignora posicoes sem lucro', () => {
     const lossAsset = { ...brAsset, current_quote: 20 };
-    const rows = topAssetsByProfitPercent([smallProfitPosition], { 1: lossAsset }, 5);
+    const rows = topAssetsByProfitPercent([smallProfitPosition], { 1: lossAsset }, 5, { usdBrlRate: 5 });
     expect(rows).toHaveLength(0);
   });
 });
@@ -107,6 +113,7 @@ describe('topAssetsByPositionValue', () => {
     );
 
     expect(rows[0].symbol).toBe('VOO');
+    expect(rows[0].displayClass).toBe('international');
     expect(rows[0].displayAmount).toBeCloseTo(5000);
     expect(rows[1].symbol).toBe('BBSE3');
   });
@@ -126,6 +133,36 @@ describe('topAssetsByGrossProfit', () => {
     expect(rows[0].displayAmount).toBeCloseTo(1000);
     expect(rows[1].symbol).toBe('BBSE3');
     expect(rows[1].displayAmount).toBeCloseTo(1000);
+  });
+
+  it('exclui previdencia quando filtro desmarcado', () => {
+    const pensionAsset: Asset = {
+      ...brAsset,
+      id: 3,
+      symbol: 'PREV-1',
+      name: 'Previdência',
+      asset_type: 'pension',
+      display_class: 'pension',
+      current_quote: null
+    };
+    const pensionPosition: Position = {
+      ...smallProfitPosition,
+      id: 3,
+      asset_id: 3,
+      quantity: 0,
+      average_price: 0,
+      invested_amount: 20_000,
+      current_value: 25_000
+    };
+    const assets = { 1: brAsset, 3: pensionAsset };
+    const rows = topAssetsByGrossProfit(
+      [smallProfitPosition, pensionPosition],
+      assets,
+      null,
+      5,
+      { filters: { includeNonInvestment: false, includePension: false } }
+    );
+    expect(rows.every((row) => row.symbol !== 'PREV-1')).toBe(true);
   });
 });
 
@@ -170,44 +207,5 @@ describe('allocationToPieSegments', () => {
     expect(shouldShowDonutSegmentLabel(4.7, 16.9)).toBe(true);
     expect(shouldShowDonutSegmentLabel(3.9, 14)).toBe(false);
     expect(shouldShowDonutSegmentLabel(10, 10)).toBe(false);
-  });
-
-  it('buildAssetMonthlyDividendAmounts agrega por mes', () => {
-    const ref = new Date(2025, 5, 15);
-    const amounts = buildAssetMonthlyDividendAmounts(
-      [
-        {
-          id: 1,
-          asset_id: 1,
-          symbol: 'PETR4',
-          payment_date: '2025-06-10',
-          amount: 50,
-          currency: 'BRL',
-          display_class: 'stocks',
-          payment_type: 'dividend',
-          portfolio_id: 1,
-          created_at: '',
-          updated_at: ''
-        }
-      ],
-      1,
-      ref
-    );
-    expect(amounts).toHaveLength(12);
-    expect(amounts[11]).toBe(50);
-  });
-
-  it('sparklinePointsFromAmounts gera pontos normalizados', () => {
-    const points = sparklinePointsFromAmounts([0, 50, 100], 100, 20);
-    expect(points).toHaveLength(3);
-    expect(points[2].y).toBeLessThan(points[0].y);
-  });
-
-  it('sparklinePolyline monta string de pontos', () => {
-    const poly = sparklinePolyline([
-      { x: 0, y: 10 },
-      { x: 5, y: 5 }
-    ]);
-    expect(poly).toBe('0,10 5,5');
   });
 });

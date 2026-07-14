@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
 
   import AppNavbar from '$lib/components/AppNavbar.svelte';
+  import AppToastStack from '$lib/components/AppToastStack.svelte';
   import { PAGE_SHELL_PADDING_X_CLASS, PAGE_SHELL_WIDTH_CLASS } from '$lib/layout/pageShell';
   import { hideMoneyValues } from '$lib/stores/hideMoneyValues';
   import { theme } from '$lib/stores/theme';
@@ -30,4 +31,5 @@
       </a>
     </div>
   </footer>
+  <AppToastStack />
 </div>

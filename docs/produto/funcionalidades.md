@@ -9,9 +9,9 @@ A barra de navegação organiza as áreas implementadas nesta ordem e hierarquia
 | Ordem | Menu | Itens | Rotas |
 | ----- | ---- | ----- | ----- |
 | 1 | Dashboard | — | `/dashboard` |
-| 2 | Visão consolidada | — | `/portfolios/consolidada` |
-| 3 | Alocação | Rebalanceamento · Análise de ativos (Ações, FII, ETF intl., **Criptomoedas**) | `/rebalanceamento` · `/analise` · `/analise/criptomoedas` |
-| 4 | Cadastro | Ativos · Carteiras · Proventos · Dados | `/assets` · `/portfolios` · `/proventos` · `/dados` |
+| 2 | Visão consolidada | — | `/consolidada` |
+| 3 | Carteira | Carteiras · Rebalanceamento · Análise de ativos · Proventos | `/portfolios` · `/rebalanceamento` · `/analise` · `/proventos` |
+| 4 | Banco de dados | Ativos · Dados | `/assets` · `/dados` |
 | 5 | Ferramentas | Gerenciamento de objetivos · Taxas cripto · Financiamento imóvel · Cálculo de preço médio · Conferência anual de IR · Controle de patrimônio | `/ferramentas/objetivos` · `/ferramentas/criptomoedas` · `/ferramentas/financiamento-imovel` · `/ferramentas/calculo-preco-medio` · `/ferramentas/conferencia-ir` · `/ferramentas/controle-patrimonio` |
 | 6 | **Financeiro** | Painel · Orçamento · Metas (+ Tags) · Renda · Perfis | `/financeiro` · `/financeiro/orcamento` · `/financeiro/metas` · `/financeiro/renda` · `/financeiro/perfis` |
 
@@ -142,9 +142,9 @@ Possíveis telas:
 
 ## 5. Rebalanceamento
 
-Detalhamento: **[desenvolvido/rebalanceamento.md](desenvolvido/rebalanceamento.md)** (implementado — MVP).
+Detalhamento: **[desenvolvido/rebalanceamento.md](desenvolvido/rebalanceamento.md)** (implementado — MVP) · **Mockups (candidato):** [candidato/mockups/](candidato/mockups/) — variantes Hub e híbrido alinhadas ao Dashboard/Consolidada.
 
-**Status:** parcial — `/rebalanceamento` com metas por classe, sub-divisão ETF/Ação, % desejada por ativo em **Ações/ETF BR** e **FIIs** (via Soma). Internacional/crypto permanecem só nível de classe.
+**Status:** parcial — `/rebalanceamento` com metas por classe, sub-divisão ETF/Ação, % desejada por ativo em **Ações/ETF BR** e **FIIs** (via Soma). Internacional/crypto permanecem só nível de classe. Redesign visual proposto em mockups (aguardando validação).
 
 Origem na planilha:
 
@@ -266,7 +266,7 @@ Possíveis telas:
 
 ## 9. Análise de ativos
 
-**Status:** parcialmente implementado — [classificacao-ativos-acoes-br.md](desenvolvido/classificacao-ativos-acoes-br.md) (Ações/ETF BR), [classificacao-ativos-fiis.md](desenvolvido/classificacao-ativos-fiis.md) (FIIs) e [classificacao-ativos-etf-intl.md](desenvolvido/classificacao-ativos-etf-intl.md) (ETF internacional).
+**Status:** parcialmente implementado — [classificacao-ativos-acoes-br.md](desenvolvido/classificacao-ativos-acoes-br.md) (Ações/ETF BR), [classificacao-ativos-fiis.md](desenvolvido/classificacao-ativos-fiis.md) (FIIs) e [classificacao-ativos-etf-intl.md](desenvolvido/classificacao-ativos-etf-intl.md) (ETF internacional). **Mockup Ações/ETF BR (candidato):** [candidato/mockups/analise-acoes-br-hub.png](candidato/mockups/analise-acoes-br-hub.png) — layout no estilo Consolidada.
 
 Origem na planilha:
 
@@ -471,6 +471,17 @@ Funcionalidades:
 - Exibir patrimônio investido (todas as posições) e total geral (investido + manual).
 - CRUD de reserva de emergência com localização (Banco, Dinheiro em espécie, Corretora).
 - Cards de resumo por categoria.
+
+## Mockups candidatos (redesign visual)
+
+Propostas de layout para telas já funcionais, alinhadas ao padrão Hub do Dashboard e Consolidada. **Não implementados** — servem para validação antes de PR de redesign.
+
+| Tela | Mockups | Pasta |
+| ---- | ------- | ----- |
+| Rebalanceamento | Hub completo e híbrido | [candidato/mockups/](candidato/mockups/) |
+| Análise Ações/ETF BR | Filha modernizada (tabs mantidas) | [candidato/mockups/analise-acoes-br-hub.png](candidato/mockups/analise-acoes-br-hub.png) |
+
+Índice e comparativo de variantes: [candidato/mockups/README.md](candidato/mockups/README.md).
 
 ## Priorização inicial sugerida
 

@@ -1,6 +1,7 @@
 <script lang="ts">
   import LucideIcon from '$lib/components/LucideIcon.svelte';
   import { LAST_DIVIDEND_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
+  import { CONSOLIDADA_PATH } from '$lib/routes/appRoutes';
 
   import DashboardIcon from './DashboardIcon.svelte';
   import type { DashboardIconName } from './dashboardIcons';
@@ -20,7 +21,7 @@
     {
       title: 'Visão consolidada',
       description: 'Veja o panorama completo da carteira',
-      href: '/portfolios/consolidada',
+      href: CONSOLIDADA_PATH,
       icon: 'pie-chart',
       bgClass: 'bg-primary/15',
       fgClass: 'text-primary',

@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-001`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** estado vazio e link para criar carteira
 - **Depende de:** `portfolios.db` vazia (spec isolado)
 - **Arquivo de teste:** `e2e/specs/consolidada/01-carregamento-sem-carteira.spec.ts`
@@ -25,7 +25,7 @@
 ### Passo a passo
 
 1. `portfolios.db` de teste não contém carteiras.
-2. Navego para `http://127.0.0.1:5173/portfolios/consolidada`.
+2. Navego para `http://127.0.0.1:5173/consolidada`.
 3. Vejo mensagem de ausência de carteira ou estado vazio.
 4. Há link ou botão para ir a `/portfolios`.
 5. Não são exibidos cartões de resumo nem tabela de posições preenchida.

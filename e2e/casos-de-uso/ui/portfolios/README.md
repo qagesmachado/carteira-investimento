@@ -33,7 +33,12 @@ Cada spec em `e2e/specs/portfolios/` é **autocontido** (`beforeEach` com seed v
 | `UI-PRT-022` | [22-ordenacao-colunas-posicoes.md](22-ordenacao-colunas-posicoes.md) | `e2e/specs/portfolios/22-ordenacao-colunas-posicoes.spec.ts` |
 | `UI-PRT-023` | [23-detalhes-posicao-precos.md](23-detalhes-posicao-precos.md) | `e2e/specs/portfolios/23-detalhes-posicao-precos.spec.ts` |
 | `UI-PRT-024` | [24-validacao-rf-modal-unificado.md](24-validacao-rf-modal-unificado.md) | `e2e/specs/portfolios/24-validacao-rf-modal-unificado.spec.ts` |
+| `UI-PRT-025` | [25-hub-cards-metricas.md](25-hub-cards-metricas.md) | `e2e/specs/portfolios/25-hub-cards-metricas.spec.ts` |
+| `UI-PRT-026` | [26-criar-carteira-modal.md](26-criar-carteira-modal.md) | `e2e/specs/portfolios/26-criar-carteira-modal.spec.ts` |
+| `UI-PRT-027` | [27-editar-carteira-hub.md](27-editar-carteira-hub.md) | `e2e/specs/portfolios/27-editar-carteira-hub.spec.ts` |
+| `UI-PRT-028` | [28-criar-carteira-perfil-personalizado.md](28-criar-carteira-perfil-personalizado.md) | `e2e/specs/portfolios/28-criar-carteira-perfil-personalizado.spec.ts` |
+| `UI-PRT-029` | [29-excluir-carteira-hub.md](29-excluir-carteira-hub.md) | `e2e/specs/portfolios/29-excluir-carteira-hub.spec.ts` |
 
 Cadastro unificado de renda fixa/previdência: `UI-PRT-006` (renda fixa), `UI-PRT-017` (previdência), `UI-PRT-018` (edição) e `UI-PRT-024` (validação) usam o modal **Adicionar ativo à carteira** (produto + posição numa ação). Ver [doc](../../../../docs/produto/desenvolvido/cadastro-rf-previdencia-na-carteira.md).
 
-**Total:** 24 casos · **Comando:** `npm run test:ui -- specs/portfolios` · **Próxima página:** [`../consolidada/README.md`](../consolidada/README.md)
+**Total:** 29 casos · **Comando:** `npm run test:ui -- specs/portfolios` · **Próxima página:** [`../consolidada/README.md`](../consolidada/README.md)

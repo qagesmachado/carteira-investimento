@@ -26,3 +26,7 @@ export function pageHeroClass(variant: PageHeroVariant): string {
 export function pageHeroSubtitleClass(variant: PageHeroVariant): string {
   return `mt-2 ${HERO_SUBTITLE_CLASS[variant]}`;
 }
+
+/** Botões de ação no hero `variant="dashboard"` (Dashboard, consolidada, hub de carteiras). */
+export const PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS =
+  'btn btn-outline min-h-[2.75rem] gap-2.5 border-white/30 bg-white/10 px-5 text-[1.09375rem] text-white hover:border-white hover:bg-white/20';

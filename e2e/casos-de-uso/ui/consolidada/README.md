@@ -1,6 +1,6 @@
-# Casos E2E — Visão consolidada (`/portfolios/consolidada`)
+# Casos E2E — Visão consolidada (`/consolidada`)
 
-**Rota:** `http://127.0.0.1:5174/portfolios/consolidada` (E2E)  
+**Rota:** `http://127.0.0.1:5174/consolidada` (E2E)  
 **Prefixo de ID:** `UI-CNS-`
 
 **Estratégia:** [`../../estrategia-e2e-ui.md`](../../estrategia-e2e-ui.md) — cenário real (yfinance + rede). Comando: `npm run test:ui -- specs/consolidada`.
@@ -27,7 +27,9 @@ Seed via API no `beforeEach` de cada spec (não depende da suíte UI de portfoli
 | `UI-CNS-016` | [16-detalhes-posicao-precos.md](16-detalhes-posicao-precos.md) | implementado | `16-detalhes-posicao-precos.spec.ts` |
 | `UI-CNS-017` | [17-proventos-no-detalhe.md](17-proventos-no-detalhe.md) | rascunho | — |
 | `UI-CNS-018` | [18-detalhes-btc-lucro-taxas.md](18-detalhes-btc-lucro-taxas.md) | implementado | `17-detalhes-btc-lucro-taxas.spec.ts` |
+| `UI-CNS-019` | [19-limpar-filtros-chips.md](19-limpar-filtros-chips.md) | implementado | `19-limpar-filtros-chips.spec.ts` |
+| `UI-CNS-020` | [20-filtro-previdencia-padrao.md](20-filtro-previdencia-padrao.md) | implementado | `20-filtro-previdencia-padrao.spec.ts` |
 
 Caminho completo: `e2e/specs/consolidada/`.
 
-**Total:** 17 casos · **16 specs** · ETF RF no caso 006: **`AUVP11`**
+**Total:** 20 casos · **19 specs** · ETF RF no caso 006: **`AUVP11`**

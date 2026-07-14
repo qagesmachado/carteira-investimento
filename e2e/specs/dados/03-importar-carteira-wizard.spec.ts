@@ -8,7 +8,7 @@ import {
   uploadPortfolioImportFile
 } from '../helpers/dataPage';
 import { E2E_PORTFOLIO_IMPORT } from '../helpers/e2eFixtures';
-import { gotoPortfoliosPage, positionsTable } from '../helpers/portfoliosPage';
+import { gotoPortfoliosHub, expectPortfolioActiveOnHub, openPortfolioFromHubByName, positionsTable } from '../helpers/portfoliosPage';
 import { seedPortfoliosForImport } from '../helpers/seedPortfolios';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
 
@@ -30,9 +30,9 @@ test.describe('UI-DAD-003', () => {
     await clickConfirmPortfolioImport(page);
     await expect(page.getByText('Carteira importada com sucesso.')).toBeVisible();
 
-    await gotoPortfoliosPage(page);
-    await expect(page.getByRole('button', { name: new RegExp(E2E_PORTFOLIO_IMPORT) })).toBeVisible();
-    await expect(page.locator('.badge', { hasText: 'ativa' })).toBeVisible();
+    await gotoPortfoliosHub(page);
+    await expectPortfolioActiveOnHub(page, E2E_PORTFOLIO_IMPORT);
+    await openPortfolioFromHubByName(page, E2E_PORTFOLIO_IMPORT);
     await expect(positionsTable(page).locator('tr')).not.toHaveCount(0);
   });
 });

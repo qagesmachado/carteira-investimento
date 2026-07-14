@@ -10,6 +10,6 @@
 
 ## Cenário
 
-1. Abro o dropdown **Financeiro** na navbar.
+1. Abro o dropdown **Financeiro** na navbar (passar o mouse sobre o item).
 2. Clico em **Orçamento** e chego em `/financeiro/orcamento/[mês]`.
 3. A sub-nav interna exibe Painel · Orçamento · Metas · Renda · Perfis.

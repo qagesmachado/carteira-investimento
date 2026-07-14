@@ -2,7 +2,7 @@
 
 - **ID:** `UI-CNS-018`
 - **Status:** aprovado
-- **Rota:** `/portfolios/consolidada`
+- **Rota:** `/consolidada`
 - **Funcionalidade:** painel de detalhes — lucro descontando taxas de movimentação
 - **Depende de:** `UI-BTC-001`, `UI-CNS-016`
 - **Arquivo de teste:** `e2e/specs/consolidada/17-detalhes-btc-lucro-taxas.spec.ts`

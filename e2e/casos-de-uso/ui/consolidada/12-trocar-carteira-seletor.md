@@ -4,7 +4,7 @@
 
 - **ID:** `UI-CNS-012`
 - **Status:** implementado
-- **Página:** `/portfolios/consolidada`
+- **Página:** `/consolidada`
 - **Funcionalidade:** trocar carteira ativa no select
 - **Depende de:** `UI-PRT-004` (duas carteiras)
 - **Arquivo de teste:** `e2e/specs/consolidada/12-trocar-carteira-seletor.spec.ts`
@@ -25,7 +25,7 @@
 ### Passo a passo
 
 1. Existem `E2E Principal` e `E2E Secundária` com posições distintas.
-2. Estou em `/portfolios/consolidada` com `E2E Principal` selecionada.
+2. Estou em `/consolidada` com `E2E Principal` selecionada.
 3. No seletor, escolho `E2E Secundária`.
 4. A tabela e os cartões recalculam para a carteira secundária.
 5. O seletor mantém `E2E Secundária` selecionada.

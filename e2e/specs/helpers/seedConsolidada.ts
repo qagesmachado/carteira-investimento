@@ -4,6 +4,8 @@ import { getWorkerApiBaseUrl } from './workerContext';
 import {
   E2E_CDB_IDENTIFIER,
   E2E_CDB_NAME,
+  E2E_PENSION_IDENTIFIER,
+  E2E_PENSION_NAME,
   E2E_PORTFOLIO_PRINCIPAL,
   E2E_PORTFOLIO_SECONDARY,
   TICKER_AUVP11,
@@ -102,4 +104,28 @@ export async function seedConsolidadaForRfFilter(request: APIRequestContext): Pr
   await createPosition(request, portfolio.id, rfId, { quantity: 1, average_price: 1000 });
   await setActivePortfolio(request, portfolio.id);
   return portfolio.id;
+}
+
+export async function seedConsolidadaWithPension(request: APIRequestContext): Promise<number> {
+  const portfolioId = await seedConsolidadaPrincipal(request);
+  const response = await request.post(
+    `${getWorkerApiBaseUrl()}/portfolios/${portfolioId}/fixed-income-positions`,
+    {
+      data: {
+        asset: {
+          symbol: E2E_PENSION_IDENTIFIER,
+          name: E2E_PENSION_NAME,
+          asset_type: 'pension',
+          market: 'national',
+          currency: 'BRL'
+        },
+        invested_amount: 50_000,
+        current_value: 52_000
+      }
+    }
+  );
+  if (!response.ok()) {
+    throw new Error(`Falha ao criar previdência no seed: ${response.status()}`);
+  }
+  return portfolioId;
 }

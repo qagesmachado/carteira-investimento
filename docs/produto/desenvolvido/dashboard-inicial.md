@@ -4,7 +4,7 @@
 
 Visão executiva da **carteira selecionada** em `/dashboard`: patrimônio, P&L, alocação por classe, proventos agregados, aderência ao rebalanceamento e atalhos para consolidada, rebalanceamento e proventos.
 
-Equivalente parcial à aba `RESUMO` da planilha. Não substitui a tabela operacional em `/portfolios/consolidada`.
+Equivalente parcial à aba `RESUMO` da planilha. Não substitui a tabela operacional em `/consolidada`.
 
 ## Escopo entregue
 
@@ -46,7 +46,7 @@ Equivalente parcial à aba `RESUMO` da planilha. Não substitui a tabela operaci
 | Card | Dados | Link |
 | ---- | ----- | ---- |
 | Aderência ao rebalanceamento | `GET /portfolios/{id}/rebalance` — `100 - média(\|atual - meta\|)`; até 3 classes abaixo da meta | `/rebalanceamento` ou `/rebalanceamento/configuracao` |
-| Classe em destaque | Top 3 por rendimento bruto `(atual − investido) / investido` | `/portfolios/consolidada?display_class=` por linha |
+| Classe em destaque | Top 3 por rendimento bruto `(atual − investido) / investido` | `/consolidada?display_class=` por linha |
 | Proventos recentes | Até 3 últimos `payment_date` da carteira | — |
 
 ### Alocação por classe
@@ -63,24 +63,26 @@ Equivalente parcial à aba `RESUMO` da planilha. Não substitui a tabela operaci
 
 ### Top ativos refinado
 
-- Coluna **#** com destaque 1–3
+- Medalhas Lucide nos ranks 1–3 (máximo **3 ativos** por aba)
+- Abas com ícone Lucide: `TrendingUp`, `Layers`, `HandCoins`, `BadgePercent`
+- Ticker em pill (`font-mono`); coluna Tipo com ícone por `display_class` (ver [icones-ui.md](icones-ui.md))
 - Barras horizontais proporcionais à métrica da aba
-- Coluna **Evolução 12M** com sparkline de proventos mensais do ativo
-- Link «Ver todos os ativos →» para `/portfolios/consolidada`
+- Botão outline «Ver todos os ativos» com `ArrowRight` → `/consolidada`
+- Checkboxes de escopo patrimonial (não-investimento / previdência) no canto direito do cabeçalho, sincronizados com KPI Patrimônio e Alocação
 - Abas: Maior lucro (%), Maior posição, Proventos (total), Retorno bruto
 
 ### Atalhos inferiores
 
-- Visão consolidada → `/portfolios/consolidada`
+- Visão consolidada → `/consolidada`
 - Rebalanceamento → `/rebalanceamento`
 - Proventos → `/proventos`
 - Objetivos → `/ferramentas/objetivos`
 
 ### Atalhos inferiores
 
-- Classe de alocação → `/portfolios/consolidada?display_class=...`
+- Classe de alocação → `/consolidada?display_class=...`
 - Link proventos → `/proventos`
-- Link consolidada → `/portfolios/consolidada`
+- Link consolidada → `/consolidada`
 - Link carteiras → `/portfolios`
 
 ## Fora de escopo (Tier 3+)

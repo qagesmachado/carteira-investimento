@@ -18,11 +18,11 @@ export type AllocationTargets = {
 };
 
 export const DEFAULT_CLASS_TARGETS: ClassTargets = {
-  stocks: 30,
-  funds: 5,
-  international: 20,
-  fixed_income: 40,
-  crypto: 5
+  stocks: 20,
+  funds: 7,
+  international: 15,
+  fixed_income: 55,
+  crypto: 3
 };
 
 export const DEFAULT_STOCKS_SPLIT: StocksSplitTargets = {

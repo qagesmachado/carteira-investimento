@@ -27,7 +27,7 @@
 1. Carteira `E2E Principal` está ativa com posição em `BBSE3`.
 2. Carteira `E2E Secundária` existe sem posições (ou com outro ativo).
 3. Defino `E2E Secundária` como carteira ativa.
-4. O badge de ativa aparece em `E2E Secundária`.
+4. O card de `E2E Secundária` fica destacado como carteira em uso (borda no hub).
 5. A tabela de posições reflete apenas dados da carteira secundária.
 6. Volto `E2E Principal` como ativa.
 7. A posição em `BBSE3` reaparece na tabela.

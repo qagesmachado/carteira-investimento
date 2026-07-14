@@ -21,18 +21,19 @@ Neste momento não há decisão de stack, banco de dados, framework ou arquitetu
 
 - [Visualização da carteira](produto/desenvolvido/visualizacao-carteira.md): visão consolidada de posições (implementado).
 
-**Alocação**
+**Carteira**
 
+- [Cadastro de ativos na carteira](produto/desenvolvido/cadastro-ativos-na-carteira.md): posições por carteira em `/portfolios` (implementado).
+- [Cadastro unificado de renda fixa e previdência na carteira](produto/desenvolvido/cadastro-rf-previdencia-na-carteira.md): CDB, LCI, LCA, Tesouro, previdência — produto + posição numa ação (implementado).
 - [Rebalanceamento](produto/desenvolvido/rebalanceamento.md): metas por classe, ETF/Ação e score por ativo (implementado).
 - [Classificação de ativos — Ações/ETF BR](produto/desenvolvido/classificacao-ativos-acoes-br.md): análise fundamentalista e diagrama (implementado).
 - [Classificação de ativos — FIIs](produto/desenvolvido/classificacao-ativos-fiis.md): viabilidade, diagrama FIIs e catálogo de segmentos (implementado).
 - [Análise — Criptomoedas](produto/desenvolvido/analise-criptomoedas.md): alocação percentual por ativo na classe Criptomoeda (implementado).
-
-**Cadastro**
-
-- [Cadastro de ativos](produto/desenvolvido/cadastro-de-ativos.md): catálogo de mercado e posições por carteira (implementado).
-- [Cadastro unificado de renda fixa e previdência na carteira](produto/desenvolvido/cadastro-rf-previdencia-na-carteira.md): CDB, LCI, LCA, Tesouro, previdência — produto + posição numa ação (implementado).
 - [Cadastro de proventos](produto/desenvolvido/cadastro-proventos.md): lançamentos de dividendos e proventos por ativo (implementado).
+
+**Banco de dados**
+
+- [Cadastro de ativos](produto/desenvolvido/cadastro-de-ativos.md): catálogo global de mercado em `/assets` (implementado).
 - [Página Dados](produto/desenvolvido/pagina-dados.md): export/import centralizado em `/dados` (implementado).
 - [Persistência — banco único](produto/desenvolvido/persistencia-banco-unico.md): SQLite unificado, FKs e migração legado (implementado).
 

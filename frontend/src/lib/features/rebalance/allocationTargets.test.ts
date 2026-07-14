@@ -24,7 +24,7 @@ describe('allocationTargets', () => {
 
   it('returns defaults when json is null', () => {
     const targets = parseAllocationTargets(null);
-    expect(targets.classes.stocks).toBe(30);
+    expect(targets.classes.stocks).toBe(20);
     expect(targets.stocks_split.etf).toBe(70);
   });
 

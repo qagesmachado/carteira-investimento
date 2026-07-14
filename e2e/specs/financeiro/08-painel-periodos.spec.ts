@@ -40,7 +40,9 @@ test.describe('UI-FIN-008', () => {
     await page.getByTestId('budget-dashboard-months-6').click();
     await expect(page.locator('[data-testid^="budget-cashflow-month-"]')).toHaveCount(13);
 
-    await page.getByTestId(`budget-cashflow-month-${yearMonth}`).hover();
+    const monthColumn = page.getByTestId(`budget-cashflow-month-${yearMonth}`);
+    await monthColumn.scrollIntoViewIfNeeded();
+    await monthColumn.focus();
     await expect(page.getByTestId('budget-cashflow-tooltip')).toContainText('Receita:');
 
     const fromYm = shiftBudgetYearMonth(yearMonth, -1);

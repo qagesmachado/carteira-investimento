@@ -36,13 +36,13 @@
 >
   <div class="card-body flex-row items-center gap-4 p-5">
     <div
-      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {iconBgClass} {iconFgClass}"
+      class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl {iconBgClass} {iconFgClass}"
       aria-hidden="true"
     >
       {#if lucideIcon}
-        <LucideIcon name={lucideIcon} size="lg" class={iconFgClass} />
+        <LucideIcon name={lucideIcon} size="xl" class={iconFgClass} />
       {:else if icon}
-        <DashboardIcon name={icon} size="lg" />
+        <DashboardIcon name={icon} size="xl" />
       {/if}
     </div>
     <div class="min-w-0 flex-1">

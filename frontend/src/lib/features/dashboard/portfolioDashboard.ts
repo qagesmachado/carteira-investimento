@@ -2,6 +2,7 @@ import type { Asset, DisplayClass } from '$lib/api/assets';
 import type { AssetPartition } from '$lib/api/objetivos';
 import type { Position } from '$lib/api/portfolios';
 import { formatDisplayClassForDisplay } from '$lib/assetLabels';
+import { consolidadaHref } from '$lib/routes/appRoutes';
 
 import {
   positionCurrentValue,
@@ -219,5 +220,5 @@ export function grossReturnPercentClass(percent: number): string {
 }
 
 export function featuredClassConsolidadaHref(displayClass: DisplayClass): string {
-  return `/portfolios/consolidada?display_class=${encodeURIComponent(displayClass)}`;
+  return consolidadaHref(displayClass);
 }

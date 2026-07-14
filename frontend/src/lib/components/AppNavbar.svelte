@@ -1,23 +1,27 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import NavbarDropdown from '$lib/components/NavbarDropdown.svelte';
   import { hideMoneyValues, toggleHideMoneyValues } from '$lib/stores/hideMoneyValues';
   import { PAGE_SHELL_PADDING_X_CLASS, PAGE_SHELL_WIDTH_CLASS } from '$lib/layout/pageShell';
   import { theme, toggleTheme } from '$lib/stores/theme';
 
   $: pathname = $page.url.pathname;
   $: dashboardOpen = pathname === '/dashboard' || pathname.startsWith('/dashboard/');
+  $: consolidadaOpen = pathname === '/consolidada' || pathname.startsWith('/consolidada/');
   $: analiseOpen = pathname.startsWith('/analise');
   $: rebalanceOpen = pathname.startsWith('/rebalanceamento');
   $: criptomoedasOpen = pathname.startsWith('/ferramentas/criptomoedas');
   $: objetivosOpen = pathname.startsWith('/ferramentas/objetivos');
-  $: alocacaoOpen = analiseOpen || rebalanceOpen;
-  $: cadastroOpen =
+  $: carteiraOpen =
+    pathname === '/portfolios' ||
+    pathname.startsWith('/portfolios/') ||
+    pathname.startsWith('/rebalanceamento') ||
+    pathname.startsWith('/analise') ||
+    pathname === '/proventos' ||
+    pathname.startsWith('/proventos/');
+  $: bancoDadosOpen =
     pathname === '/assets' ||
     pathname.startsWith('/assets/') ||
-    pathname === '/proventos' ||
-    pathname.startsWith('/proventos/') ||
-    pathname === '/portfolios' ||
-    (pathname.startsWith('/portfolios/') && pathname !== '/portfolios/consolidada') ||
     pathname === '/dados' ||
     pathname.startsWith('/dados/');
   $: ferramentasOpen = pathname.startsWith('/ferramentas');
@@ -28,7 +32,10 @@
   $: controlePatrimonioOpen = pathname.startsWith('/ferramentas/controle-patrimonio');
 </script>
 
-<header class="flex min-h-16 w-full items-center bg-base-100 shadow-sm">
+<header
+  class="sticky top-0 z-40 flex min-h-16 w-full items-center border-b border-base-300/60 bg-base-100/95 shadow-sm backdrop-blur-sm"
+  data-testid="app-navbar"
+>
   <div class="{PAGE_SHELL_WIDTH_CLASS} {PAGE_SHELL_PADDING_X_CLASS} flex min-h-16 w-full min-w-0 items-center gap-2">
     <a class="btn btn-ghost text-xl" href="/">Carteira de Investimentos</a>
 
@@ -38,121 +45,121 @@
 
     <a
       class="btn btn-ghost"
-      class:btn-active={pathname === '/portfolios/consolidada'}
-      href="/portfolios/consolidada"
+      class:btn-active={consolidadaOpen}
+      href="/consolidada"
     >
       Visão consolidada
     </a>
 
-    <div class="dropdown">
-      <div tabindex="0" role="button" class="btn btn-ghost" class:btn-active={alocacaoOpen}>
-        Alocação
-      </div>
-      <ul class="dropdown-content menu z-50 mt-2 w-52 rounded-box bg-base-100 p-2 shadow">
-        <li>
-          <a href="/rebalanceamento" class:active={rebalanceOpen}>Rebalanceamento</a>
-        </li>
-        <li>
-          <a href="/analise/acoes-br" class:active={analiseOpen}>Análise de ativos</a>
-        </li>
-      </ul>
-    </div>
+    <NavbarDropdown label="Carteira" active={carteiraOpen} panelClass="w-56">
+      <li>
+        <a
+          href="/portfolios"
+          class:active={pathname === '/portfolios' || pathname.startsWith('/portfolios/')}
+        >
+          Carteiras
+        </a>
+      </li>
+      <li>
+        <a href="/rebalanceamento" class:active={rebalanceOpen}>Rebalanceamento</a>
+      </li>
+      <li>
+        <a href="/analise/acoes-br" class:active={analiseOpen}>Análise de ativos</a>
+      </li>
+      <li>
+        <a
+          href="/proventos"
+          class:active={pathname === '/proventos' || pathname.startsWith('/proventos/')}
+        >
+          Proventos
+        </a>
+      </li>
+    </NavbarDropdown>
 
-    <div class="dropdown">
-      <div tabindex="0" role="button" class="btn btn-ghost" class:btn-active={cadastroOpen}>
-        Cadastro
-      </div>
-      <ul class="dropdown-content menu z-50 mt-2 w-52 rounded-box bg-base-100 p-2 shadow">
-        <li>
-          <a href="/assets" class:active={pathname === '/assets'}>Ativos</a>
-        </li>
-        <li>
-          <a href="/portfolios" class:active={pathname === '/portfolios'}>Carteiras</a>
-        </li>
-        <li>
-          <a href="/proventos" class:active={pathname === '/proventos'}>Proventos</a>
-        </li>
-        <li>
-          <a href="/dados" class:active={pathname === '/dados'}>Dados</a>
-        </li>
-      </ul>
-    </div>
+    <NavbarDropdown label="Banco de dados" active={bancoDadosOpen}>
+      <li>
+        <a
+          href="/assets"
+          class:active={pathname === '/assets' || pathname.startsWith('/assets/')}
+        >
+          Ativos
+        </a>
+      </li>
+      <li>
+        <a
+          href="/dados"
+          class:active={pathname === '/dados' || pathname.startsWith('/dados/')}
+        >
+          Dados
+        </a>
+      </li>
+    </NavbarDropdown>
 
-    <div class="dropdown">
-      <div tabindex="0" role="button" class="btn btn-ghost" class:btn-active={ferramentasOpen}>
-        Ferramentas
-      </div>
-      <ul class="dropdown-content menu z-50 mt-2 w-56 rounded-box bg-base-100 p-2 shadow">
-        <li>
-          <a href="/ferramentas/objetivos" class:active={objetivosOpen}>
-            Gerenciamento de objetivos
-          </a>
-        </li>
-        <li>
-          <a href="/ferramentas/criptomoedas" class:active={criptomoedasOpen}>
-            Taxas cripto
-          </a>
-        </li>
-        <li>
-          <a href="/ferramentas/financiamento-imovel" class:active={financiamentoOpen}>
-            Financiamento imóvel
-          </a>
-        </li>
-        <li>
-          <a href="/ferramentas/calculo-preco-medio" class:active={calculoPrecoMedioOpen}>
-            Cálculo de preço médio
-          </a>
-        </li>
-        <li>
-          <a href="/ferramentas/conferencia-ir" class:active={conferenciaIrOpen}>
-            Conferência anual de IR
-          </a>
-        </li>
-        <li>
-          <a href="/ferramentas/controle-patrimonio" class:active={controlePatrimonioOpen}>
-            Controle de patrimônio
-          </a>
-        </li>
-      </ul>
-    </div>
+    <NavbarDropdown label="Ferramentas" active={ferramentasOpen} panelClass="w-56">
+      <li>
+        <a href="/ferramentas/objetivos" class:active={objetivosOpen}>
+          Gerenciamento de objetivos
+        </a>
+      </li>
+      <li>
+        <a href="/ferramentas/criptomoedas" class:active={criptomoedasOpen}>
+          Taxas cripto
+        </a>
+      </li>
+      <li>
+        <a href="/ferramentas/financiamento-imovel" class:active={financiamentoOpen}>
+          Financiamento imóvel
+        </a>
+      </li>
+      <li>
+        <a href="/ferramentas/calculo-preco-medio" class:active={calculoPrecoMedioOpen}>
+          Cálculo de preço médio
+        </a>
+      </li>
+      <li>
+        <a href="/ferramentas/conferencia-ir" class:active={conferenciaIrOpen}>
+          Conferência anual de IR
+        </a>
+      </li>
+      <li>
+        <a href="/ferramentas/controle-patrimonio" class:active={controlePatrimonioOpen}>
+          Controle de patrimônio
+        </a>
+      </li>
+    </NavbarDropdown>
 
-    <div class="dropdown">
-      <div tabindex="0" role="button" class="btn btn-ghost" class:btn-active={financeiroOpen}>
-        Financeiro
-      </div>
-      <ul class="dropdown-content menu z-50 mt-2 w-52 rounded-box bg-base-100 p-2 shadow">
-        <li>
-          <a href="/financeiro" class:active={pathname === '/financeiro' || pathname === '/financeiro/'}>
-            Painel
-          </a>
-        </li>
-        <li>
-          <a href="/financeiro/orcamento" class:active={pathname.startsWith('/financeiro/orcamento')}>
-            Orçamento
-          </a>
-        </li>
-        <li>
-          <a href="/financeiro/despesas" class:active={pathname.startsWith('/financeiro/despesas')}>
-            Despesas
-          </a>
-        </li>
-        <li>
-          <a href="/financeiro/metas" class:active={pathname.startsWith('/financeiro/metas')}>
-            Metas
-          </a>
-        </li>
-        <li>
-          <a href="/financeiro/renda" class:active={pathname.startsWith('/financeiro/renda')}>
-            Renda
-          </a>
-        </li>
-        <li>
-          <a href="/financeiro/perfis" class:active={pathname.startsWith('/financeiro/perfis')}>
-            Perfis
-          </a>
-        </li>
-      </ul>
-    </div>
+    <NavbarDropdown label="Financeiro" active={financeiroOpen}>
+      <li>
+        <a href="/financeiro" class:active={pathname === '/financeiro' || pathname === '/financeiro/'}>
+          Painel
+        </a>
+      </li>
+      <li>
+        <a href="/financeiro/orcamento" class:active={pathname.startsWith('/financeiro/orcamento')}>
+          Orçamento
+        </a>
+      </li>
+      <li>
+        <a href="/financeiro/despesas" class:active={pathname.startsWith('/financeiro/despesas')}>
+          Despesas
+        </a>
+      </li>
+      <li>
+        <a href="/financeiro/metas" class:active={pathname.startsWith('/financeiro/metas')}>
+          Metas
+        </a>
+      </li>
+      <li>
+        <a href="/financeiro/renda" class:active={pathname.startsWith('/financeiro/renda')}>
+          Renda
+        </a>
+      </li>
+      <li>
+        <a href="/financeiro/perfis" class:active={pathname.startsWith('/financeiro/perfis')}>
+          Perfis
+        </a>
+      </li>
+    </NavbarDropdown>
 
     <div class="ml-auto flex items-center gap-1">
       <button

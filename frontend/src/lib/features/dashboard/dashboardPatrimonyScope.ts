@@ -87,6 +87,36 @@ export function hasDashboardPatrimonyFilterOptions(
   return availability.hasNonInvestment || availability.hasPension;
 }
 
+/** IDs de ativos com valor de mercado no escopo patrimonial atual (filtros aplicados). */
+export function computeScopedAssetIdsForDashboard(
+  positions: Position[],
+  assetById: Record<number, Asset>,
+  partitionsByAssetId: Record<number, AssetPartition>,
+  usdBrlRate: number | null | undefined,
+  filters: DashboardPatrimonyFilters = DEFAULT_DASHBOARD_PATRIMONY_FILTERS
+): Set<number> {
+  const ids = new Set<number>();
+
+  for (const position of positions) {
+    const asset = assetById[position.asset_id];
+    if (!asset) {
+      continue;
+    }
+    const currentBrl = resolvePositionCurrentBrlForDashboard(
+      position,
+      asset,
+      usdBrlRate,
+      partitionsByAssetId[position.asset_id],
+      filters
+    );
+    if (currentBrl != null && currentBrl > 0) {
+      ids.add(position.asset_id);
+    }
+  }
+
+  return ids;
+}
+
 function applyInvestedScope(
   investedBrl: number,
   currentBrl: number,

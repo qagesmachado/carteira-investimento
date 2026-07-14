@@ -5,7 +5,7 @@ import { E2E_PORTFOLIO_PRINCIPAL } from '../helpers/e2eFixtures';
 import {
   addAssetModal,
   createPortfolioViaUI,
-  gotoPortfoliosPage,
+  gotoPortfoliosHub,
   positionDataRows
 } from '../helpers/portfoliosPage';
 import { submitFixedIncomeModalEmpty } from '../helpers/fixedIncomePositionForm';
@@ -24,7 +24,7 @@ test.describe('UI-PRT-024', () => {
   });
 
   test('não cadastra renda fixa com campos obrigatórios vazios', async ({ page }) => {
-    await gotoPortfoliosPage(page);
+    await gotoPortfoliosHub(page);
     await createPortfolioViaUI(page, E2E_PORTFOLIO_PRINCIPAL);
 
     await submitFixedIncomeModalEmpty(page);

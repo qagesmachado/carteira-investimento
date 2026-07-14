@@ -23,7 +23,7 @@
 
 **Como** investidor  
 **Quero** cadastrar o mix mínimo de ativos  
-**Para** habilitar os casos de `/portfolios` e `/portfolios/consolidada`
+**Para** habilitar os casos de `/portfolios` e `/consolidada`
 
 ### Passo a passo
 

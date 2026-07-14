@@ -43,12 +43,14 @@
   import { dashboardPatrimonyFilters } from '$lib/features/dashboard/dashboardPatrimonyFilters';
   import {
     computeDashboardPatrimonyFilterAvailability,
+    computeScopedAssetIdsForDashboard,
     sanitizeDashboardPatrimonyFilters
   } from '$lib/features/dashboard/dashboardPatrimonyScope';
   import {
     topAssetsByGrossProfit,
     topAssetsByPositionValue,
-    topAssetsByProfitPercent
+    topAssetsByProfitPercent,
+    TOP_ASSETS_PANEL_LIMIT
   } from '$lib/features/dashboard/topAssetsDashboard';
   import { summarizeDividendPayments } from '$lib/features/proventos/dividendSummary';
 
@@ -123,15 +125,45 @@
   $: allPaymentsForPortfolio = dividendPayments.filter((p) =>
     assetIdsInPortfolio.has(p.asset_id)
   );
+  $: scopedAssetIds = computeScopedAssetIdsForDashboard(
+    positions,
+    assetById,
+    partitionsByAssetId,
+    usdBrlRate,
+    effectivePatrimonyFilters
+  );
+  $: topAssetsScope = {
+    partitionsByAssetId,
+    filters: effectivePatrimonyFilters,
+    usdBrlRate
+  };
   $: topDividendAssets = topAssetsByDividendAmount(
     allPaymentsForPortfolio,
     assetIdsInPortfolio,
     assetById,
-    5
+    TOP_ASSETS_PANEL_LIMIT,
+    scopedAssetIds
   );
-  $: topByProfitPercent = topAssetsByProfitPercent(positions, assetById, 5);
-  $: topByPositionValue = topAssetsByPositionValue(positions, assetById, usdBrlRate, 5);
-  $: topByGrossProfit = topAssetsByGrossProfit(positions, assetById, usdBrlRate, 5);
+  $: topByProfitPercent = topAssetsByProfitPercent(
+    positions,
+    assetById,
+    TOP_ASSETS_PANEL_LIMIT,
+    topAssetsScope
+  );
+  $: topByPositionValue = topAssetsByPositionValue(
+    positions,
+    assetById,
+    usdBrlRate,
+    TOP_ASSETS_PANEL_LIMIT,
+    topAssetsScope
+  );
+  $: topByGrossProfit = topAssetsByGrossProfit(
+    positions,
+    assetById,
+    usdBrlRate,
+    TOP_ASSETS_PANEL_LIMIT,
+    topAssetsScope
+  );
 
   async function loadFx() {
     try {
@@ -353,7 +385,7 @@
           positionValueRows={topByPositionValue}
           dividendRows={topDividendAssets}
           grossProfitRows={topByGrossProfit}
-          dividendPayments={allPaymentsForPortfolio}
+          {filterAvailability}
         />
 
         <DashboardShortcutBar />

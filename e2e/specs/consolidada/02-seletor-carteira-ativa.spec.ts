@@ -5,6 +5,7 @@ import {
   E2E_PORTFOLIO_PRINCIPAL,
   expectPortfolioSelectShows,
   expectRowVisible,
+  expectTickerPillVisible,
   gotoConsolidadaPage
 } from '../helpers/consolidadaPage';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
@@ -25,6 +26,7 @@ test.describe('UI-CNS-002', () => {
   test('carteira ativa aparece no seletor e posições na tabela', async ({ page }) => {
     await gotoConsolidadaPage(page);
     await expectPortfolioSelectShows(page, E2E_PORTFOLIO_PRINCIPAL);
+    await expectTickerPillVisible(page, TICKER_BBSE3);
     await expectRowVisible(page, TICKER_BBSE3);
   });
 });
