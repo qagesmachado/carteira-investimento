@@ -25,8 +25,8 @@ test.describe('UI-OBJ-014', () => {
     await expect(page.getByRole('button', { name: /Previdência IR/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /Previdência IR/ }).getByText('Previdência')).toBeVisible();
     await expect(page.getByTestId('pension-target-value')).toHaveText(/14\.400,00/);
-    await expect(page.getByTestId('pension-contributed-input')).toBeDisabled();
-    await expect(page.getByTestId('pension-contributed-input')).toHaveValue('');
+    await expect(page.getByTestId('pension-contributed-display')).toHaveText(/0,00/);
+    await expect(page.getByTestId('pension-edit-btn')).toBeVisible();
 
     await page.getByRole('button', { name: 'Renomear' }).click();
     await expect(page.getByTestId('objetivo-mode-multi')).not.toBeVisible();

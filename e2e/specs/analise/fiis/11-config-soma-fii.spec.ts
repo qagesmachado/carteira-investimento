@@ -1,7 +1,12 @@
 import { expect, test } from '../../fixtures/test';
 
-
-import { analysisConfigProfileTabs, gotoFiiConfigPage, saveAnalysisConfig, setSumColumnDiagramMultiplier } from '../../helpers/analisePage';
+import {
+  analysisSumConfigModal,
+  gotoFiisPage,
+  openSumColumnConfigModal,
+  saveAnalysisConfig,
+  setSumColumnDiagramMultiplier
+} from '../../helpers/analisePage';
 import { seedAnalysisEmpty } from '../../helpers/seedAnalysis';
 
 /**
@@ -13,17 +18,17 @@ test.describe('UI-ANL-011', () => {
     await seedAnalysisEmpty(request);
   });
 
-  test('altera multiplicador do diagrama na config FII', async ({ page }) => {
-    await gotoFiiConfigPage(page);
-    const profileTabs = analysisConfigProfileTabs(page);
-    await expect(profileTabs.getByRole('tab', { name: 'FIIs', exact: true })).toHaveAttribute(
-      'aria-selected',
-      'true'
+  test('altera multiplicador do diagrama na tela de FIIs', async ({ page }) => {
+    await gotoFiisPage(page);
+    await openSumColumnConfigModal(page);
+    await expect(analysisSumConfigModal(page)).toContainText(
+      /Vacância \+ Qtd Ativos \+ Alavancagem \+ Segmento/
     );
-    await expect(page.getByText(/Vacância \+ Qtd Ativos \+ Alavancagem \+ Segmento/)).toBeVisible();
-    await expect(page.getByText(/Lucros \+ Dívida/)).toHaveCount(0);
+    await expect(analysisSumConfigModal(page)).not.toContainText(/Lucros \+ Dívida/);
     await setSumColumnDiagramMultiplier(page, '3.5');
     await saveAnalysisConfig(page);
-    await expect(page.getByLabel('Multiplicador do diagrama')).toHaveValue('3.5');
+    await expect(analysisSumConfigModal(page).getByLabel('Multiplicador do diagrama')).toHaveValue(
+      '3.5'
+    );
   });
 });

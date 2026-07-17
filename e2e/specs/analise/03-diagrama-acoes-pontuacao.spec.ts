@@ -30,6 +30,6 @@ test.describe('UI-ANL-003', () => {
 
     await expect(page.getByRole('alert').filter({ hasText: 'Classificação salva.' })).toBeVisible();
     const row = page.locator('table tbody tr').filter({ hasText: TICKER_BBSE3 });
-    await expect(row.locator('td').nth(8)).toHaveText('+1');
+    await expect(row.getByRole('cell', { name: '+1' })).toBeVisible();
   });
 });

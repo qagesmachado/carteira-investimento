@@ -58,10 +58,83 @@ export async function seedCryptoAnalysis(request: APIRequestContext): Promise<nu
 
 export async function saveCryptoAllocationViaApi(
   request: APIRequestContext,
+  portfolioId: number,
   allocations: { asset_id: number; target_percent: number; analysis_link?: string | null }[]
 ): Promise<void> {
   const response = await request.put(`${getWorkerApiBaseUrl()}/analysis/profiles/crypto/allocations`, {
-    data: { allocations }
+    data: { portfolio_id: portfolioId, allocations }
   });
-  expect(response.ok()).toBeTruthy();
+  expect(
+    response.ok(),
+    `crypto allocations failed (${response.status()}): ${await response.text()}`
+  ).toBeTruthy();
+}
+
+export async function seedCryptoRebalanceNoQuote(request: APIRequestContext): Promise<number> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
+    await clearAllPortfolios(request);
+
+    await createAssetViaApi(request, {
+      symbol: TICKER_BTC_USD,
+      name: 'Bitcoin USD',
+      asset_type: 'crypto',
+      market: 'international',
+      country: 'US',
+      currency: 'USD',
+      current_quote: 65000
+    });
+    await createAssetViaApi(request, {
+      symbol: TICKER_ABTC11,
+      name: 'ETF Bitcoin',
+      asset_type: 'etf',
+      market: 'national',
+      country: 'BR',
+      currency: 'BRL',
+      etf_subtype: 'crypto',
+      current_quote: null
+    });
+
+    const assets = await request.get(`${getWorkerApiBaseUrl()}/assets`);
+    expect(assets.ok()).toBeTruthy();
+    const list = (await assets.json()) as { id: number; symbol: string }[];
+    const btc = list.find((a) => a.symbol === TICKER_BTC_USD);
+    const abtc = list.find((a) => a.symbol === TICKER_ABTC11);
+    if (!btc || !abtc) {
+      if (attempt === 2) {
+        throw new Error('crypto assets not found');
+      }
+      continue;
+    }
+
+    const portfolio = await createPortfolio(request, 'Crypto sem cotacao');
+    await createPosition(request, portfolio.id, btc.id, { quantity: 0.1, average_price: 60000 });
+    await createPosition(request, portfolio.id, abtc.id, { quantity: 1, average_price: 1 });
+    await setActivePortfolio(request, portfolio.id);
+    await request.post(`${getWorkerApiBaseUrl()}/fx/usd-brl/refresh`);
+
+    const allocationResponse = await request.put(
+      `${getWorkerApiBaseUrl()}/analysis/profiles/crypto/allocations`,
+      {
+        data: {
+          portfolio_id: portfolio.id,
+          allocations: [
+            { asset_id: btc.id, target_percent: 40 },
+            { asset_id: abtc.id, target_percent: 60 }
+          ]
+        }
+      }
+    );
+    if (allocationResponse.ok()) {
+      return portfolio.id;
+    }
+    if (attempt === 2) {
+      expect(
+        allocationResponse.ok(),
+        `crypto allocations failed (${allocationResponse.status()}): ${await allocationResponse.text()}`
+      ).toBeTruthy();
+    }
+  }
+
+  throw new Error('seedCryptoRebalanceNoQuote exhausted retries');
 }

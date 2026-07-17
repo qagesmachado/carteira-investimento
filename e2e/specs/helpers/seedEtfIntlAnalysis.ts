@@ -45,12 +45,14 @@ export async function seedEtfIntlAnalysis(request: APIRequestContext): Promise<n
 
 export async function saveEtfIntlAllocationViaApi(
   request: APIRequestContext,
+  portfolioId: number,
   assetId: number,
   targetPercent = 100,
   analysisLink = 'https://example.com/voo'
 ): Promise<void> {
   const response = await request.put(`${getWorkerApiBaseUrl()}/analysis/profiles/etf-intl/allocations`, {
     data: {
+      portfolio_id: portfolioId,
       allocations: [{ asset_id: assetId, target_percent: targetPercent, analysis_link: analysisLink }]
     }
   });

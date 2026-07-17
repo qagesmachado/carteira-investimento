@@ -24,6 +24,8 @@ test.describe('UI-REB-008', () => {
     await expect(xplgRow).toBeVisible();
     await expect(hglgRow.getByRole('cell').nth(4)).not.toHaveText('—');
     await expect(xplgRow.getByRole('cell').nth(4)).not.toHaveText('—');
+    await expect(hglgRow.getByRole('cell').nth(5)).not.toHaveText('—', { timeout: 10_000 });
+    await expect(xplgRow.getByRole('cell').nth(5)).not.toHaveText('—', { timeout: 10_000 });
 
     const hglgPctText = await hglgRow.getByRole('cell').nth(5).innerText();
     const xplgPctText = await xplgRow.getByRole('cell').nth(5).innerText();

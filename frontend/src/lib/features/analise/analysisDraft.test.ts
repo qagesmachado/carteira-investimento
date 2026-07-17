@@ -27,6 +27,15 @@ describe('analysisDraft', () => {
     ).toBe(true);
   });
 
+  it('detecta pendente alterado no rascunho', () => {
+    expect(
+      hasUnsavedAnalysisDraft({ lucros: 5 }, { lucros: 5 }, {}, {}, true, false)
+    ).toBe(true);
+    expect(
+      hasUnsavedAnalysisDraft({ lucros: 5 }, { lucros: 5 }, {}, {}, false, false)
+    ).toBe(false);
+  });
+
   it('considera iguais quando normaliza null e undefined', () => {
     expect(scoreMapsEqual({ lucros: null }, { lucros: undefined })).toBe(true);
     expect(refMapsEqual({ segmento_fii: null }, { segmento_fii: undefined })).toBe(true);

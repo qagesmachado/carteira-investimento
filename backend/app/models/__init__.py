@@ -3,6 +3,9 @@ from app.models.analysis import (
     AnalysisProfileSettings,
     AnalysisViabilityRule,
     AssetAnalysisScore,
+    PortfolioAssetAllocation,
+    PortfolioAssetAnalysisStatus,
+    PortfolioAnalysisMethodology,
 )
 from app.models.asset import Asset
 from app.models.budget import (
@@ -61,6 +64,9 @@ __all__ = [
     "PropertyFinancingEntryType",
     "PropertyFinancingEventCategory",
     "PropertyType",
+    "PortfolioAssetAllocation",
+    "PortfolioAssetAnalysisStatus",
+    "PortfolioAnalysisMethodology",
     "Portfolio",
     "PortfolioYearSnapshot",
     "Position",

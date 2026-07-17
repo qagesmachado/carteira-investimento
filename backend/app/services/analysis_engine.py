@@ -81,7 +81,8 @@ class ViabilidadeWeightSettings(BaseModel):
 
 
 class TableSumColumnSettings(BaseModel):
-    enabled: bool = True
+    use_fundamental: bool = True
+    use_diagram: bool = True
     label: str = "Soma"
     diagram_multiplier: float = 2.0
     viabilidade_weights: ViabilidadeWeightSettings = Field(default_factory=ViabilidadeWeightSettings)
@@ -266,15 +267,11 @@ def resolve_viabilidade_table_weight(
     return mapping[score]
 
 
-def compute_table_sum_score(
+def compute_fundamental_table_score(
     scores: dict[str, int | None],
-    summary: AnalysisSummary,
     settings: TableSumColumnSettings,
     profile: str = AnalysisProfile.STOCK_BR.value,
 ) -> float | None:
-    if not settings.enabled:
-        return None
-
     if is_pvp_discarded(scores):
         return None
 
@@ -295,11 +292,58 @@ def compute_table_sum_score(
         total += viabilidade_weight
         has_any = True
 
-    if summary.diagrama.score is not None:
-        total += settings.diagram_multiplier * float(summary.diagrama.score)
+    return total if has_any else None
+
+
+def compute_combined_table_score(
+    scores: dict[str, int | None],
+    summary: AnalysisSummary,
+    settings: TableSumColumnSettings,
+    profile: str = AnalysisProfile.STOCK_BR.value,
+) -> float | None:
+    if is_pvp_discarded(scores):
+        return None
+    if not settings.use_fundamental and not settings.use_diagram:
+        return None
+
+    total: float | None = None
+    has_any = False
+
+    if settings.use_fundamental:
+        fundamental = compute_fundamental_table_score(scores, settings, profile)
+        if fundamental is not None:
+            total = float(fundamental)
+            has_any = True
+
+    if settings.use_diagram and summary.diagrama.score is not None:
+        diagram = float(summary.diagrama.score)
+        weighted = (
+            diagram * settings.diagram_multiplier
+            if settings.use_fundamental and settings.use_diagram
+            else diagram
+        )
+        total = (total or 0.0) + weighted
         has_any = True
 
     return total if has_any else None
+
+
+def compute_rebalance_table_score(
+    scores: dict[str, int | None],
+    summary: AnalysisSummary,
+    settings: TableSumColumnSettings,
+    profile: str = AnalysisProfile.STOCK_BR.value,
+) -> float | None:
+    return compute_combined_table_score(scores, summary, settings, profile)
+
+
+def compute_table_sum_score(
+    scores: dict[str, int | None],
+    summary: AnalysisSummary,
+    settings: TableSumColumnSettings,
+    profile: str = AnalysisProfile.STOCK_BR.value,
+) -> float | None:
+    return compute_rebalance_table_score(scores, summary, settings, profile)
 
 
 def summarize_analysis(

@@ -479,6 +479,7 @@ Propostas de layout para telas já funcionais, alinhadas ao padrão Hub do Dashb
 | Tela | Mockups | Pasta |
 | ---- | ------- | ----- |
 | Rebalanceamento | Hub completo e híbrido | [candidato/mockups/](candidato/mockups/) |
+| Análise Sumário | Hub com KPIs e atalhos | [candidato/mockups/analise-sumario-hub.png](candidato/mockups/analise-sumario-hub.png) |
 | Análise Ações/ETF BR | Filha modernizada (tabs mantidas) | [candidato/mockups/analise-acoes-br-hub.png](candidato/mockups/analise-acoes-br-hub.png) |
 
 Índice e comparativo de variantes: [candidato/mockups/README.md](candidato/mockups/README.md).

@@ -9,7 +9,9 @@ import {
   Banknote,
   BanknoteArrowUp,
   Bitcoin,
+  BookOpen,
   Building2,
+  Calculator,
   CandlestickChart,
   ChartLine,
   ChartNoAxesColumn,
@@ -21,9 +23,12 @@ import {
   CircleX,
   Coins,
   DollarSign,
+  ExternalLink,
   Eye,
   Globe,
+  GitBranch,
   HandCoins,
+  Info,
   Landmark,
   Layers,
   LayoutDashboard,
@@ -36,6 +41,7 @@ import {
   Scale,
   ScrollText,
   Search,
+  Settings,
   SlidersHorizontal,
   Tags,
   Trash2,
@@ -65,10 +71,13 @@ export const LUCIDE_ICON_ENTRIES = [
   { name: 'BadgePercent', label: 'Selo com percentual', component: BadgePercent },
   { name: 'DollarSign', label: 'Cifrão', component: DollarSign },
   { name: 'Eye', label: 'Olho', component: Eye },
+  { name: 'ExternalLink', label: 'Link externo', component: ExternalLink },
   { name: 'Banknote', label: 'Cédula', component: Banknote },
   { name: 'BanknoteArrowUp', label: 'Cédula com seta para cima', component: BanknoteArrowUp },
   { name: 'Bitcoin', label: 'Bitcoin', component: Bitcoin },
+  { name: 'BookOpen', label: 'Livro aberto', component: BookOpen },
   { name: 'Building2', label: 'Edifício', component: Building2 },
+  { name: 'Calculator', label: 'Calculadora', component: Calculator },
   { name: 'CandlestickChart', label: 'Gráfico de candlestick', component: CandlestickChart },
   { name: 'ChartLine', label: 'Gráfico de linha', component: ChartLine },
   { name: 'ChartNoAxesColumn', label: 'Gráfico de colunas', component: ChartNoAxesColumn },
@@ -78,6 +87,8 @@ export const LUCIDE_ICON_ENTRIES = [
   { name: 'CircleEllipsis', label: 'Círculo com reticências', component: CircleEllipsis },
   { name: 'CircleX', label: 'Círculo com X', component: CircleX },
   { name: 'Globe', label: 'Globo', component: Globe },
+  { name: 'GitBranch', label: 'Ramificação', component: GitBranch },
+  { name: 'Info', label: 'Informação', component: Info },
   { name: 'Landmark', label: 'Instituição', component: Landmark },
   { name: 'Layers', label: 'Camadas', component: Layers },
   { name: 'LayoutDashboard', label: 'Painel', component: LayoutDashboard },
@@ -90,6 +101,7 @@ export const LUCIDE_ICON_ENTRIES = [
   { name: 'Scale', label: 'Balança', component: Scale },
   { name: 'ScrollText', label: 'Pergaminho com texto', component: ScrollText },
   { name: 'Search', label: 'Buscar', component: Search },
+  { name: 'Settings', label: 'Configurações', component: Settings },
   { name: 'SlidersHorizontal', label: 'Controles deslizantes', component: SlidersHorizontal },
   { name: 'Tags', label: 'Etiquetas', component: Tags },
   { name: 'Trash2', label: 'Lixeira', component: Trash2 },
@@ -180,6 +192,24 @@ export const TOP_ASSET_SEE_ALL_LUCIDE_ICON: LucideIconName = 'ArrowRight';
 /** Painel de filtros da visão consolidada. */
 export const CONSOLIDADA_FILTERS_LUCIDE_ICON: LucideIconName = 'SlidersHorizontal';
 
+/** Ícone do painel de simulação de rebalanceamento. */
+export const REBALANCE_SIMULATION_LUCIDE_ICON: LucideIconName = 'Scale';
+
+/** Ícone do botão calcular aporte no rebalanceamento. */
+export const REBALANCE_CALCULATE_LUCIDE_ICON: LucideIconName = 'Calculator';
+
+/** Ícone do link configurar metas no rebalanceamento. */
+export const REBALANCE_SETTINGS_LUCIDE_ICON: LucideIconName = 'Settings';
+
+/** Ícone do KPI desvio total no rebalanceamento. */
+export const REBALANCE_DEVIATION_LUCIDE_ICON: LucideIconName = 'TrendingDown';
+
+/** Ícone do KPI acima da meta no rebalanceamento. */
+export const REBALANCE_ABOVE_TARGET_LUCIDE_ICON: LucideIconName = 'ArrowUp';
+
+/** Ícone do KPI abaixo da meta no rebalanceamento. */
+export const REBALANCE_BELOW_TARGET_LUCIDE_ICON: LucideIconName = 'ArrowDown';
+
 /** Toast de sucesso. */
 export const APP_TOAST_SUCCESS_LUCIDE_ICON: LucideIconName = 'CircleCheck';
 
@@ -191,6 +221,18 @@ export const APP_TOAST_WARNING_LUCIDE_ICON: LucideIconName = 'TriangleAlert';
 
 /** Chevron dos menus dropdown da navbar — [ChevronDown](https://lucide.dev/icons/chevron-down) */
 export const NAV_DROPDOWN_CHEVRON_LUCIDE_ICON: LucideIconName = 'ChevronDown';
+
+/** Coluna Fundamental na metodologia de análise AUVP. */
+export const ANALYSIS_FUNDAMENTAL_COLUMN_LUCIDE_ICON: LucideIconName = 'Scale';
+
+/** Coluna Diagrama na metodologia de análise AUVP. */
+export const ANALYSIS_DIAGRAM_COLUMN_LUCIDE_ICON: LucideIconName = 'GitBranch';
+
+/** Status pendente na análise. */
+export const ANALYSIS_PENDING_LUCIDE_ICON: LucideIconName = 'CircleEllipsis';
+
+/** Link externo de análise (ETF intl / cripto). */
+export const ANALYSIS_EXTERNAL_LINK_LUCIDE_ICON: LucideIconName = 'ExternalLink';
 
 export function getLucideIconComponent(name: LucideIconName): ComponentType {
   const row = LUCIDE_ICON_ENTRIES.find((entry) => entry.name === name);

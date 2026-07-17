@@ -1,6 +1,6 @@
 import { PROFILE_STOCK_BR, type AssetAnalysis, type TableSumColumnSettings } from '$lib/api/analysis';
 
-import { computeTableSumScore } from './computeAnalysis';
+import { computeCombinedTableScore, computeFundamentalTableScore } from './computeAnalysis';
 
 export type AnalysisSortKey =
   | 'symbol'
@@ -15,6 +15,7 @@ export type AnalysisSortKey =
   | 'alavancagem'
   | 'segmento_fii'
   | 'viabilidade'
+  | 'fundamental'
   | 'diagrama'
   | 'soma';
 
@@ -45,15 +46,22 @@ function scoreValue(row: AssetAnalysis, code: string): number | null {
   return row.scores[code] ?? null;
 }
 
-function sumValue(
+function fundamentalValue(
   row: AssetAnalysis,
   sumColumn: TableSumColumnSettings | null | undefined,
   profile: string = PROFILE_STOCK_BR
 ): number | null {
-  if (!sumColumn?.enabled) {
-    return null;
-  }
-  return computeTableSumScore(row.scores, row.summary, sumColumn, profile);
+  if (!sumColumn) return null;
+  return computeFundamentalTableScore(row.scores, sumColumn, profile);
+}
+
+function combinedValue(
+  row: AssetAnalysis,
+  sumColumn: TableSumColumnSettings | null | undefined,
+  profile: string = PROFILE_STOCK_BR
+): number | null {
+  if (!sumColumn) return null;
+  return computeCombinedTableScore(row.scores, row.summary, sumColumn, profile);
 }
 
 export function sortAnalysisRows(
@@ -107,11 +115,22 @@ export function sortAnalysisRows(
       case 'viabilidade':
         cmp = compareNullableNumber(scoreValue(a, 'viabilidade'), scoreValue(b, 'viabilidade'), factor);
         break;
+      case 'fundamental':
+        cmp = compareNullableNumber(
+          fundamentalValue(a, sumColumn, profile),
+          fundamentalValue(b, sumColumn, profile),
+          factor
+        );
+        break;
       case 'diagrama':
         cmp = compareNullableNumber(a.summary.diagrama.score, b.summary.diagrama.score, factor);
         break;
       case 'soma':
-        cmp = compareNullableNumber(sumValue(a, sumColumn, profile), sumValue(b, sumColumn, profile), factor);
+        cmp = compareNullableNumber(
+          combinedValue(a, sumColumn, profile),
+          combinedValue(b, sumColumn, profile),
+          factor
+        );
         break;
       default:
         cmp = 0;

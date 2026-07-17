@@ -43,7 +43,8 @@ class ViabilityRuleRead(BaseModel):
 
 
 class TableSumColumnSettingsRead(BaseModel):
-    enabled: bool = True
+    use_fundamental: bool = True
+    use_diagram: bool = True
     label: str = "Soma"
     diagram_multiplier: float = 2.0
     viabilidade_weights: ViabilidadeWeightSettings = Field(default_factory=ViabilidadeWeightSettings)
@@ -94,6 +95,44 @@ class AssetAnalysisRead(BaseModel):
     scores: dict[str, int | None]
     score_refs: dict[str, str | None] = Field(default_factory=dict)
     summary: AnalysisSummaryRead
+    is_pending: bool = False
+
+
+class AssetPendingUpdate(BaseModel):
+    portfolio_id: int
+    is_pending: bool
+
+
+class AnalysisProfileSummaryRead(BaseModel):
+    profile: str
+    total: int
+    classified: int
+    pending: int
+
+
+class AnalysisPortfolioSummaryRead(BaseModel):
+    portfolio_id: int
+    classified_count: int
+    pending_count: int
+    profiles: list[AnalysisProfileSummaryRead] = Field(default_factory=list)
+
+
+class PendingAssetRead(BaseModel):
+    asset_id: int
+    symbol: str
+    name: str
+    asset_type: str
+    profile: str
+
+
+class PendingAssetsGroupRead(BaseModel):
+    profile: str
+    assets: list[PendingAssetRead] = Field(default_factory=list)
+
+
+class AnalysisPortfolioPendingRead(BaseModel):
+    portfolio_id: int
+    groups: list[PendingAssetsGroupRead] = Field(default_factory=list)
 
 
 class AssetScoresUpdate(BaseModel):
@@ -108,11 +147,34 @@ class EtfIntlAllocationUpdate(BaseModel):
 
 
 class EtfIntlAllocationsBulkUpdate(BaseModel):
+    portfolio_id: int
     allocations: list[EtfIntlAllocationUpdate] = Field(min_length=1)
 
 
 class CryptoAllocationsBulkUpdate(BaseModel):
+    portfolio_id: int
     allocations: list[EtfIntlAllocationUpdate] = Field(min_length=1)
+
+
+class StockBrAllocationsBulkUpdate(BaseModel):
+    portfolio_id: int
+    allocations: list[EtfIntlAllocationUpdate] = Field(min_length=1)
+
+
+class FiiBrAllocationsBulkUpdate(BaseModel):
+    portfolio_id: int
+    allocations: list[EtfIntlAllocationUpdate] = Field(min_length=1)
+
+
+class AnalysisMethodologyRead(BaseModel):
+    portfolio_id: int
+    profile: str
+    methodology: str
+
+
+class AnalysisMethodologyUpdate(BaseModel):
+    portfolio_id: int
+    methodology: str
 
 
 class SegmentCatalogEntryRead(BaseModel):

@@ -28,6 +28,6 @@ test.describe('UI-ANL-010', () => {
     await page.getByRole('checkbox', { name: /P\/VP acima de 1,5/i }).check();
     await saveAnalysisPanel(page);
     await expectViabilityBadge(page, TICKER_HGLG11, 'DESCARTADO', 'fii');
-    await expect(fiiAnalysisRow(page, TICKER_HGLG11).getByRole('cell').nth(9)).toHaveText('—');
+    await expect(fiiAnalysisRow(page, TICKER_HGLG11).getByRole('cell').nth(10)).toHaveText('—');
   });
 });

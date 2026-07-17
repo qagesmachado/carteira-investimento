@@ -8,6 +8,7 @@ import {
   computeDashboardPatrimonyFilterAvailability,
   computeScopedAssetIdsForDashboard,
   isPensionAsset,
+  isPositionIncludedInDashboardPatrimonyScope,
   resolvePositionCurrentBrlForDashboard,
   resolvePositionInvestedBrlForDashboard,
   sanitizeDashboardPatrimonyFilters
@@ -205,5 +206,20 @@ describe('dashboardPatrimonyScope', () => {
       { includeNonInvestment: false, includePension: true }
     );
     expect(ids.has(2)).toBe(true);
+  });
+
+  it('isPositionIncludedInDashboardPatrimonyScope exclui previdencia por padrao', () => {
+    expect(
+      isPositionIncludedInDashboardPatrimonyScope(pensionPosition, pensionAsset, null, undefined)
+    ).toBe(false);
+    expect(
+      isPositionIncludedInDashboardPatrimonyScope(pensionPosition, pensionAsset, null, undefined, {
+        includeNonInvestment: false,
+        includePension: true
+      })
+    ).toBe(true);
+    expect(
+      isPositionIncludedInDashboardPatrimonyScope(stockPosition, stockAsset, null, undefined)
+    ).toBe(true);
   });
 });

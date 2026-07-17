@@ -19,12 +19,15 @@ Fluxo completo (doc → casos de uso → specs → código): ver [desenvolviment
 
 ## Falhas detectadas — corrigir sempre (obrigatório)
 
-Ao rodar qualquer suíte (`test:unit`, escopo, `test:all`, CI), **toda falha deve ser corrigida antes de concluir a tarefa** — mesmo quando a falha **não** estiver relacionada à mudança em andamento.
+Ao rodar qualquer suíte (`test:unit`, escopo, `test:all`, CI), **toda falha deve ser corrigida antes de concluir a tarefa** — inclusive quando **não** estiver relacionada à mudança em andamento.
 
-- Não classificar falha como “pré-existente” para ignorar na entrega.
+- Não classificar falha como “pré-existente” ou “fora do escopo” para encerrar sem correção.
 - Não deixar teste vermelho no repositório assumindo que “outro PR resolve”.
-- Se a falha for flake intermitente, tornar o teste determinístico (seletor estável, espera por estado da UI, helper compartilhado) em vez de pular ou comentar.
-- Exceção única: indisponibilidade externa documentada (ex.: yfinance) — registrar no `summary.md` e reexecutar quando estável; ainda assim, não misturar com falhas reproduzíveis de código/spec.
+- **Flake / paralelismo / timeout / rede:** tornar o spec determinístico (seed idempotente, timeouts alinhados ao lookup, `retries` no Playwright, seletor estável, helper compartilhado) — **não** ignorar no relatório final.
+- **`test.skip` por rede:** só no `beforeEach`, quando a dependência externa estiver **comprovadamente** indisponível (ex.: `assertYfinanceLookupBackend`). Isso evita falso vermelho; não substitui corrigir spec lento ou seed frágil.
+- **Exceção rara:** indisponibilidade externa **persistente** em todos os workers após o skip (ex.: Yahoo fora do ar). Registrar no `summary.md` do `test:all` e reexecutar quando estável — **somente** depois de esgotar correções de código/spec reproduzíveis localmente.
+
+**Proibido na entrega:** concluir com E2E vermelho alegando “yfinance/rede não relacionado” sem ter aplicado as correções acima.
 
 ## DRY e KISS
 
@@ -126,7 +129,7 @@ Preferir scripts npm (`npm run test:ui`, `npm run test:all`) para disparar hooks
 
 Paralelismo E2E: ver [e2e-paralelo.mdc](e2e-paralelo.mdc) (`E2E_WORKERS=4` padrão).
 
-Reportar no fim: caminho do relatório, quais suítes rodaram e se passaram. Se E2E falhar por rede (yfinance), indicar no `summary.md` e sugerir nova execução quando estável.
+Reportar no fim: caminho do relatório, quais suítes rodaram e se passaram. Se, após correções de determinismo, ainda restar skip por indisponibilidade externa confirmada, registrar no `summary.md` e reexecutar `test:all` quando estável.
 
 ## E2E — doc, caso de uso e spec juntos
 

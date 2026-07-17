@@ -36,4 +36,20 @@ describe('computePensionContributionMetrics', () => {
   it('returns 12 months for future year', () => {
     expect(monthsRemainingInYear(2027, ref)).toBe(12);
   });
+
+  it('julho inclui dezembro no aporte mensal (faltante ÷ meses restantes)', () => {
+    const july = new Date(2026, 6, 16);
+    const metrics = computePensionContributionMetrics(2026, 216_000, 12_800, july);
+    expect(metrics.remainingBrl).toBe(13_120);
+    expect(metrics.monthsRemaining).toBe(6);
+    expect(metrics.monthlyNeededBrl).toBeCloseTo(13_120 / 6, 2);
+  });
+
+  it('aportes maiores reduzem o valor mensal necessário', () => {
+    const july = new Date(2026, 6, 16);
+    const low = computePensionContributionMetrics(2026, 216_000, 6_000, july);
+    const high = computePensionContributionMetrics(2026, 216_000, 20_000, july);
+    expect(high.remainingBrl).toBeLessThan(low.remainingBrl);
+    expect(high.monthlyNeededBrl!).toBeLessThan(low.monthlyNeededBrl!);
+  });
 });

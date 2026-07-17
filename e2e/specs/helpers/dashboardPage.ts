@@ -88,3 +88,20 @@ export function allocationSection(page: Page): Locator {
 export function topAssetsSection(page: Page): Locator {
   return page.locator('section[aria-label="Top ativos"]');
 }
+
+export function dashboardKpiPositions(page: Page): Locator {
+  return page.getByTestId('dashboard-kpi-positions');
+}
+
+export function dashboardPatrimonyFilters(page: Page): Locator {
+  return page.getByTestId('dashboard-kpi-patrimony').getByTestId('dashboard-patrimony-filters');
+}
+
+export async function toggleDashboardPensionFilter(page: Page, checked: boolean): Promise<void> {
+  const input = page.getByTestId('dashboard-kpi-patrimony').getByTestId('dashboard-filter-pension');
+  if (checked) {
+    await input.check();
+  } else {
+    await input.uncheck();
+  }
+}

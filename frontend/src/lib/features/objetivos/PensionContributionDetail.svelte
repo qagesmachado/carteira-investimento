@@ -2,7 +2,9 @@
   import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
   import type { Objective, PensionContribution } from '$lib/api/objetivos';
   import { formatBrl } from '$lib/features/rebalance/allocationTargets';
+  import { computePensionContributionMetrics } from '$lib/features/objetivos/computePensionContributionMetrics';
   import { sortPensionYears } from '$lib/features/objetivos/sortPensionYears';
+  import PensionYearEditModal from '$lib/features/objetivos/PensionYearEditModal.svelte';
   import { createEventDispatcher } from 'svelte';
 
   export let objective: Objective | null = null;
@@ -23,16 +25,11 @@
     };
   }>();
 
-  let annualGrossIncomeValue = 0;
-  let contributedValue = 0;
   let newYear = '';
   let newYearIncomeValue = 0;
-  let lastDraftSignature = '';
-  let editing = false;
   let addingYear = false;
+  let editModalOpen = false;
 
-  let incomeInput: BrDecimalInput;
-  let contributedInput: BrDecimalInput;
   let newYearIncomeInput: BrDecimalInput;
 
   $: summary = objective?.pension_contribution;
@@ -43,43 +40,13 @@
       ? years.find((row) => row.plan_year === selectedYear) ?? null
       : years[0] ?? null;
 
-  $: if (activeYear) {
-    const signature = `${activeYear.plan_year}:${activeYear.annual_gross_income_brl}:${activeYear.contributed_ytd_brl}`;
-    if (signature !== lastDraftSignature && !editing) {
-      annualGrossIncomeValue = activeYear.annual_gross_income_brl ?? 0;
-      contributedValue = activeYear.contributed_ytd_brl;
-      lastDraftSignature = signature;
-    }
-  }
-
-  function incomeForSave(): number | null {
-    return annualGrossIncomeValue === 0 ? null : annualGrossIncomeValue;
-  }
-
-  function startEditing() {
-    if (!activeYear) return;
-    annualGrossIncomeValue = activeYear.annual_gross_income_brl ?? 0;
-    contributedValue = activeYear.contributed_ytd_brl;
-    editing = true;
-  }
-
-  function cancelEditing() {
-    if (!activeYear) return;
-    annualGrossIncomeValue = activeYear.annual_gross_income_brl ?? 0;
-    contributedValue = activeYear.contributed_ytd_brl;
-    editing = false;
-  }
-
-  function handleSubmit(event: Event) {
-    event.preventDefault();
-    if (!editing || !activeYear) return;
-    if (!incomeInput.flush() || !contributedInput.flush()) return;
-    dispatch('save', {
-      planYear: activeYear.plan_year,
-      annualGrossIncomeBrl: incomeForSave(),
-      contributedYtdBrl: contributedValue
-    });
-  }
+  $: liveMetrics = activeYear
+    ? computePensionContributionMetrics(
+        activeYear.plan_year,
+        activeYear.annual_gross_income_brl,
+        activeYear.contributed_ytd_brl
+      )
+    : null;
 
   function handleAddYear(event: Event) {
     event.preventDefault();
@@ -95,12 +62,35 @@
     addingYear = false;
   }
 
-  export function exitEditMode() {
-    editing = false;
+  function openEditModal() {
+    if (!activeYear) return;
+    editModalOpen = true;
+  }
+
+  function closeEditModal() {
+    editModalOpen = false;
+  }
+
+  function handleModalSave(
+    event: CustomEvent<{
+      planYear: number;
+      annualGrossIncomeBrl: number | null;
+      contributedYtdBrl: number;
+    }>
+  ) {
+    dispatch('save', event.detail);
+  }
+
+  export function closeEditModalAfterSave() {
+    editModalOpen = false;
   }
 
   function formatProgress(row: PensionContribution): string {
-    return `${row.progress_percent.toLocaleString('pt-BR', {
+    return formatProgressPercent(row.progress_percent);
+  }
+
+  function formatProgressPercent(value: number): string {
+    return `${value.toLocaleString('pt-BR', {
       minimumFractionDigits: 1,
       maximumFractionDigits: 1
     })}%`;
@@ -164,6 +154,7 @@
           class:btn-primary={selectedYear === row.plan_year}
           class:btn-outline={selectedYear !== row.plan_year}
           data-testid={`pension-year-tab-${row.plan_year}`}
+          disabled={editModalOpen}
           on:click={() => dispatch('selectYear', row.plan_year)}
         >
           {row.plan_year}
@@ -173,7 +164,7 @@
         type="button"
         class="btn btn-sm btn-ghost"
         data-testid="pension-add-year-btn"
-        disabled={saving || editing}
+        disabled={saving || editModalOpen}
         on:click={() => (addingYear = !addingYear)}
       >
         + Ano
@@ -220,7 +211,7 @@
     {#if activeYear}
       <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h3 class="font-medium">Detalhe {activeYear.plan_year}</h3>
-        {#if years.length > 1 && !editing}
+        {#if years.length > 1 && !editModalOpen}
           <button
             type="button"
             class="btn btn-sm btn-ghost text-error"
@@ -232,55 +223,56 @@
           </button>
         {/if}
       </div>
-      <form class="space-y-4" on:submit={handleSubmit}>
+
+      <div class="space-y-4">
         <div class="grid gap-3 sm:grid-cols-2">
-          {#key activeYear.plan_year}
-            <BrDecimalInput
-              bind:this={incomeInput}
-              bind:value={annualGrossIncomeValue}
-              label="Renda bruta anual (R$)"
-              inputClass="input input-bordered w-full"
-              testId="pension-income-input"
-              currency
-              disabled={!editing || saving}
-            />
-            <BrDecimalInput
-              bind:this={contributedInput}
-              bind:value={contributedValue}
-              label="Total aportado no ano (R$)"
-              inputClass="input input-bordered w-full"
-              testId="pension-contributed-input"
-              currency
-              disabled={!editing || saving}
-            />
-          {/key}
+          <div class="rounded-lg bg-base-200 p-3">
+            <p class="text-xs opacity-60">Renda bruta anual (R$)</p>
+            <p class="text-base font-medium" data-testid="pension-income-display">
+              {formatBrl(activeYear.annual_gross_income_brl ?? 0)}
+            </p>
+          </div>
+          <div class="rounded-lg bg-base-200 p-3">
+            <p class="text-xs opacity-60">Total aportado no ano (R$)</p>
+            <p class="text-base font-medium" data-testid="pension-contributed-display">
+              {formatBrl(activeYear.contributed_ytd_brl)}
+            </p>
+          </div>
         </div>
 
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div class="rounded-lg border border-base-300 p-3">
             <p class="text-xs uppercase opacity-60">Meta anual (12%)</p>
             <p class="text-lg font-semibold" data-testid="pension-target-value">
-              {formatBrl(activeYear.target_annual_brl)}
+              {formatBrl(liveMetrics?.targetAnnualBrl ?? activeYear.target_annual_brl)}
             </p>
           </div>
           <div class="rounded-lg border border-base-300 p-3">
             <p class="text-xs uppercase opacity-60">Faltante</p>
             <p class="text-lg font-semibold" data-testid="pension-remaining-value">
-              {formatBrl(activeYear.remaining_brl)}
+              {formatBrl(liveMetrics?.remainingBrl ?? activeYear.remaining_brl)}
             </p>
           </div>
           <div class="rounded-lg border border-base-300 p-3">
             <p class="text-xs uppercase opacity-60">Aporte mensal necessário</p>
             <p class="text-lg font-semibold" data-testid="pension-monthly-value">
-              {activeYear.monthly_needed_brl != null
-                ? formatBrl(activeYear.monthly_needed_brl)
+              {liveMetrics?.monthlyNeededBrl != null
+                ? formatBrl(liveMetrics.monthlyNeededBrl)
                 : '—'}
             </p>
+            {#if liveMetrics && liveMetrics.monthsRemaining > 0 && liveMetrics.remainingBrl > 0}
+              <p class="text-xs opacity-60" data-testid="pension-months-remaining">
+                {formatBrl(liveMetrics.remainingBrl)} ÷ {liveMetrics.monthsRemaining}
+                {liveMetrics.monthsRemaining === 1 ? 'mês' : 'meses'} até dez/{activeYear.plan_year}
+              </p>
+            {:else if liveMetrics?.monthsRemaining === 0}
+              <p class="text-xs opacity-60" data-testid="pension-months-remaining">Ano encerrado</p>
+            {/if}
           </div>
           <div class="rounded-lg border border-base-300 p-3">
             <p class="text-xs uppercase opacity-60">Progresso</p>
             <p class="text-lg font-semibold" data-testid="pension-progress-value">
-              {formatProgress(activeYear)}
+              {formatProgressPercent(liveMetrics?.progressPercent ?? activeYear.progress_percent)}
             </p>
           </div>
         </div>
@@ -288,48 +280,41 @@
         <div>
           <progress
             class="progress progress-primary w-full"
-            value={activeYear.progress_percent}
+            value={liveMetrics?.progressPercent ?? activeYear.progress_percent}
             max="100"
             data-testid="pension-progress-bar"
           ></progress>
         </div>
 
-        {#if error}
+        {#if error && !editModalOpen}
           <p class="text-sm text-error">{error}</p>
         {/if}
 
         <div class="flex justify-end gap-2">
-          {#if editing}
-            <button
-              type="button"
-              class="btn btn-sm"
-              disabled={saving}
-              data-testid="pension-cancel-btn"
-              on:click={cancelEditing}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              class="btn btn-primary btn-sm"
-              disabled={saving}
-              data-testid="pension-save-btn"
-            >
-              Salvar
-            </button>
-          {:else}
-            <button
-              type="button"
-              class="btn btn-primary btn-sm"
-              disabled={saving}
-              data-testid="pension-edit-btn"
-              on:click={startEditing}
-            >
-              Editar
-            </button>
-          {/if}
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            disabled={saving}
+            data-testid="pension-edit-btn"
+            on:click={openEditModal}
+          >
+            Editar
+          </button>
         </div>
-      </form>
+      </div>
     {/if}
   </section>
+
+  {#if activeYear}
+    <PensionYearEditModal
+      open={editModalOpen}
+      planYear={activeYear.plan_year}
+      initialAnnualGrossIncomeBrl={activeYear.annual_gross_income_brl ?? 0}
+      initialContributedYtdBrl={activeYear.contributed_ytd_brl}
+      {saving}
+      error={editModalOpen ? error : ''}
+      on:close={closeEditModal}
+      on:save={handleModalSave}
+    />
+  {/if}
 {/if}

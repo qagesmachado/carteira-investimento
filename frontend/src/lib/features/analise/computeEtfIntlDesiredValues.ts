@@ -4,18 +4,28 @@ export type EtfIntlAllocationDraft = {
   analysis_link: string;
 };
 
-export function sumTargetPercents(allocations: EtfIntlAllocationDraft[]): number {
-  return allocations.reduce((sum, row) => sum + (row.target_percent || 0), 0);
+export function sumTargetPercents(
+  allocations: EtfIntlAllocationDraft[],
+  excludeAssetIds: ReadonlySet<number> = new Set()
+): number {
+  return allocations.reduce((sum, row) => {
+    if (excludeAssetIds.has(row.asset_id)) {
+      return sum;
+    }
+    return sum + (row.target_percent || 0);
+  }, 0);
 }
 
 export function isAllocationSumValid(
   allocations: EtfIntlAllocationDraft[],
-  tolerance = 0.01
+  tolerance = 0.01,
+  excludeAssetIds: ReadonlySet<number> = new Set()
 ): boolean {
-  if (allocations.length === 0) {
+  const active = allocations.filter((row) => !excludeAssetIds.has(row.asset_id));
+  if (active.length === 0) {
     return false;
   }
-  return Math.abs(sumTargetPercents(allocations) - 100) <= tolerance;
+  return Math.abs(sumTargetPercents(allocations, excludeAssetIds) - 100) <= tolerance;
 }
 
 export function computeCurrentPercentInGroup(
@@ -56,4 +66,24 @@ export function parseTargetPercentRef(value: string | null | undefined): number 
   }
   const parsed = Number.parseFloat(value.replace(',', '.'));
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function allocationTargetPercentFromRow(row: {
+  is_pending?: boolean;
+  score_refs?: { target_percent?: string | null };
+}): number {
+  if (row.is_pending) {
+    return 0;
+  }
+  return parseTargetPercentRef(row.score_refs?.target_percent);
+}
+
+export function buildAllocationSavePayload(
+  drafts: EtfIntlAllocationDraft[],
+  pendingAssetIds: ReadonlySet<number>
+): EtfIntlAllocationDraft[] {
+  return drafts.map((draft) => ({
+    ...draft,
+    target_percent: pendingAssetIds.has(draft.asset_id) ? 0 : draft.target_percent
+  }));
 }

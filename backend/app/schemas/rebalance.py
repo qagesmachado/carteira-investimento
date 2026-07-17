@@ -1,6 +1,11 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.asset import DisplayClass
+
+StocksSplitMode = Literal["by_subtype", "unified"]
+DEFAULT_STOCKS_SPLIT_MODE: StocksSplitMode = "unified"
 
 REBALANCE_CLASS_KEYS: tuple[str, ...] = (
     DisplayClass.STOCKS.value,
@@ -19,8 +24,8 @@ DEFAULT_CLASS_TARGETS: dict[str, float] = {
 }
 
 DEFAULT_STOCKS_SPLIT: dict[str, float] = {
-    "etf": 70.0,
-    "stock": 30.0,
+    "etf": 50.0,
+    "stock": 50.0,
 }
 
 
@@ -38,8 +43,8 @@ class ClassTargets(BaseModel):
 
 
 class StocksSplitTargets(BaseModel):
-    etf: float = Field(default=70.0, ge=0, le=100)
-    stock: float = Field(default=30.0, ge=0, le=100)
+    etf: float = Field(default=50.0, ge=0, le=100)
+    stock: float = Field(default=50.0, ge=0, le=100)
 
     @field_validator("etf", "stock")
     @classmethod
@@ -50,6 +55,7 @@ class StocksSplitTargets(BaseModel):
 class AllocationTargets(BaseModel):
     classes: ClassTargets = Field(default_factory=ClassTargets)
     stocks_split: StocksSplitTargets = Field(default_factory=StocksSplitTargets)
+    stocks_split_mode: StocksSplitMode = DEFAULT_STOCKS_SPLIT_MODE
 
     def validate_sums(self) -> None:
         class_sum = sum(
@@ -57,9 +63,10 @@ class AllocationTargets(BaseModel):
         )
         if abs(class_sum - 100.0) > 0.01:
             raise ValueError(f"class targets must sum to 100, got {class_sum}")
-        split_sum = self.stocks_split.etf + self.stocks_split.stock
-        if abs(split_sum - 100.0) > 0.01:
-            raise ValueError(f"stocks_split must sum to 100, got {split_sum}")
+        if self.stocks_split_mode == "by_subtype":
+            split_sum = self.stocks_split.etf + self.stocks_split.stock
+            if abs(split_sum - 100.0) > 0.01:
+                raise ValueError(f"stocks_split must sum to 100, got {split_sum}")
 
 
 class AllocationTargetsUpdate(BaseModel):
@@ -92,8 +99,8 @@ class AssetRebalanceRowRead(BaseModel):
     symbol: str
     name: str
     asset_type: str
-    current_value_brl: float
-    current_percent: float
+    current_value_brl: float | None
+    current_percent: float | None
     target_percent: float | None
     target_value_brl: float | None
     gap_brl: float | None

@@ -20,6 +20,8 @@
   export let quotesRefreshedAt: string | null = null;
   export let disabled = false;
   export let portfolioSelectTestId = 'dashboard-portfolio-select';
+  /** Exibe pills USD/BRL e cotações (desligado em telas de análise). */
+  export let showQuoteStatus = true;
 
   const dispatch = createEventDispatcher<{ select: number }>();
 
@@ -75,7 +77,8 @@
     </div>
   </div>
 
-  <div class="inline-flex shrink-0 flex-col items-stretch gap-2" data-testid="dashboard-status-badges">
+  {#if showQuoteStatus}
+    <div class="inline-flex shrink-0 flex-col items-stretch gap-2" data-testid="dashboard-status-badges">
     <div class={statusPillClass} data-testid="dashboard-fx-badge">
       <span class={statusIconSlotClass} aria-hidden="true">
         <img
@@ -101,5 +104,6 @@
         <span class="whitespace-nowrap text-right text-base-content/50">Cotações indisponíveis</span>
       {/if}
     </div>
-  </div>
+    </div>
+  {/if}
 </div>

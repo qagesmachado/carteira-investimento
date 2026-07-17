@@ -4,7 +4,8 @@ import type { ClassRowForAllocation } from './investmentAllocation';
 import {
   computeAssetInvestmentAllocation,
   computeClassInvestmentAllocation,
-  defaultIncludedClasses
+  defaultIncludedClasses,
+  resolveInvestmentAmount
 } from './investmentAllocation';
 
 const sampleClasses: ClassRowForAllocation[] = [
@@ -12,6 +13,22 @@ const sampleClasses: ClassRowForAllocation[] = [
   { display_class: 'international', current_value_brl: 11_374.17, target_percent: 20 },
   { display_class: 'fixed_income', current_value_brl: 40_000, target_percent: 40 }
 ];
+
+describe('resolveInvestmentAmount', () => {
+  it('returns zero for empty input', () => {
+    expect(resolveInvestmentAmount('invest_amount', 0, 100_000)).toBe(0);
+    expect(resolveInvestmentAmount('final_total', 0, 100_000)).toBe(0);
+  });
+
+  it('returns invest amount directly in invest mode', () => {
+    expect(resolveInvestmentAmount('invest_amount', 10_000, 100_000)).toBe(10_000);
+  });
+
+  it('derives investment from final total in total mode', () => {
+    expect(resolveInvestmentAmount('final_total', 125_000, 118_450)).toBe(6_550);
+    expect(resolveInvestmentAmount('final_total', 100_000, 118_450)).toBe(0);
+  });
+});
 
 describe('computeClassInvestmentAllocation', () => {
   it('returns null when investment amount is empty', () => {

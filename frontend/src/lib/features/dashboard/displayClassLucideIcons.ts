@@ -20,3 +20,7 @@ export function lucideIconForDisplayClass(displayClass: DisplayClass | string): 
 export function displayClassIconFgClass(displayClass: DisplayClass | string): string {
   return allocationBarClassForDisplayClass(displayClass).replace(/^bg-/, 'text-');
 }
+
+export function displayClassIconSurfaceClass(displayClass: DisplayClass | string): string {
+  return `${allocationBarClassForDisplayClass(displayClass)}/15`;
+}

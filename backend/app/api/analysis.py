@@ -8,16 +8,23 @@ from app.models.asset import Asset
 from app.schemas.analysis import (
     AnalysisConfigRead,
     AnalysisConfigUpdate,
+    AnalysisMethodologyRead,
+    AnalysisMethodologyUpdate,
+    AnalysisPortfolioPendingRead,
+    AnalysisPortfolioSummaryRead,
     AnalysisSummaryRead,
     AssetAnalysisRead,
+    AssetPendingUpdate,
     AssetScoresUpdate,
     BlockSummaryRead,
     CriterionDefinitionRead,
     CryptoAllocationsBulkUpdate,
     EtfIntlAllocationsBulkUpdate,
+    FiiBrAllocationsBulkUpdate,
     ScoreOptionRead,
     SegmentCatalogEntryRead,
     SegmentCatalogUpdate,
+    StockBrAllocationsBulkUpdate,
     TableDisplaySettingsRead,
     TableSumColumnSettingsRead,
     ViabilityBandRead,
@@ -25,6 +32,21 @@ from app.schemas.analysis import (
     ViabilityResultRead,
 )
 from app.services.analysis_defaults import PROFILE_CRYPTO, PROFILE_ETF_INTL, PROFILE_FII_BR, PROFILE_STOCK_BR
+from app.services.analysis_methodology_service import (
+    AnalysisMethodologyError,
+    get_portfolio_methodology,
+    profile_from_slug,
+    set_portfolio_methodology,
+)
+from app.services.analysis_pending_service import (
+    get_pending_asset_ids,
+    is_asset_pending,
+    set_asset_pending,
+)
+from app.services.analysis_summary_service import (
+    build_portfolio_analysis_summary,
+    list_portfolio_pending_assets,
+)
 from app.services.analysis_service import (
     build_asset_analysis_read,
     get_profile_config,
@@ -37,13 +59,32 @@ from app.services.analysis_service import (
     save_asset_scores,
     save_crypto_allocations,
     save_etf_intl_allocations,
+    save_fii_br_allocations,
+    save_stock_br_allocations,
     save_profile_config,
     save_profile_segments,
 )
-from app.services.analysis_service import CryptoAllocationError, EtfIntlAllocationError
+from app.services.analysis_service import (
+    CryptoAllocationError,
+    EtfIntlAllocationError,
+    ProfileAllocationError,
+)
 from app.services.asset_service import infer_display_class
+from app.services.portfolio_service import get_portfolio
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
+
+
+def _require_portfolio_for_allocation_profile(
+    session: Session,
+    profile: str,
+    portfolio_id: int | None,
+) -> None:
+    if portfolio_id is None and profile in (PROFILE_ETF_INTL, PROFILE_CRYPTO):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="portfolio_id is required for allocation profiles",
+        )
 
 
 def _viability_to_read(v) -> ViabilityResultRead | None:
@@ -103,7 +144,14 @@ def _config_to_read(profile: str, criteria, rules, table_display) -> AnalysisCon
     )
 
 
-def _asset_analysis_to_read(asset: Asset, scores, score_refs, summary) -> AssetAnalysisRead:
+def _asset_analysis_to_read(
+    asset: Asset,
+    scores,
+    score_refs,
+    summary,
+    *,
+    is_pending: bool = False,
+) -> AssetAnalysisRead:
     return AssetAnalysisRead(
         asset_id=asset.id,
         symbol=asset.symbol,
@@ -115,6 +163,7 @@ def _asset_analysis_to_read(asset: Asset, scores, score_refs, summary) -> AssetA
         scores=scores,
         score_refs=score_refs,
         summary=_summary_to_read(summary),
+        is_pending=is_pending,
     )
 
 
@@ -130,13 +179,16 @@ def put_stock_br_config(
     payload: AnalysisConfigUpdate,
     session: Annotated[Session, Depends(get_session)],
 ) -> AnalysisConfigRead:
-    save_profile_config(
-        session,
-        PROFILE_STOCK_BR,
-        payload.criteria,
-        payload.rules,
-        payload.table_display,
-    )
+    try:
+        save_profile_config(
+            session,
+            PROFILE_STOCK_BR,
+            payload.criteria,
+            payload.rules,
+            payload.table_display,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
     criteria, rules = get_profile_config(session, PROFILE_STOCK_BR)
     table_display = get_profile_table_display(session, PROFILE_STOCK_BR)
     return _config_to_read(PROFILE_STOCK_BR, criteria, rules, table_display)
@@ -164,13 +216,16 @@ def put_fii_br_config(
     payload: AnalysisConfigUpdate,
     session: Annotated[Session, Depends(get_session)],
 ) -> AnalysisConfigRead:
-    save_profile_config(
-        session,
-        PROFILE_FII_BR,
-        payload.criteria,
-        payload.rules,
-        payload.table_display,
-    )
+    try:
+        save_profile_config(
+            session,
+            PROFILE_FII_BR,
+            payload.criteria,
+            payload.rules,
+            payload.table_display,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
     criteria, rules = get_profile_config(session, PROFILE_FII_BR)
     table_display = get_profile_table_display(session, PROFILE_FII_BR)
     return _config_to_read(PROFILE_FII_BR, criteria, rules, table_display)
@@ -231,9 +286,11 @@ def put_crypto_allocations(
     payload: CryptoAllocationsBulkUpdate,
     session: Annotated[Session, Depends(get_session)],
 ) -> list[AssetAnalysisRead]:
+    get_portfolio(session, payload.portfolio_id)
     try:
         save_crypto_allocations(
             session,
+            payload.portfolio_id,
             [a.model_dump() for a in payload.allocations],
         )
     except CryptoAllocationError as exc:
@@ -243,9 +300,50 @@ def put_crypto_allocations(
         ) from exc
 
     asset_ids = {a.asset_id for a in payload.allocations}
-    rows = list_assets_with_analysis(session, PROFILE_CRYPTO)
+    pending_ids = get_pending_asset_ids(session, payload.portfolio_id)
+    rows = list_assets_with_analysis(session, PROFILE_CRYPTO, payload.portfolio_id)
     return [
-        _asset_analysis_to_read(asset, scores, score_refs, summary)
+        _asset_analysis_to_read(
+            asset,
+            scores,
+            score_refs,
+            summary,
+            is_pending=asset.id in pending_ids,
+        )
+        for asset, scores, score_refs, summary in rows
+        if asset.id in asset_ids
+    ]
+
+
+@router.put("/profiles/etf-intl/allocations", response_model=list[AssetAnalysisRead])
+def put_etf_intl_allocations(
+    payload: EtfIntlAllocationsBulkUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[AssetAnalysisRead]:
+    get_portfolio(session, payload.portfolio_id)
+    try:
+        save_etf_intl_allocations(
+            session,
+            payload.portfolio_id,
+            [a.model_dump() for a in payload.allocations],
+        )
+    except EtfIntlAllocationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    asset_ids = {a.asset_id for a in payload.allocations}
+    pending_ids = get_pending_asset_ids(session, payload.portfolio_id)
+    rows = list_assets_with_analysis(session, PROFILE_ETF_INTL, payload.portfolio_id)
+    return [
+        _asset_analysis_to_read(
+            asset,
+            scores,
+            score_refs,
+            summary,
+            is_pending=asset.id in pending_ids,
+        )
         for asset, scores, score_refs, summary in rows
         if asset.id in asset_ids
     ]
@@ -258,41 +356,148 @@ def get_etf_intl_config(session: Annotated[Session, Depends(get_session)]) -> An
     return _config_to_read(PROFILE_ETF_INTL, criteria, rules, table_display)
 
 
-@router.put("/profiles/etf-intl/allocations", response_model=list[AssetAnalysisRead])
-def put_etf_intl_allocations(
-    payload: EtfIntlAllocationsBulkUpdate,
+def _allocation_response(
+    session: Session,
+    profile: str,
+    portfolio_id: int,
+    asset_ids: set[int],
+) -> list[AssetAnalysisRead]:
+    pending_ids = get_pending_asset_ids(session, portfolio_id)
+    rows = list_assets_with_analysis(session, profile, portfolio_id)
+    return [
+        _asset_analysis_to_read(
+            asset,
+            scores,
+            score_refs,
+            summary,
+            is_pending=asset.id in pending_ids,
+        )
+        for asset, scores, score_refs, summary in rows
+        if asset.id in asset_ids
+    ]
+
+
+@router.put("/profiles/stock-br/allocations", response_model=list[AssetAnalysisRead])
+def put_stock_br_allocations(
+    payload: StockBrAllocationsBulkUpdate,
     session: Annotated[Session, Depends(get_session)],
 ) -> list[AssetAnalysisRead]:
+    get_portfolio(session, payload.portfolio_id)
     try:
-        save_etf_intl_allocations(
+        save_stock_br_allocations(
             session,
+            payload.portfolio_id,
             [a.model_dump() for a in payload.allocations],
         )
-    except EtfIntlAllocationError as exc:
+    except ProfileAllocationError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
-
     asset_ids = {a.asset_id for a in payload.allocations}
-    rows = list_assets_with_analysis(session, PROFILE_ETF_INTL)
-    return [
-        _asset_analysis_to_read(asset, scores, score_refs, summary)
-        for asset, scores, score_refs, summary in rows
-        if asset.id in asset_ids
-    ]
+    return _allocation_response(session, PROFILE_STOCK_BR, payload.portfolio_id, asset_ids)
+
+
+@router.put("/profiles/fii-br/allocations", response_model=list[AssetAnalysisRead])
+def put_fii_br_allocations(
+    payload: FiiBrAllocationsBulkUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[AssetAnalysisRead]:
+    get_portfolio(session, payload.portfolio_id)
+    try:
+        save_fii_br_allocations(
+            session,
+            payload.portfolio_id,
+            [a.model_dump() for a in payload.allocations],
+        )
+    except ProfileAllocationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+    asset_ids = {a.asset_id for a in payload.allocations}
+    return _allocation_response(session, PROFILE_FII_BR, payload.portfolio_id, asset_ids)
+
+
+@router.get("/profiles/{profile_slug}/methodology", response_model=AnalysisMethodologyRead)
+def get_analysis_methodology(
+    profile_slug: str,
+    session: Annotated[Session, Depends(get_session)],
+    portfolio_id: int = Query(...),
+) -> AnalysisMethodologyRead:
+    try:
+        profile = profile_from_slug(profile_slug)
+    except AnalysisMethodologyError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    get_portfolio(session, portfolio_id)
+    methodology = get_portfolio_methodology(session, portfolio_id, profile)
+    return AnalysisMethodologyRead(
+        portfolio_id=portfolio_id,
+        profile=profile,
+        methodology=methodology,
+    )
+
+
+@router.put("/profiles/{profile_slug}/methodology", response_model=AnalysisMethodologyRead)
+def put_analysis_methodology(
+    profile_slug: str,
+    payload: AnalysisMethodologyUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> AnalysisMethodologyRead:
+    get_portfolio(session, payload.portfolio_id)
+    try:
+        profile = profile_from_slug(profile_slug)
+        methodology = set_portfolio_methodology(
+            session, payload.portfolio_id, profile, payload.methodology
+        )
+    except AnalysisMethodologyError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    return AnalysisMethodologyRead(
+        portfolio_id=payload.portfolio_id,
+        profile=profile,
+        methodology=methodology,
+    )
+
+
+@router.get("/portfolio-pending", response_model=AnalysisPortfolioPendingRead)
+def get_analysis_portfolio_pending(
+    session: Annotated[Session, Depends(get_session)],
+    portfolio_id: int = Query(...),
+) -> AnalysisPortfolioPendingRead:
+    get_portfolio(session, portfolio_id)
+    return list_portfolio_pending_assets(session, session, portfolio_id)
+
+
+@router.get("/portfolio-summary", response_model=AnalysisPortfolioSummaryRead)
+def get_analysis_portfolio_summary(
+    session: Annotated[Session, Depends(get_session)],
+    portfolio_id: int = Query(...),
+) -> AnalysisPortfolioSummaryRead:
+    get_portfolio(session, portfolio_id)
+    return build_portfolio_analysis_summary(session, session, portfolio_id)
 
 
 @router.get("/assets", response_model=list[AssetAnalysisRead])
 def get_analysis_assets(
     session: Annotated[Session, Depends(get_session)],
     profile: str = Query(default=PROFILE_STOCK_BR),
+    portfolio_id: int | None = Query(default=None),
 ) -> list[AssetAnalysisRead]:
     if profile not in _ANALYSIS_PROFILES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile")
-    rows = list_assets_with_analysis(session, profile)
+    _require_portfolio_for_allocation_profile(session, profile, portfolio_id)
+    if portfolio_id is not None:
+        get_portfolio(session, portfolio_id)
+    pending_ids = get_pending_asset_ids(session, portfolio_id) if portfolio_id is not None else set()
+    rows = list_assets_with_analysis(session, profile, portfolio_id)
     return [
-        _asset_analysis_to_read(asset, scores, score_refs, summary)
+        _asset_analysis_to_read(
+            asset,
+            scores,
+            score_refs,
+            summary,
+            is_pending=portfolio_id is not None and asset.id in pending_ids,
+        )
         for asset, scores, score_refs, summary in rows
     ]
 
@@ -302,15 +507,55 @@ def get_analysis_asset(
     asset_id: int,
     session: Annotated[Session, Depends(get_session)],
     profile: str = Query(default=PROFILE_STOCK_BR),
+    portfolio_id: int | None = Query(default=None),
 ) -> AssetAnalysisRead:
     if profile not in _ANALYSIS_PROFILES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile")
+    _require_portfolio_for_allocation_profile(session, profile, portfolio_id)
+    if portfolio_id is not None:
+        get_portfolio(session, portfolio_id)
     asset = session.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
 
-    scores, score_refs, summary, _, _ = build_asset_analysis_read(session, asset, profile)
-    return _asset_analysis_to_read(asset, scores, score_refs, summary)
+    scores, score_refs, summary, _, _ = build_asset_analysis_read(
+        session, asset, profile, portfolio_id
+    )
+    is_pending = (
+        is_asset_pending(session, portfolio_id, asset_id)
+        if portfolio_id is not None
+        else False
+    )
+    return _asset_analysis_to_read(
+        asset, scores, score_refs, summary, is_pending=is_pending
+    )
+
+
+@router.put("/assets/{asset_id}/pending", response_model=AssetAnalysisRead)
+def put_analysis_asset_pending(
+    asset_id: int,
+    payload: AssetPendingUpdate,
+    session: Annotated[Session, Depends(get_session)],
+    profile: str = Query(default=PROFILE_STOCK_BR),
+) -> AssetAnalysisRead:
+    if profile not in _ANALYSIS_PROFILES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid profile")
+    get_portfolio(session, payload.portfolio_id)
+    asset = session.get(Asset, asset_id)
+    if not asset:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+
+    set_asset_pending(session, payload.portfolio_id, asset_id, payload.is_pending)
+    scores, score_refs, summary, _, _ = build_asset_analysis_read(
+        session, asset, profile, payload.portfolio_id
+    )
+    return _asset_analysis_to_read(
+        asset,
+        scores,
+        score_refs,
+        summary,
+        is_pending=payload.is_pending,
+    )
 
 
 @router.put("/assets/{asset_id}/scores", response_model=AssetAnalysisRead)

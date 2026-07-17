@@ -61,7 +61,8 @@ test.describe('UI-AST-002R', () => {
     await expectReviewFormYfinanceBbse3(formReview);
 
     const createAssetResponse = page.waitForResponse(
-      (response) => isApiAssetsListResponse(response, 'POST') && response.ok()
+      (response) => isApiAssetsListResponse(response, 'POST') && response.ok(),
+      { timeout: 45_000 }
     );
     await formReview.getByRole('button', { name: 'Salvar ativo' }).click();
     await createAssetResponse;

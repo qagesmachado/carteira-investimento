@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
 
   import {
     type AnalysisConfig,
@@ -8,21 +8,31 @@
   import { parseApiError } from '$lib/api/parseApiError';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
 
-  export let title: string;
-  export let formulaDescription: string;
-  export let resetConfirmMessage: string;
+  import AnalysisSumColumnConfigFields from './AnalysisSumColumnConfigFields.svelte';
+  import { isTableScoreMethodologyValid } from './computeAnalysis';
+
+  export let title = '';
+  export let profile: 'stock_br' | 'fii_br' = 'stock_br';
   export let loadConfig: () => Promise<AnalysisConfig>;
   export let saveConfig: (payload: {
     criteria: AnalysisConfig['criteria'];
     rules: AnalysisConfig['rules'];
     table_display: TableDisplaySettings;
   }) => Promise<AnalysisConfig>;
-  export let resetConfig: () => Promise<AnalysisConfig>;
+  /** Quando true, renderiza sem card externo (dentro de modal). */
+  export let embedded = false;
+  /** Quando true, oculta rodapé interno (modal fornece Cancelar/Salvar). */
+  export let footerless = false;
+
+  const dispatch = createEventDispatcher<{
+    saved: TableDisplaySettings;
+  }>();
 
   let config: AnalysisConfig | null = null;
   let tableDisplay: TableDisplaySettings = {
     sum_column: {
-      enabled: true,
+      use_fundamental: true,
+      use_diagram: true,
       label: 'Soma',
       diagram_multiplier: 2,
       viabilidade_weights: {
@@ -37,6 +47,8 @@
   let saving = false;
   let error = '';
   let message = '';
+
+  $: canSave = !loading && !saving && isTableScoreMethodologyValid(tableDisplay.sum_column);
 
   async function reloadConfig() {
     loading = true;
@@ -56,8 +68,13 @@
     void reloadConfig();
   });
 
-  async function handleSave() {
-    if (!config) return;
+  export async function save(): Promise<boolean> {
+    if (!config) return false;
+    if (!isTableScoreMethodologyValid(tableDisplay.sum_column)) {
+      error = 'Ative Fundamental, Diagrama ou ambos para salvar.';
+      return false;
+    }
+    tableDisplay.sum_column.label = 'Soma';
     saving = true;
     error = '';
     message = '';
@@ -69,45 +86,24 @@
       });
       tableDisplay = structuredClone(config.table_display);
       message = 'Configuração salva.';
+      dispatch('saved', tableDisplay);
+      return true;
     } catch (err) {
       error = parseApiError(err, 'Não foi possível salvar a configuração.');
+      return false;
     } finally {
       saving = false;
     }
   }
 
-  async function handleReset() {
-    if (!confirm(resetConfirmMessage)) return;
-    saving = true;
-    error = '';
-    message = '';
-    try {
-      config = await resetConfig();
-      tableDisplay = structuredClone(config.table_display);
-      message = 'Configuração restaurada.';
-    } catch (err) {
-      error = parseApiError(err, 'Não foi possível restaurar a configuração.');
-    } finally {
-      saving = false;
-    }
+  async function handleSaveClick() {
+    await save();
   }
 </script>
 
-<section class="card bg-base-100 shadow">
-  <div class="card-body gap-3">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 class="card-title">{title}</h2>
-      <div class="flex gap-2">
-        <button type="button" class="btn btn-outline btn-sm" disabled={saving} on:click={handleReset}>
-          Restaurar padrão
-        </button>
-        <button type="button" class="btn btn-primary btn-sm" disabled={saving || loading} on:click={handleSave}>
-          {saving ? 'Salvando…' : 'Salvar configuração'}
-        </button>
-      </div>
-    </div>
-
-    {#if message}
+{#if embedded}
+  <div class="flex flex-col gap-3" data-testid="analysis-sum-config-panel">
+    {#if message && footerless}
       <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
     {/if}
     {#if error}
@@ -117,77 +113,50 @@
     {#if loading}
       <p class="text-sm text-base-content/70">Carregando…</p>
     {:else}
-      <p class="text-sm text-base-content/70">{formulaDescription}</p>
-      <div class="grid gap-4 rounded-lg border border-base-300 p-4 lg:max-w-xl">
-        <label class="label cursor-pointer justify-start gap-3">
-          <input
-            type="checkbox"
-            class="checkbox checkbox-sm"
-            bind:checked={tableDisplay.sum_column.enabled}
-          />
-          <span class="label-text">Exibir coluna de soma</span>
-        </label>
-        <label class="form-control">
-          <span class="label-text">Rótulo da coluna</span>
-          <input
-            class="input input-bordered input-sm"
-            bind:value={tableDisplay.sum_column.label}
-            disabled={!tableDisplay.sum_column.enabled}
-          />
-        </label>
-        <label class="form-control">
-          <span class="label-text">Multiplicador do diagrama</span>
-          <input
-            class="input input-bordered input-sm w-28"
-            type="number"
-            step="0.1"
-            bind:value={tableDisplay.sum_column.diagram_multiplier}
-            disabled={!tableDisplay.sum_column.enabled}
-          />
-        </label>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <label class="form-control">
-            <span class="label-text">Peso AZULIM</span>
-            <input
-              class="input input-bordered input-sm"
-              type="number"
-              step="0.1"
-              bind:value={tableDisplay.sum_column.viabilidade_weights.azulim}
-              disabled={!tableDisplay.sum_column.enabled}
-            />
-          </label>
-          <label class="form-control">
-            <span class="label-text">Peso VIÁVEL</span>
-            <input
-              class="input input-bordered input-sm"
-              type="number"
-              step="0.1"
-              bind:value={tableDisplay.sum_column.viabilidade_weights.viavel}
-              disabled={!tableDisplay.sum_column.enabled}
-            />
-          </label>
-          <label class="form-control">
-            <span class="label-text">Peso ATENÇÃO</span>
-            <input
-              class="input input-bordered input-sm"
-              type="number"
-              step="0.1"
-              bind:value={tableDisplay.sum_column.viabilidade_weights.atencao}
-              disabled={!tableDisplay.sum_column.enabled}
-            />
-          </label>
-          <label class="form-control">
-            <span class="label-text">Peso BOMBA</span>
-            <input
-              class="input input-bordered input-sm"
-              type="number"
-              step="0.1"
-              bind:value={tableDisplay.sum_column.viabilidade_weights.bomba}
-              disabled={!tableDisplay.sum_column.enabled}
-            />
-          </label>
-        </div>
+      <AnalysisSumColumnConfigFields bind:tableDisplay {profile} />
+    {/if}
+
+    {#if !footerless}
+      <div class="modal-action mt-2">
+        <button
+          type="button"
+          class="btn btn-primary"
+          disabled={!canSave}
+          on:click={handleSaveClick}
+        >
+          {saving ? 'Salvando…' : 'Salvar configuração'}
+        </button>
       </div>
     {/if}
   </div>
-</section>
+{:else}
+  <section class="card bg-base-100 shadow">
+    <div class="card-body gap-3">
+      <h2 class="card-title">{title}</h2>
+
+      {#if message}
+        <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
+      {/if}
+      {#if error}
+        <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
+      {/if}
+
+      {#if loading}
+        <p class="text-sm text-base-content/70">Carregando…</p>
+      {:else}
+        <AnalysisSumColumnConfigFields bind:tableDisplay {profile} />
+      {/if}
+
+      <div class="modal-action mt-2">
+        <button
+          type="button"
+          class="btn btn-primary"
+          disabled={!canSave}
+          on:click={handleSaveClick}
+        >
+          {saving ? 'Salvando…' : 'Salvar configuração'}
+        </button>
+      </div>
+    </div>
+  </section>
+{/if}

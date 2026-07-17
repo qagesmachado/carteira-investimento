@@ -1,7 +1,12 @@
 import { expect, test } from '../fixtures/test';
 
-
-import { gotoAnaliseConfigPage, analysisConfigProfileTabs, saveAnalysisConfig, setSumColumnDiagramMultiplier } from '../helpers/analisePage';
+import {
+  gotoAcoesBrPage,
+  openSumColumnConfigModal,
+  saveAnalysisConfig,
+  setAnalysisMethodologyComponents,
+  setSumColumnDiagramMultiplier
+} from '../helpers/analisePage';
 import { seedAnalysisWithBbse3 } from '../helpers/seedAnalysis';
 
 /**
@@ -13,16 +18,28 @@ test.describe('UI-ANL-004', () => {
     await seedAnalysisWithBbse3(request);
   });
 
-  test('salva alteração do multiplicador do diagrama', async ({ page }) => {
-    await gotoAnaliseConfigPage(page);
-    const profileTabs = analysisConfigProfileTabs(page);
-    await expect(profileTabs.getByRole('tab', { name: 'Ações/ETF BR', exact: true })).toHaveAttribute(
-      'aria-selected',
-      'true'
-    );
-    await expect(profileTabs.getByRole('tab', { name: 'FIIs', exact: true })).toBeVisible();
+  test('salva alteração do multiplicador e exibe colunas Fundamental, Diagrama e Soma', async ({ page }) => {
+    await gotoAcoesBrPage(page);
+    await expect(page.getByRole('columnheader', { name: 'Fundamental' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Diagrama' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Soma' })).toBeVisible();
+
+    await openSumColumnConfigModal(page);
+    await expect(page.getByRole('heading', { name: 'Configurar metodologia de análise' })).toBeVisible();
     await setSumColumnDiagramMultiplier(page, '3');
     await saveAnalysisConfig(page);
-    await expect(page.getByRole('alert').filter({ hasText: 'Configuração salva.' })).toBeVisible();
+    await expect(page.getByTestId('analysis-sum-config-modal')).toHaveCount(0);
+    await expect(page.getByRole('columnheader', { name: 'Soma' })).toBeVisible();
+  });
+
+  test('oculta coluna Fundamental quando desmarcada e persiste na tabela', async ({ page }) => {
+    await gotoAcoesBrPage(page);
+    await openSumColumnConfigModal(page);
+    await setAnalysisMethodologyComponents(page, { fundamental: false, diagram: true });
+    await saveAnalysisConfig(page);
+
+    await expect(page.getByRole('columnheader', { name: 'Fundamental' })).toHaveCount(0);
+    await expect(page.getByRole('columnheader', { name: 'Diagrama' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Soma' })).toBeVisible();
   });
 });

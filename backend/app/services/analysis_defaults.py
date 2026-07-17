@@ -15,6 +15,26 @@ PROFILE_FII_BR = "fii_br"
 PROFILE_ETF_INTL = "etf_intl"
 PROFILE_CRYPTO = "crypto"
 
+METHODOLOGY_SIMPLES = "simples"
+METHODOLOGY_AUVP = "auvp"
+NEW_PORTFOLIO_METHODOLOGY = METHODOLOGY_SIMPLES
+
+ANALYSIS_PROFILES_ALL = (
+    PROFILE_STOCK_BR,
+    PROFILE_FII_BR,
+    PROFILE_ETF_INTL,
+    PROFILE_CRYPTO,
+)
+
+LEGACY_DEFAULT_METHODOLOGY_BY_PROFILE: dict[str, str] = {
+    PROFILE_STOCK_BR: METHODOLOGY_AUVP,
+    PROFILE_FII_BR: METHODOLOGY_AUVP,
+    PROFILE_ETF_INTL: METHODOLOGY_SIMPLES,
+    PROFILE_CRYPTO: METHODOLOGY_SIMPLES,
+}
+
+PROFILES_AUVP_UNAVAILABLE = frozenset({PROFILE_ETF_INTL, PROFILE_CRYPTO})
+
 TARGET_PERCENT_CODE = "target_percent"
 ANALYSIS_LINK_CODE = "analysis_link"
 
@@ -417,7 +437,8 @@ def default_etf_intl_criteria() -> list[CriterionDefinition]:
 
 def default_etf_intl_table_display() -> TableDisplaySettings:
     settings = TableDisplaySettings()
-    settings.sum_column.enabled = False
+    settings.sum_column.use_fundamental = False
+    settings.sum_column.use_diagram = False
     return settings
 
 
@@ -448,7 +469,8 @@ def default_crypto_criteria() -> list[CriterionDefinition]:
 
 def default_crypto_table_display() -> TableDisplaySettings:
     settings = TableDisplaySettings()
-    settings.sum_column.enabled = False
+    settings.sum_column.use_fundamental = False
+    settings.sum_column.use_diagram = False
     return settings
 
 

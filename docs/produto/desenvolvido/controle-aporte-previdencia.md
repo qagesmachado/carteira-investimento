@@ -56,7 +56,9 @@ monthly_needed_brl = remaining_brl / months_remaining   (se months_remaining > 0
 monthly_needed_brl = null                               (se months_remaining = 0)
 ```
 
-Exemplo: renda R$ 120.000 → meta R$ 14.400; aportado R$ 6.000 em maio → faltam R$ 8.400 em 8 meses → R$ 1.050/mês.
+Exemplo: renda R$ 120.000 → meta R$ 14.400; aportado R$ 6.000 em maio → faltam R$ 8.400 em 8 meses (mai–dez) → R$ 1.050/mês.
+
+Exemplo (jul/2026): renda R$ 216.000 → meta R$ 25.920; aportado R$ 12.800 → faltam R$ 13.120 em 6 meses (jul–dez) → R$ 2.186,67/mês. Aportes maiores no início reduzem o faltante e, portanto, o valor mensal necessário.
 
 ### Progresso
 
@@ -88,12 +90,12 @@ Substitui a tabela de alocações quando `mode = pension_contribution`.
 1. **Consolidado por ano** — tabela com aportado, meta e progresso de cada ano.
 2. **Total aportado (todos os anos)** — soma consolidada no cabeçalho.
 3. **Abas por ano** + botão **+ Ano** para adicionar sub-objetivo anual.
-4. **Detalhe do ano selecionado** — renda e aporte editáveis via **Editar** / **Salvar** / **Cancelar**; **Excluir ano** remove o sub-registro (desde que reste pelo menos um ano).
+4. **Detalhe do ano selecionado** — renda e aporte somente leitura; **Editar** abre modal para alterar renda e aporte; **Excluir ano** remove o sub-registro (desde que reste pelo menos um ano).
 
 | Campo | Editável |
 | ----- | -------- |
-| Renda bruta anual (ano selecionado) | sim (modo edição) |
-| Total aportado no ano | sim (modo edição) |
+| Renda bruta anual (ano selecionado) | sim (modal Editar) |
+| Total aportado no ano | sim (modal Editar) |
 | Meta anual (12%) | não |
 | Faltante | não |
 | Aporte mensal necessário | não |

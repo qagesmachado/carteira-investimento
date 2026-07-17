@@ -14,7 +14,8 @@ import type { DashboardPatrimonyFilters } from './dashboardPatrimonyFilters';
 import { DEFAULT_DASHBOARD_PATRIMONY_FILTERS } from './dashboardPatrimonyFilters';
 import {
   resolvePositionCurrentBrlForDashboard,
-  resolvePositionInvestedBrlForDashboard
+  resolvePositionInvestedBrlForDashboard,
+  isPositionIncludedInDashboardPatrimonyScope
 } from './dashboardPatrimonyScope';
 
 export type DashboardPatrimony = {
@@ -65,9 +66,20 @@ export function computeDashboardPatrimony(
     if (!asset) {
       continue;
     }
-    activePositions += 1;
 
     const partition = partitionsByAssetId[position.asset_id];
+    if (
+      isPositionIncludedInDashboardPatrimonyScope(
+        position,
+        asset,
+        usdBrlRate,
+        partition,
+        filters
+      )
+    ) {
+      activePositions += 1;
+    }
+
     const invBrl = resolvePositionInvestedBrlForDashboard(
       position,
       asset,

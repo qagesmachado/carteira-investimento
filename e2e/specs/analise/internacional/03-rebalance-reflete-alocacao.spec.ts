@@ -14,13 +14,13 @@ import { getWorkerApiBaseUrl } from '../../helpers/workerContext';
  */
 test.describe('UI-ANL-016', () => {
   test('aba ETF internacional exibe % desejada após alocação', async ({ page, request }) => {
-    await seedEtfIntlAnalysis(request);
+    const portfolioId = await seedEtfIntlAnalysis(request);
     const assets = await request.get(`${getWorkerApiBaseUrl()}/assets`);
     const voo = ((await assets.json()) as { id: number; symbol: string }[]).find(
       (a) => a.symbol === 'VOO'
     );
     if (!voo) throw new Error('VOO not found');
-    await saveEtfIntlAllocationViaApi(request, voo.id);
+    await saveEtfIntlAllocationViaApi(request, portfolioId, voo.id);
 
     await gotoRebalancePage(page);
     const section = page.locator('section').filter({ hasText: 'Por ativo' });

@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  computeCombinedTableScore,
+  computeFundamentalTableScore,
+  computeRebalanceTableScore,
   computeDiagramSumScore,
   computeTableSumScore,
+  isTableScoreMethodologyValid,
   resolveManualViability,
   summarizeAnalysis,
   type CriterionDefinition
@@ -90,17 +94,18 @@ describe('computeAnalysis', () => {
     };
     const summary = summarizeAnalysis(scores, criteria, []);
     expect(
-      computeTableSumScore(scores, summary, {
-        enabled: true,
-        label: 'Soma',
-        diagram_multiplier: 2,
-        viabilidade_weights: {
-          azulim: 10,
-          viavel: 3,
-          atencao: -5,
-          bomba: -10
-        }
-      })
+      computeTableSumScore(scores, summary,         {
+          use_fundamental: true,
+          use_diagram: true,
+          label: 'Soma',
+          diagram_multiplier: 2,
+          viabilidade_weights: {
+            azulim: 10,
+            viavel: 3,
+            atencao: -5,
+            bomba: -10
+          }
+        })
     ).toBe(12);
   });
 
@@ -153,7 +158,8 @@ describe('computeAnalysis', () => {
         scores,
         summary,
         {
-          enabled: true,
+          use_fundamental: true,
+          use_diagram: true,
           label: 'Soma',
           diagram_multiplier: 2,
           viabilidade_weights: { azulim: 10, viavel: 3, atencao: -5, bomba: -10 }
@@ -169,7 +175,13 @@ describe('computeAnalysis', () => {
       computeTableSumScore(
         { vacancia: 5, pvp_descarte: 1 },
         summary,
-        { enabled: true, label: 'Soma', diagram_multiplier: 2, viabilidade_weights: { azulim: 10, viavel: 3, atencao: -5, bomba: -10 } },
+        {
+          use_fundamental: true,
+          use_diagram: true,
+          label: 'Soma',
+          diagram_multiplier: 2,
+          viabilidade_weights: { azulim: 10, viavel: 3, atencao: -5, bomba: -10 }
+        },
         'fii_br'
       )
     ).toBeNull();
@@ -181,5 +193,55 @@ describe('computeAnalysis', () => {
       { code: 'pvp_descarte', block: 'diagrama', label: 'Flag', input_type: 'flag', score_options: [] }
     ];
     expect(computeDiagramSumScore({ localizacao: 1, pvp_descarte: 1 }, criteria)).toBe(1);
+  });
+
+  it('valida metodologia com ao menos um componente', () => {
+    expect(
+      isTableScoreMethodologyValid({
+        use_fundamental: false,
+        use_diagram: false,
+        label: 'Soma',
+        diagram_multiplier: 2,
+        viabilidade_weights: { azulim: 10, viavel: 3, atencao: -5, bomba: -10 }
+      })
+    ).toBe(false);
+  });
+
+  it('soma usa só diagrama quando fundamental desligado', () => {
+    const criteria: CriterionDefinition[] = [
+      ...fundamentalCriteria.slice(0, 2),
+      fundamentalCriteria[2],
+      { code: 'roe', block: 'diagrama', label: 'ROE', input_type: 'yes_no', score_options: [] }
+    ];
+    const scores = { lucros: 5, divida: 2, viabilidade: 2, roe: 1 };
+    const summary = summarizeAnalysis(scores, criteria, []);
+    const settings = {
+      use_fundamental: false,
+      use_diagram: true,
+      label: 'Soma',
+      diagram_multiplier: 2,
+      viabilidade_weights: { azulim: 10, viavel: 3, atencao: -5, bomba: -10 }
+    };
+    expect(computeCombinedTableScore(scores, summary, settings)).toBe(1);
+  });
+
+  it('rebalance usa só fundamental quando diagrama desligado', () => {
+    const criteria: CriterionDefinition[] = [
+      ...fundamentalCriteria.slice(0, 2),
+      fundamentalCriteria[2],
+      { code: 'roe', block: 'diagrama', label: 'ROE', input_type: 'yes_no', score_options: [] }
+    ];
+    const scores = { lucros: 5, divida: 2, viabilidade: 2, roe: 1 };
+    const summary = summarizeAnalysis(scores, criteria, []);
+    const settings = {
+      use_fundamental: true,
+      use_diagram: false,
+      label: 'Soma',
+      diagram_multiplier: 2,
+      viabilidade_weights: { azulim: 10, viavel: 3, atencao: -5, bomba: -10 }
+    };
+    expect(computeFundamentalTableScore(scores, settings)).toBe(10);
+    expect(computeCombinedTableScore(scores, summary, settings)).toBe(10);
+    expect(computeRebalanceTableScore(scores, summary, settings)).toBe(10);
   });
 });

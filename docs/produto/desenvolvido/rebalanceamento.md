@@ -6,8 +6,8 @@ Comparar alocação **atual** vs. **desejada** da carteira ativa, calcular **FAL
 
 ## Escopo MVP
 
-- Página **`/rebalanceamento`**: tabela por classe, bloco ETF/Ação (70/30), tabela por ativo com abas Ações/ETF BR, ETF internacional e FII. Cabeçalhos da tabela **Por ativo** são clicáveis para ordenar (asc/desc) por qualquer coluna.
-- Página **`/rebalanceamento/configuracao`**: editar metas % por classe e split ETF/Ação.
+- Página **`/rebalanceamento`**: layout **Hub** (`PageHero` gradiente dashboard, barra de carteira com badges USD/BRL e cotações, botões «Atualizar cotações» / «Atualizar câmbio»), painel de **simulação** (por patrimônio final desejado ou valor a investir), KPIs de desvio, tabela por classe com ícones por classe, filtro de classe, **Meta %**, **% Atual**, **Desvio %**, **Desvio R$**, tabela por ativo com abas pill (ícones), filtro por ticker/nome e abas Ações/ETF BR, ETF internacional e FII. Cabeçalhos da tabela **Por ativo** são clicáveis para ordenar (asc/desc) por qualquer coluna.
+- Página **`/rebalanceamento/configuracao`**: layout alinhado ao rebalanceamento (`PageHero` dashboard), sliders com ícones e barras coloridas por classe, editor ETF/Ação (quando `stocks ≥ 1%`), pré-visualização em donut ao vivo, validação visual da soma (100%) e botão **Perfis predefinidos** (Conservador, Moderado, Arrojado) que preenche o formulário — persistência só após **Salvar metas**.
 - API **`GET /portfolios/{id}/rebalance`**: snapshot calculado.
 - Metas persistidas em **`Portfolio.allocation_targets_json`** (validação soma 100%).
 - **Ações/ETF BR:** % desejada por ativo via perfil `stock_br` (Soma + split ETF 70% / Ação 30%).
@@ -30,7 +30,26 @@ Comparar alocação **atual** vs. **desejada** da carteira ativa, calcular **FAL
 | Renda fixa | `fixed_income` | 40 |
 | Criptomoeda | `crypto` | 5 |
 
-Relação ETF/Ação dentro de `stocks`: **70% / 30%**.
+Relação ETF/Ação dentro de `stocks`: **50% / 50%** quando modo `by_subtype`; modo padrão **`unified`** (conjunto único).
+
+### Modo ETF/Ação (`stocks_split_mode`)
+
+| Modo | Comportamento |
+| ---- | ------------- |
+| `by_subtype` | Metas internas separadas para ETF e Ação; % desejada por ticker usa Soma dentro do subtipo |
+| `unified` (padrão) | ETF e ação compartilham 100% da meta Ações/ETF BR; Soma distribui entre todos os tickers da aba (como FIIs) |
+
+Configurável em `/rebalanceamento/configuracao` com confirmação ao trocar de modo.
+
+## Visibilidade na tela principal
+
+Na página `/rebalanceamento`, **classes** e **abas por ativo** só aparecem quando a meta correspondente em `/rebalanceamento/configuracao` é **≥ 1%**. Metas zeradas ou abaixo de 1% continuam válidas na configuração (desde que a soma das cinco classes seja 100%), mas ficam ocultas na tela de rebalanceamento.
+
+| Área | Regra |
+| ---- | ----- |
+| Tabela **Balanceamento por classe** | exibe linha da classe se `meta% ≥ 1` |
+| Abas **Por ativo** | exibe aba se a classe ligada (`stocks`, `international`, `funds`, `crypto`) tiver `meta% ≥ 1` |
+| KPIs de desvio por classe | contam apenas classes visíveis |
 
 ## Fórmulas
 
@@ -41,10 +60,25 @@ Relação ETF/Ação dentro de `stocks`: **70% / 30%**.
 
 Patrimônio = soma dos valores atuais das posições **das cinco classes de balanceamento**, convertidos para BRL (USD × câmbio). **Previdência** e **Outros** ficam fora dessa soma (como na planilha).
 
-Na UI, informe **Valor a investir** na linha TOTAL. O sistema calcula **Patrimônio final** = patrimônio atual + aporte e exibe:
+### Simulação de aporte
+
+Dois modos no painel **Simular rebalanceamento**:
+
+| Modo | Entrada | Aporte calculado |
+| ---- | ------- | ---------------- |
+| **Por valor total** | Patrimônio final desejado | `max(0, total − patrimônio_atual)` |
+| **Por valor a investir** | Valor do aporte | valor informado |
+
+Com aporte > 0, o sistema calcula **Patrimônio final** = patrimônio atual + aporte e exibe:
 
 - **Deveria ter** = `patrimônio_final × meta%` (valor ideal da classe/ativo após o aporte).
 - **Aporte sugerido** = parcela do valor investido alocada à classe/ativo.
+
+Colunas de desvio na tabela **Balanceamento por classe**:
+
+- **Desvio %** = `% atual − meta%` (positivo = acima da meta).
+- **Desvio R$** = `valor atual − valor alvo` (positivo = acima da meta).
+- **Faltando** = `max(0, valor alvo − valor atual)` (útil para aporte).
 
 Checkboxes por classe (marcados por padrão) permitem excluir uma classe do aporte; o gap ideal da classe desmarcada é redistribuído proporcionalmente entre as classes marcadas. A soma dos aportes sugeridos nas classes marcadas equivale ao valor informado.
 

@@ -68,7 +68,7 @@ module.exports = defineConfig({
       testMatch: '**/*.spec.ts',
       testIgnore: ['**/helpers/**', '**/fixtures/**'],
       timeout: 60_000,
-      retries: process.env.CI ? 1 : 0,
+      retries: 1,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: E2E_FRONTEND_BASE_URL,

@@ -25,7 +25,19 @@ describe('allocationTargets', () => {
   it('returns defaults when json is null', () => {
     const targets = parseAllocationTargets(null);
     expect(targets.classes.stocks).toBe(20);
-    expect(targets.stocks_split.etf).toBe(70);
+    expect(targets.stocks_split.etf).toBe(50);
+    expect(targets.stocks_split.stock).toBe(50);
+    expect(targets.stocks_split_mode).toBe('unified');
+  });
+
+  it('preserva modo by_subtype legado quando json nao informa stocks_split_mode', () => {
+    const raw = JSON.stringify({
+      classes: defaultAllocationTargets().classes,
+      stocks_split: { etf: 70, stock: 30 }
+    });
+    const parsed = parseAllocationTargets(raw);
+    expect(parsed.stocks_split_mode).toBe('by_subtype');
+    expect(parsed.stocks_split.etf).toBe(70);
   });
 
   it('parses stored json', () => {
@@ -57,12 +69,25 @@ describe('allocationTargets', () => {
 
   it('validates stocks split sum', () => {
     const targets = defaultAllocationTargets();
+    targets.stocks_split_mode = 'by_subtype';
     targets.stocks_split.etf = 80;
     expect(validateAllocationTargets(targets)).toMatch(/ETF\/Ação/);
+  });
+
+  it('parses stocks_split_mode from json', () => {
+    const raw = serializeAllocationTargets({
+      ...defaultAllocationTargets(),
+      stocks_split_mode: 'unified'
+    });
+    expect(parseAllocationTargets(raw).stocks_split_mode).toBe('unified');
   });
 
   it('formatBrl mascara quando ocultar valores está ativo', () => {
     setHideMoneyValues(true);
     expect(formatBrl(216_000)).toBe('R$ ••••••');
+  });
+
+  it('formatBrl retorna travessão quando valor é nulo', () => {
+    expect(formatBrl(null)).toBe('—');
   });
 });

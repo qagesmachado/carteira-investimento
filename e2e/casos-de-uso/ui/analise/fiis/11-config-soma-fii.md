@@ -4,7 +4,7 @@
 
 - **ID:** `UI-ANL-011`
 - **Status:** aprovado
-- **Página:** `/analise/configuracao?perfil=fiis`
+- **Página:** `/analise/fiis` (modal Coluna Soma, metodologia AUVP)
 - **Arquivo de teste:** `e2e/specs/analise/fiis/11-config-soma-fii.spec.ts`
 
 ## Cenário
@@ -15,6 +15,7 @@
 
 ### Passo a passo
 
-1. Abro `/analise/configuracao?perfil=fiis` (aba FIIs).
-2. Altero multiplicador do diagrama e salvo.
-3. Config persiste via API `fii-br/config`.
+1. Abro `/analise/fiis` (sem carteira ou com AUVP).
+2. Clico em **Configurar coluna Soma** e abro o modal.
+3. Altero multiplicador do diagrama e salvo.
+4. Config persiste via API `fii-br/config`.

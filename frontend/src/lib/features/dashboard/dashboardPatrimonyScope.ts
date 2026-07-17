@@ -87,6 +87,34 @@ export function hasDashboardPatrimonyFilterOptions(
   return availability.hasNonInvestment || availability.hasPension;
 }
 
+export function isPositionIncludedInDashboardPatrimonyScope(
+  position: Position,
+  asset: Asset,
+  usdBrlRate: number | null | undefined,
+  partition: AssetPartition | undefined,
+  filters: DashboardPatrimonyFilters = DEFAULT_DASHBOARD_PATRIMONY_FILTERS
+): boolean {
+  if (isPensionAsset(asset) && !filters.includePension) {
+    return false;
+  }
+
+  const currentBrl = resolvePositionCurrentBrlForDashboard(
+    position,
+    asset,
+    usdBrlRate,
+    partition,
+    filters
+  );
+
+  if (currentBrl != null) {
+    return currentBrl > 0;
+  }
+
+  // Posição sem valor de mercado calculável (ex.: sem cotação) ainda conta,
+  // desde que não tenha sido excluída acima (previdência com filtro desligado).
+  return true;
+}
+
 /** IDs de ativos com valor de mercado no escopo patrimonial atual (filtros aplicados). */
 export function computeScopedAssetIdsForDashboard(
   positions: Position[],

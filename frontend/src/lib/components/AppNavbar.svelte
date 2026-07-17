@@ -64,7 +64,7 @@
         <a href="/rebalanceamento" class:active={rebalanceOpen}>Rebalanceamento</a>
       </li>
       <li>
-        <a href="/analise/acoes-br" class:active={analiseOpen}>Análise de ativos</a>
+        <a href="/analise/sumario" class:active={analiseOpen}>Análise de ativos</a>
       </li>
       <li>
         <a

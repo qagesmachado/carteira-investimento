@@ -30,3 +30,6 @@ export function pageHeroSubtitleClass(variant: PageHeroVariant): string {
 /** Botões de ação no hero `variant="dashboard"` (Dashboard, consolidada, hub de carteiras). */
 export const PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS =
   'btn btn-outline min-h-[2.75rem] gap-2.5 border-white/30 bg-white/10 px-5 text-[1.09375rem] text-white hover:border-white hover:bg-white/20';
+
+/** Botão de voltar/navegação no hero dashboard — mesma caixa translúcida das demais ações. */
+export const PAGE_HERO_DASHBOARD_BACK_BTN_CLASS = PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS;

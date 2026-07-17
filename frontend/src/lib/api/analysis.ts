@@ -1,5 +1,9 @@
 import { API_BASE_URL } from './config';
 import { apiFetch } from './http';
+import {
+  ANALYSIS_PENDING_PROFILES,
+  buildPortfolioPendingGroups
+} from '$lib/features/analise/buildPortfolioPendingGroups';
 
 export type ScoreOption = {
   value: number;
@@ -41,7 +45,8 @@ export type ViabilidadeWeightSettings = {
 };
 
 export type TableSumColumnSettings = {
-  enabled: boolean;
+  use_fundamental: boolean;
+  use_diagram: boolean;
   label: string;
   diagram_multiplier: number;
   viabilidade_weights: ViabilidadeWeightSettings;
@@ -86,6 +91,37 @@ export type AssetAnalysis = {
   scores: Record<string, number | null>;
   score_refs?: Record<string, string | null>;
   summary: AnalysisSummary;
+  is_pending?: boolean;
+};
+
+export type AnalysisPortfolioSummary = {
+  portfolio_id: number;
+  classified_count: number;
+  pending_count: number;
+  profiles: Array<{
+    profile: string;
+    total: number;
+    classified: number;
+    pending: number;
+  }>;
+};
+
+export type PendingAssetSummary = {
+  asset_id: number;
+  symbol: string;
+  name: string;
+  asset_type: string;
+  profile: string;
+};
+
+export type PendingAssetsGroup = {
+  profile: string;
+  assets: PendingAssetSummary[];
+};
+
+export type AnalysisPortfolioPending = {
+  portfolio_id: number;
+  groups: PendingAssetsGroup[];
 };
 
 export type SegmentCatalogEntry = {
@@ -102,6 +138,23 @@ export const PROFILE_STOCK_BR = 'stock_br';
 export const PROFILE_FII_BR = 'fii_br';
 export const PROFILE_ETF_INTL = 'etf_intl';
 export const PROFILE_CRYPTO = 'crypto';
+
+export type AnalysisMethodology = 'simples' | 'auvp';
+
+export type AnalysisMethodologyRead = {
+  portfolio_id: number;
+  profile: string;
+  methodology: AnalysisMethodology;
+};
+
+export type AnalysisProfileSlug = 'stock-br' | 'fii-br' | 'etf-intl' | 'crypto';
+
+export const PROFILE_TO_SLUG: Record<string, AnalysisProfileSlug> = {
+  [PROFILE_STOCK_BR]: 'stock-br',
+  [PROFILE_FII_BR]: 'fii-br',
+  [PROFILE_ETF_INTL]: 'etf-intl',
+  [PROFILE_CRYPTO]: 'crypto'
+};
 
 export type EtfIntlAllocationInput = {
   asset_id: number;
@@ -141,8 +194,9 @@ export async function resetStockBrConfig(): Promise<AnalysisConfig> {
   return parseResponse<AnalysisConfig>(response);
 }
 
-export async function listStockBrAnalysis(): Promise<AssetAnalysis[]> {
-  const response = await apiFetch(`${API_BASE_URL}/analysis/assets?profile=stock_br`);
+export async function listStockBrAnalysis(portfolioId?: number | null): Promise<AssetAnalysis[]> {
+  const query = portfolioId != null ? `&portfolio_id=${portfolioId}` : '';
+  const response = await apiFetch(`${API_BASE_URL}/analysis/assets?profile=stock_br${query}`);
   return parseResponse<AssetAnalysis[]>(response);
 }
 
@@ -193,9 +247,69 @@ export async function resetFiiBrConfig(): Promise<AnalysisConfig> {
   return parseResponse<AnalysisConfig>(response);
 }
 
-export async function listFiiBrAnalysis(): Promise<AssetAnalysis[]> {
-  const response = await apiFetch(`${API_BASE_URL}/analysis/assets?profile=fii_br`);
+export async function listFiiBrAnalysis(portfolioId?: number | null): Promise<AssetAnalysis[]> {
+  const query = portfolioId != null ? `&portfolio_id=${portfolioId}` : '';
+  const response = await apiFetch(`${API_BASE_URL}/analysis/assets?profile=fii_br${query}`);
   return parseResponse<AssetAnalysis[]>(response);
+}
+
+export async function getAnalysisPortfolioSummary(
+  portfolioId: number
+): Promise<AnalysisPortfolioSummary> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/analysis/portfolio-summary?portfolio_id=${portfolioId}`
+  );
+  return parseResponse<AnalysisPortfolioSummary>(response);
+}
+
+export async function getAnalysisPortfolioPending(
+  portfolioId: number
+): Promise<AnalysisPortfolioPending> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/analysis/portfolio-pending?portfolio_id=${portfolioId}`
+  );
+  if (response.ok) {
+    return parseResponse<AnalysisPortfolioPending>(response);
+  }
+  if (response.status === 404) {
+    return loadPortfolioPendingFromAnalysisAssets(portfolioId);
+  }
+  return parseResponse<AnalysisPortfolioPending>(response);
+}
+
+async function loadPortfolioPendingFromAnalysisAssets(
+  portfolioId: number
+): Promise<AnalysisPortfolioPending> {
+  const rowsByProfile: Record<string, AssetAnalysis[]> = {};
+  await Promise.all(
+    ANALYSIS_PENDING_PROFILES.map(async (profile) => {
+      const assetsResponse = await apiFetch(
+        `${API_BASE_URL}/analysis/assets?profile=${profile}&portfolio_id=${portfolioId}`
+      );
+      if (!assetsResponse.ok) {
+        throw new Error(await assetsResponse.text());
+      }
+      rowsByProfile[profile] = (await assetsResponse.json()) as AssetAnalysis[];
+    })
+  );
+  return buildPortfolioPendingGroups(portfolioId, rowsByProfile);
+}
+
+export async function setAssetPending(
+  assetId: number,
+  portfolioId: number,
+  isPending: boolean,
+  profile: string = PROFILE_STOCK_BR
+): Promise<AssetAnalysis> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/analysis/assets/${assetId}/pending?profile=${profile}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portfolio_id: portfolioId, is_pending: isPending })
+    }
+  );
+  return parseResponse<AssetAnalysis>(response);
 }
 
 export async function getFiiSegments(): Promise<SegmentCatalogEntry[]> {
@@ -224,18 +338,21 @@ export async function getEtfIntlConfig(): Promise<AnalysisConfig> {
   return parseResponse<AnalysisConfig>(response);
 }
 
-export async function listEtfIntlAnalysis(): Promise<AssetAnalysis[]> {
-  const response = await apiFetch(`${API_BASE_URL}/analysis/assets?profile=etf_intl`);
+export async function listEtfIntlAnalysis(portfolioId: number): Promise<AssetAnalysis[]> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/analysis/assets?profile=etf_intl&portfolio_id=${portfolioId}`
+  );
   return parseResponse<AssetAnalysis[]>(response);
 }
 
 export async function saveEtfIntlAllocations(
+  portfolioId: number,
   allocations: EtfIntlAllocationInput[]
 ): Promise<AssetAnalysis[]> {
   const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/etf-intl/allocations`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ allocations })
+    body: JSON.stringify({ portfolio_id: portfolioId, allocations })
   });
   return parseResponse<AssetAnalysis[]>(response);
 }
@@ -245,18 +362,68 @@ export async function getCryptoConfig(): Promise<AnalysisConfig> {
   return parseResponse<AnalysisConfig>(response);
 }
 
-export async function listCryptoAnalysis(): Promise<AssetAnalysis[]> {
-  const response = await apiFetch(`${API_BASE_URL}/analysis/assets?profile=crypto`);
+export async function listCryptoAnalysis(portfolioId: number): Promise<AssetAnalysis[]> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/analysis/assets?profile=crypto&portfolio_id=${portfolioId}`
+  );
   return parseResponse<AssetAnalysis[]>(response);
 }
 
 export async function saveCryptoAllocations(
+  portfolioId: number,
   allocations: EtfIntlAllocationInput[]
 ): Promise<AssetAnalysis[]> {
   const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/crypto/allocations`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ allocations })
+    body: JSON.stringify({ portfolio_id: portfolioId, allocations })
   });
   return parseResponse<AssetAnalysis[]>(response);
+}
+
+export async function saveStockBrAllocations(
+  portfolioId: number,
+  allocations: EtfIntlAllocationInput[]
+): Promise<AssetAnalysis[]> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/stock-br/allocations`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ portfolio_id: portfolioId, allocations })
+  });
+  return parseResponse<AssetAnalysis[]>(response);
+}
+
+export async function saveFiiBrAllocations(
+  portfolioId: number,
+  allocations: EtfIntlAllocationInput[]
+): Promise<AssetAnalysis[]> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/fii-br/allocations`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ portfolio_id: portfolioId, allocations })
+  });
+  return parseResponse<AssetAnalysis[]>(response);
+}
+
+export async function getAnalysisMethodology(
+  profileSlug: AnalysisProfileSlug,
+  portfolioId: number
+): Promise<AnalysisMethodologyRead> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/analysis/profiles/${profileSlug}/methodology?portfolio_id=${portfolioId}`
+  );
+  return parseResponse<AnalysisMethodologyRead>(response);
+}
+
+export async function saveAnalysisMethodology(
+  profileSlug: AnalysisProfileSlug,
+  portfolioId: number,
+  methodology: AnalysisMethodology
+): Promise<AnalysisMethodologyRead> {
+  const response = await apiFetch(`${API_BASE_URL}/analysis/profiles/${profileSlug}/methodology`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ portfolio_id: portfolioId, methodology })
+  });
+  return parseResponse<AnalysisMethodologyRead>(response);
 }

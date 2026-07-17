@@ -54,8 +54,8 @@ class AssetRebalanceRow:
     symbol: str
     name: str
     asset_type: str
-    current_value_brl: float
-    current_percent: float
+    current_value_brl: float | None
+    current_percent: float | None
     target_percent: float | None
     target_value_brl: float | None
     gap_brl: float | None
@@ -126,6 +126,8 @@ def compute_stocks_sub_rows(
     current_by_sub_type: dict[str, float],
     targets: AllocationTargets,
 ) -> list[StocksSubTypeRebalanceRow]:
+    if targets.stocks_split_mode != "by_subtype":
+        return []
     class_target_pct = targets.classes.stocks
     stocks_pool = patrimony_brl * class_target_pct / 100.0 if patrimony_brl > 0 else 0.0
     rows: list[StocksSubTypeRebalanceRow] = []
@@ -159,7 +161,87 @@ def _stock_sub_type(asset_type: str) -> str | None:
     return None
 
 
+def _asset_is_pending(asset: dict) -> bool:
+    return bool(asset.get("is_pending"))
+
+
+def _non_pending_assets(assets: list[dict]) -> list[dict]:
+    return [asset for asset in assets if not _asset_is_pending(asset)]
+
+
 def compute_stock_asset_rows(
+    patrimony_brl: float,
+    assets: list[dict],
+    targets: AllocationTargets,
+) -> list[AssetRebalanceRow]:
+    if targets.stocks_split_mode == "unified":
+        return _compute_stock_asset_rows_unified(patrimony_brl, assets, targets)
+    return _compute_stock_asset_rows_by_subtype(patrimony_brl, assets, targets)
+
+
+def _compute_stock_asset_rows_unified(
+    patrimony_brl: float,
+    assets: list[dict],
+    targets: AllocationTargets,
+) -> list[AssetRebalanceRow]:
+    """Distribui a meta de Ações/ETF BR entre todos os ativos pela coluna Soma."""
+    class_target_pct = targets.classes.stocks
+    active_assets = _non_pending_assets(assets)
+    score_sum = sum(
+        float(asset["sum_score"])
+        for asset in active_assets
+        if _stock_sub_type(asset["asset_type"]) is not None
+        and asset.get("sum_score") is not None
+        and float(asset["sum_score"]) > 0
+    )
+    group_current_total = sum(float(asset["current_brl"]) for asset in active_assets)
+
+    rows: list[AssetRebalanceRow] = []
+    for asset in assets:
+        sub = _stock_sub_type(asset["asset_type"])
+        if sub is None:
+            continue
+        current = float(asset["current_brl"])
+        current_pct = (
+            (current / group_current_total * 100.0) if group_current_total > 0 else 0.0
+        )
+        score = asset.get("sum_score")
+        score_val = float(score) if score is not None else None
+
+        target_pct: float | None = None
+        target_value: float | None = None
+        gap: float | None = None
+        included = False
+
+        if not _asset_is_pending(asset) and score_val is not None and score_val > 0 and score_sum > 0:
+            included = True
+            weight = score_val / score_sum
+            target_pct = weight * 100.0
+            portfolio_target_pct = weight * class_target_pct
+            target_value = patrimony_brl * portfolio_target_pct / 100.0 if patrimony_brl > 0 else 0.0
+            gap = max(0.0, target_value - current)
+
+        rows.append(
+            AssetRebalanceRow(
+                asset_id=int(asset["asset_id"]),
+                symbol=str(asset["symbol"]),
+                name=str(asset["name"]),
+                asset_type=str(asset["asset_type"]),
+                current_value_brl=round(current, 2),
+                current_percent=round(current_pct, 4),
+                target_percent=round(target_pct, 4) if target_pct is not None else None,
+                target_value_brl=round(target_value, 2) if target_value is not None else None,
+                gap_brl=round(gap, 2) if gap is not None else None,
+                sum_score=score_val,
+                score_included=included,
+            )
+        )
+
+    rows.sort(key=lambda r: (r.asset_type, r.symbol))
+    return rows
+
+
+def _compute_stock_asset_rows_by_subtype(
     patrimony_brl: float,
     assets: list[dict],
     targets: AllocationTargets,
@@ -167,7 +249,7 @@ def compute_stock_asset_rows(
     class_target_pct = targets.classes.stocks
     scores_by_sub: dict[str, list[tuple[dict, float]]] = {"etf": [], "stock": []}
 
-    for asset in assets:
+    for asset in _non_pending_assets(assets):
         sub = _stock_sub_type(asset["asset_type"])
         if sub is None:
             continue
@@ -175,7 +257,8 @@ def compute_stock_asset_rows(
         if score is not None and score > 0:
             scores_by_sub[sub].append((asset, float(score)))
 
-    group_current_total = sum(float(asset["current_brl"]) for asset in assets)
+    active_assets = _non_pending_assets(assets)
+    group_current_total = sum(float(asset["current_brl"]) for asset in active_assets)
 
     rows: list[AssetRebalanceRow] = []
     for asset in assets:
@@ -197,7 +280,7 @@ def compute_stock_asset_rows(
         gap: float | None = None
         included = False
 
-        if score_val is not None and score_val > 0 and score_sum > 0:
+        if not _asset_is_pending(asset) and score_val is not None and score_val > 0 and score_sum > 0:
             included = True
             weight = score_val / score_sum
             pct_of_stocks_class = weight * sub_pct
@@ -232,13 +315,96 @@ def compute_fund_asset_rows(
     targets: AllocationTargets,
 ) -> list[AssetRebalanceRow]:
     """Distribui % desejada entre FIIs proporcional à coluna Soma (fii_br)."""
-    class_target_pct = targets.classes.funds
+    return _compute_asset_rows_by_soma(patrimony_brl, assets, targets.classes.funds)
+
+
+def compute_fund_asset_rows_by_allocation(
+    patrimony_brl: float,
+    assets: list[dict],
+    targets: AllocationTargets,
+) -> list[AssetRebalanceRow]:
+    """Distribui % desejada entre FIIs via alocação manual (metodologia Simples)."""
+    return compute_asset_rows_by_target_allocation(
+        patrimony_brl, assets, targets.classes.funds
+    )
+
+
+def compute_stock_asset_rows_by_allocation(
+    patrimony_brl: float,
+    assets: list[dict],
+    targets: AllocationTargets,
+) -> list[AssetRebalanceRow]:
+    """Distribui % desejada entre ações/ETF BR via alocação manual (metodologia Simples)."""
+    return compute_asset_rows_by_target_allocation(
+        patrimony_brl, assets, targets.classes.stocks
+    )
+
+
+def compute_asset_rows_by_target_allocation(
+    patrimony_brl: float,
+    assets: list[dict],
+    class_target_pct: float,
+) -> list[AssetRebalanceRow]:
+    active_assets = _non_pending_assets(assets)
+    group_current_total = sum(float(asset["current_brl"]) for asset in active_assets)
+
+    rows: list[AssetRebalanceRow] = []
+    for asset in assets:
+        current = float(asset["current_brl"])
+        current_pct = (
+            (current / group_current_total * 100.0) if group_current_total > 0 else 0.0
+        )
+        target_pct_group = asset.get("target_percent")
+        target_pct_val = (
+            float(target_pct_group) if target_pct_group is not None else None
+        )
+
+        target_pct: float | None = None
+        target_value: float | None = None
+        gap: float | None = None
+        included = False
+
+        if not _asset_is_pending(asset) and target_pct_val is not None and target_pct_val > 0:
+            included = True
+            target_pct = target_pct_val
+            portfolio_target_pct = target_pct * class_target_pct / 100.0
+            target_value = (
+                patrimony_brl * portfolio_target_pct / 100.0 if patrimony_brl > 0 else 0.0
+            )
+            gap = max(0.0, target_value - current)
+
+        rows.append(
+            AssetRebalanceRow(
+                asset_id=int(asset["asset_id"]),
+                symbol=str(asset["symbol"]),
+                name=str(asset["name"]),
+                asset_type=str(asset["asset_type"]),
+                current_value_brl=round(current, 2),
+                current_percent=round(current_pct, 4),
+                target_percent=round(target_pct, 4) if target_pct is not None else None,
+                target_value_brl=round(target_value, 2) if target_value is not None else None,
+                gap_brl=round(gap, 2) if gap is not None else None,
+                sum_score=target_pct_val,
+                score_included=included,
+            )
+        )
+
+    rows.sort(key=lambda r: (r.asset_type, r.symbol))
+    return rows
+
+
+def _compute_asset_rows_by_soma(
+    patrimony_brl: float,
+    assets: list[dict],
+    class_target_pct: float,
+) -> list[AssetRebalanceRow]:
+    active_assets = _non_pending_assets(assets)
     score_sum = sum(
         float(asset["sum_score"])
-        for asset in assets
+        for asset in active_assets
         if asset.get("sum_score") is not None and float(asset["sum_score"]) > 0
     )
-    group_current_total = sum(float(asset["current_brl"]) for asset in assets)
+    group_current_total = sum(float(asset["current_brl"]) for asset in active_assets)
 
     rows: list[AssetRebalanceRow] = []
     for asset in assets:
@@ -254,7 +420,7 @@ def compute_fund_asset_rows(
         gap: float | None = None
         included = False
 
-        if score_val is not None and score_val > 0 and score_sum > 0:
+        if not _asset_is_pending(asset) and score_val is not None and score_val > 0 and score_sum > 0:
             included = True
             weight = score_val / score_sum
             target_pct = weight * 100.0
@@ -289,7 +455,8 @@ def compute_international_asset_rows(
 ) -> list[AssetRebalanceRow]:
     """Distribui % desejada entre ETFs internacionais via alocação manual (etf_intl)."""
     class_target_pct = targets.classes.international
-    group_current_total = sum(float(asset["current_brl"]) for asset in assets)
+    active_assets = _non_pending_assets(assets)
+    group_current_total = sum(float(asset["current_brl"]) for asset in active_assets)
 
     rows: list[AssetRebalanceRow] = []
     for asset in assets:
@@ -307,7 +474,7 @@ def compute_international_asset_rows(
         gap: float | None = None
         included = False
 
-        if target_pct_val is not None and target_pct_val > 0:
+        if not _asset_is_pending(asset) and target_pct_val is not None and target_pct_val > 0:
             included = True
             target_pct = target_pct_val
             portfolio_target_pct = target_pct * class_target_pct / 100.0
@@ -343,14 +510,24 @@ def compute_crypto_asset_rows(
 ) -> list[AssetRebalanceRow]:
     """Distribui % desejada entre ativos da estratégia cripto via alocação manual."""
     class_target_pct = targets.classes.crypto
-    group_current_total = sum(float(asset["current_brl"]) for asset in assets)
+    active_assets = _non_pending_assets(assets)
+    group_current_total = sum(
+        float(asset["current_brl"])
+        for asset in active_assets
+        if asset.get("current_brl") is not None
+    )
 
     rows: list[AssetRebalanceRow] = []
     for asset in assets:
-        current = float(asset["current_brl"])
-        current_pct = (
-            (current / group_current_total * 100.0) if group_current_total > 0 else 0.0
-        )
+        current_raw = asset.get("current_brl")
+        if current_raw is None:
+            current: float | None = None
+            current_pct: float | None = None
+        else:
+            current = float(current_raw)
+            current_pct = (
+                (current / group_current_total * 100.0) if group_current_total > 0 else 0.0
+            )
         target_pct_group = asset.get("target_percent")
         target_pct_val = (
             float(target_pct_group) if target_pct_group is not None else None
@@ -361,14 +538,15 @@ def compute_crypto_asset_rows(
         gap: float | None = None
         included = False
 
-        if target_pct_val is not None and target_pct_val > 0:
+        if not _asset_is_pending(asset) and target_pct_val is not None and target_pct_val > 0:
             included = True
             target_pct = target_pct_val
             portfolio_target_pct = target_pct * class_target_pct / 100.0
             target_value = (
                 patrimony_brl * portfolio_target_pct / 100.0 if patrimony_brl > 0 else 0.0
             )
-            gap = max(0.0, target_value - current)
+            effective_current = current if current is not None else 0.0
+            gap = max(0.0, target_value - effective_current)
 
         rows.append(
             AssetRebalanceRow(
@@ -376,8 +554,8 @@ def compute_crypto_asset_rows(
                 symbol=str(asset["symbol"]),
                 name=str(asset["name"]),
                 asset_type=str(asset["asset_type"]),
-                current_value_brl=round(current, 2),
-                current_percent=round(current_pct, 4),
+                current_value_brl=round(current, 2) if current is not None else None,
+                current_percent=round(current_pct, 4) if current_pct is not None else None,
                 target_percent=round(target_pct, 4) if target_pct is not None else None,
                 target_value_brl=round(target_value, 2) if target_value is not None else None,
                 gap_brl=round(gap, 2) if gap is not None else None,

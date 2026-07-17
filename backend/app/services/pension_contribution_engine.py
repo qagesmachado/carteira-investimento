@@ -28,7 +28,7 @@ def months_remaining_in_year(plan_year: int, reference_date: date | None = None)
         return 12
     if plan_year < reference_date.year:
         return 0
-    return 12 - reference_date.month + 1
+    return 12 - reference_date.month + 1  # mês corrente até dezembro, inclusive
 
 
 def compute_pension_contribution_metrics(

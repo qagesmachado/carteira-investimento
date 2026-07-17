@@ -11,13 +11,13 @@ import { getWorkerApiBaseUrl } from '../../helpers/workerContext';
  */
 test.describe('UI-CRP-003', () => {
   test('aba Criptomoedas exibe % desejada após alocação', async ({ page, request }) => {
-    await seedCryptoAnalysis(request);
+    const portfolioId = await seedCryptoAnalysis(request);
     const assets = await request.get(`${getWorkerApiBaseUrl()}/assets`);
     const list = (await assets.json()) as { id: number; symbol: string }[];
     const btc = list.find((a) => a.symbol === TICKER_BTC_USD);
     const abtc = list.find((a) => a.symbol === TICKER_ABTC11);
     if (!btc || !abtc) throw new Error('crypto assets not found');
-    await saveCryptoAllocationViaApi(request, [
+    await saveCryptoAllocationViaApi(request, portfolioId, [
       { asset_id: btc.id, target_percent: 70 },
       { asset_id: abtc.id, target_percent: 30 }
     ]);

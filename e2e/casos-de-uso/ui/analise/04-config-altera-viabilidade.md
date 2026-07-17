@@ -4,7 +4,7 @@
 
 - **ID:** `UI-ANL-004`
 - **Status:** aprovado
-- **Página:** `/analise/configuracao` (aba Ações/ETF BR; mesma tela com sub-aba FIIs)
+- **Página:** `/analise/acoes-br` (modal Coluna Soma, metodologia AUVP)
 - **Arquivo de teste:** `e2e/specs/analise/04-config-altera-viabilidade.spec.ts`
 
 ## Cenário
@@ -15,7 +15,8 @@
 
 ### Passo a passo
 
-1. Abro `/analise/configuracao`.
-2. Altero peso de um critério fundamental.
-3. Salvo configuração.
-4. Preview ou mensagem de sucesso confirma persistência.
+1. Abro `/analise/acoes-br` (metodologia AUVP).
+2. Clico em **Configurar coluna Soma** e abro o modal.
+3. Altero peso de um critério fundamental.
+4. Salvo configuração.
+5. Preview ou mensagem de sucesso confirma persistência.

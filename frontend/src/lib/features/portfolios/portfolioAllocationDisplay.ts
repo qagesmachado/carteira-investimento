@@ -54,6 +54,9 @@ export function buildPortfolioAllocationClassRows(
 }
 
 export function formatStocksSplitLabel(targets: AllocationTargets): string {
+  if (targets.stocks_split_mode === 'unified') {
+    return 'Ações/ETF BR: conjunto único (Soma entre todos os tickers)';
+  }
   const { etf, stock } = targets.stocks_split;
   return `ETF/Ação (BR): ${formatAllocationPercentCompact(etf)} / ${formatAllocationPercentCompact(stock)}`;
 }

@@ -16,6 +16,6 @@
 ### Passo a passo
 
 1. Carteira ativa (seed mínimo).
-2. Abro `/rebalanceamento/configuracao` e altero percentuais (ex.: Ações/ETF BR 25%, Renda fixa 45%).
+2. Abro `/rebalanceamento/configuracao` e ajusto os sliders de classe (ex.: Ações/ETF BR 25%, Renda fixa 45%).
 3. Salvo e volto à página principal.
-4. A tabela reflete os novos percentuais na coluna Porcentagem.
+4. A tabela reflete os novos percentuais na coluna Meta %.

@@ -15,6 +15,9 @@ from app.services.analysis_engine import (
     build_score_option,
     compute_block_numeric_score,
     compute_diagram_sum_score,
+    compute_combined_table_score,
+    compute_fundamental_table_score,
+    compute_rebalance_table_score,
     compute_table_sum_score,
     is_pvp_discarded,
     resolve_manual_viability,
@@ -87,7 +90,8 @@ def test_compute_table_sum():
         VIABILIDADE_CODE: 3,
     }
     settings = TableSumColumnSettings(
-        enabled=True,
+        use_fundamental=True,
+        use_diagram=True,
         label="Soma",
         diagram_multiplier=2.0,
         viabilidade_weights=ViabilidadeWeightSettings(
@@ -98,6 +102,53 @@ def test_compute_table_sum():
         ),
     )
     assert compute_table_sum_score(scores, summary, settings) == 20
+
+
+def test_rebalance_score_uses_fundamental_only():
+    summary = AnalysisSummary(
+        fundamental=BlockSummary(score=2, viability=None),
+        diagrama=BlockSummary(score=5, viability=None),
+        viabilidade=None,
+    )
+    scores = {
+        "lucros": 5,
+        "divida": 2,
+        "tag_along": 5,
+        "segmento": 3,
+        VIABILIDADE_CODE: 3,
+    }
+    settings = TableSumColumnSettings(use_fundamental=True, use_diagram=False)
+    assert compute_rebalance_table_score(scores, summary, settings) == 10
+    assert compute_combined_table_score(scores, summary, settings) == 10
+
+
+def test_rebalance_score_uses_diagram_only():
+    summary = AnalysisSummary(
+        fundamental=BlockSummary(score=2, viability=None),
+        diagrama=BlockSummary(score=5, viability=None),
+        viabilidade=None,
+    )
+    scores = {"lucros": 5, "divida": 2, "tag_along": 5, "segmento": 3, VIABILIDADE_CODE: 3}
+    settings = TableSumColumnSettings(use_fundamental=False, use_diagram=True)
+    assert compute_rebalance_table_score(scores, summary, settings) == 5
+    assert compute_fundamental_table_score(scores, settings) == 10
+
+
+def test_combined_score_uses_diagram_only_when_fundamental_disabled():
+    summary = AnalysisSummary(
+        fundamental=BlockSummary(score=2, viability=None),
+        diagrama=BlockSummary(score=5, viability=None),
+        viabilidade=None,
+    )
+    scores = {
+        "lucros": 5,
+        "divida": 2,
+        "tag_along": 5,
+        "segmento": 3,
+        VIABILIDADE_CODE: 3,
+    }
+    settings = TableSumColumnSettings(use_fundamental=False, use_diagram=True)
+    assert compute_combined_table_score(scores, summary, settings) == 5
 
 
 def test_unknown_method_raises():

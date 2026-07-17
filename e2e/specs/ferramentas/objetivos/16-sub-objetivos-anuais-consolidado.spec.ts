@@ -54,7 +54,7 @@ test.describe('UI-OBJ-016', () => {
     await expect(page.getByTestId('pension-contribution-detail')).toContainText(/18\.000,00/);
 
     await selectPensionYearTab(page, previousYear);
-    await expect(page.getByTestId('pension-contributed-input')).toHaveValue(/R\$\s?12\.000,00/);
+    await expect(page.getByTestId('pension-contributed-display')).toHaveText(/12\.000,00/);
     await expect(page.getByTestId('pension-target-value')).toHaveText(/12\.000,00/);
   });
 });

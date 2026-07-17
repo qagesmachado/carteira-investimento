@@ -58,7 +58,8 @@ export type AnalysisSummary = {
 };
 
 export type TableSumColumnSettings = {
-  enabled: boolean;
+  use_fundamental: boolean;
+  use_diagram: boolean;
   label: string;
   diagram_multiplier: number;
   viabilidade_weights: ViabilidadeWeightSettings;
@@ -164,13 +165,15 @@ export function resolveViabilidadeTableWeight(
   }
 }
 
-export function computeTableSumScore(
+export function isTableScoreMethodologyValid(settings: TableSumColumnSettings): boolean {
+  return settings.use_fundamental || settings.use_diagram;
+}
+
+export function computeFundamentalTableScore(
   scores: Record<string, number | null | undefined>,
-  summary: AnalysisSummary,
   settings: TableSumColumnSettings,
   profile: string = PROFILE_STOCK_BR
 ): number | null {
-  if (!settings.enabled) return null;
   if (isPvpDiscarded(scores)) return null;
 
   let total = 0;
@@ -193,12 +196,58 @@ export function computeTableSumScore(
     hasAny = true;
   }
 
-  if (summary.diagrama.score != null) {
-    total += settings.diagram_multiplier * summary.diagrama.score;
+  return hasAny ? total : null;
+}
+
+export function computeCombinedTableScore(
+  scores: Record<string, number | null | undefined>,
+  summary: AnalysisSummary,
+  settings: TableSumColumnSettings,
+  profile: string = PROFILE_STOCK_BR
+): number | null {
+  if (isPvpDiscarded(scores)) return null;
+  if (!settings.use_fundamental && !settings.use_diagram) return null;
+
+  let total: number | null = null;
+  let hasAny = false;
+
+  if (settings.use_fundamental) {
+    const fundamental = computeFundamentalTableScore(scores, settings, profile);
+    if (fundamental != null) {
+      total = fundamental;
+      hasAny = true;
+    }
+  }
+
+  if (settings.use_diagram && summary.diagrama.score != null) {
+    const diagram = summary.diagrama.score;
+    const weighted =
+      settings.use_fundamental && settings.use_diagram
+        ? settings.diagram_multiplier * diagram
+        : diagram;
+    total = (total ?? 0) + weighted;
     hasAny = true;
   }
 
   return hasAny ? total : null;
+}
+
+export function computeRebalanceTableScore(
+  scores: Record<string, number | null | undefined>,
+  summary: AnalysisSummary,
+  settings: TableSumColumnSettings,
+  profile: string = PROFILE_STOCK_BR
+): number | null {
+  return computeCombinedTableScore(scores, summary, settings, profile);
+}
+
+export function computeTableSumScore(
+  scores: Record<string, number | null | undefined>,
+  summary: AnalysisSummary,
+  settings: TableSumColumnSettings,
+  profile: string = PROFILE_STOCK_BR
+): number | null {
+  return computeRebalanceTableScore(scores, summary, settings, profile);
 }
 
 export function resolveManualViability(

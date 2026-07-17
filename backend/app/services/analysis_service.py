@@ -10,10 +10,12 @@ from app.models.analysis import (
     AnalysisSegmentCatalog,
     AnalysisViabilityRule,
     AssetAnalysisScore,
+    PortfolioAssetAllocation,
 )
 from app.models.asset import Asset, DisplayClass
 from app.services.analysis_defaults import (
     ANALYSIS_LINK_CODE,
+    METHODOLOGY_SIMPLES,
     PROFILE_CRYPTO,
     PROFILE_ETF_INTL,
     PROFILE_FII_BR,
@@ -47,7 +49,83 @@ from app.services.analysis_engine import (
     score_option_dropdown_label,
     summarize_analysis,
 )
+from app.services.analysis_pending_service import get_pending_asset_ids
+from app.services.analysis_methodology_service import is_allocation_methodology
 from app.services.asset_service import infer_display_class
+
+
+_ALLOCATION_PROFILES = frozenset(
+    {PROFILE_CRYPTO, PROFILE_ETF_INTL, PROFILE_STOCK_BR, PROFILE_FII_BR}
+)
+
+_PROFILE_REQUIRED_DISPLAY_CLASS: dict[str, DisplayClass] = {
+    PROFILE_STOCK_BR: DisplayClass.STOCKS,
+    PROFILE_FII_BR: DisplayClass.FUNDS,
+    PROFILE_ETF_INTL: DisplayClass.INTERNATIONAL,
+    PROFILE_CRYPTO: DisplayClass.CRYPTO,
+}
+
+
+def _format_target_percent_value(target_percent: float) -> str:
+    return f"{target_percent:.4f}".rstrip("0").rstrip(".")
+
+
+def _allocation_refs_from_row(row: PortfolioAssetAllocation | None) -> dict[str, str | None]:
+    if row is None:
+        return {}
+    return {
+        TARGET_PERCENT_CODE: _format_target_percent_value(row.target_percent),
+        ANALYSIS_LINK_CODE: row.analysis_link,
+    }
+
+
+def get_portfolio_allocation(
+    session: Session,
+    portfolio_id: int,
+    asset_id: int,
+    profile: str,
+) -> PortfolioAssetAllocation | None:
+    return session.exec(
+        select(PortfolioAssetAllocation).where(
+            PortfolioAssetAllocation.portfolio_id == portfolio_id,
+            PortfolioAssetAllocation.asset_id == asset_id,
+            PortfolioAssetAllocation.profile == profile,
+        )
+    ).first()
+
+
+def get_portfolio_allocation_refs(
+    session: Session,
+    portfolio_id: int,
+    asset_id: int,
+    profile: str,
+) -> dict[str, str | None]:
+    row = get_portfolio_allocation(session, portfolio_id, asset_id, profile)
+    return _allocation_refs_from_row(row)
+
+
+def merge_score_refs_for_profile(
+    session: Session,
+    asset_id: int,
+    profile: str,
+    score_refs: dict[str, str | None],
+    portfolio_id: int | None,
+) -> dict[str, str | None]:
+    uses_allocation = profile in (PROFILE_ETF_INTL, PROFILE_CRYPTO) or (
+        portfolio_id is not None
+        and profile in (PROFILE_STOCK_BR, PROFILE_FII_BR)
+        and is_allocation_methodology(session, portfolio_id, profile)
+    )
+    if not uses_allocation or portfolio_id is None:
+        return score_refs
+    allocation_refs = get_portfolio_allocation_refs(session, portfolio_id, asset_id, profile)
+    merged = {
+        key: value
+        for key, value in score_refs.items()
+        if key not in (TARGET_PERCENT_CODE, ANALYSIS_LINK_CODE)
+    }
+    merged.update(allocation_refs)
+    return merged
 
 
 def _criterion_to_db(c: CriterionDefinition, profile: str) -> AnalysisCriterionDefinition:
@@ -479,8 +557,14 @@ def _normalize_table_display_settings(payload: dict, profile: str = PROFILE_STOC
         return defaults
 
     merged_sum = defaults.sum_column.model_copy()
-    if "enabled" in sum_col:
-        merged_sum.enabled = bool(sum_col["enabled"])
+    if "use_fundamental" in sum_col:
+        merged_sum.use_fundamental = bool(sum_col["use_fundamental"])
+    elif "enabled" in sum_col:
+        merged_sum.use_fundamental = True
+    if "use_diagram" in sum_col:
+        merged_sum.use_diagram = bool(sum_col["use_diagram"])
+    elif "enabled" in sum_col:
+        merged_sum.use_diagram = bool(sum_col["enabled"])
     if "label" in sum_col:
         merged_sum.label = str(sum_col["label"])
     if "diagram_multiplier" in sum_col:
@@ -495,6 +579,13 @@ def _normalize_table_display_settings(payload: dict, profile: str = PROFILE_STOC
         merged_sum.viabilidade_weights = merged_weights
 
     return TableDisplaySettings(sum_column=merged_sum)
+
+
+def validate_table_display_settings(table_display: TableDisplaySettings) -> None:
+    settings = table_display.sum_column
+    if not settings.use_fundamental and not settings.use_diagram:
+        raise ValueError("Ative Fundamental, Diagrama ou ambos para a metodologia de análise.")
+    settings.label = "Soma"
 
 
 def get_profile_table_display(session: Session, profile: str) -> TableDisplaySettings:
@@ -591,6 +682,7 @@ def save_profile_config(
     for r in rules:
         session.add(_rule_to_db(r, profile))
     if table_display is not None:
+        validate_table_display_settings(table_display)
         save_profile_table_display(session, profile, table_display)
     else:
         session.commit()
@@ -675,6 +767,131 @@ class EtfIntlAllocationError(ValueError):
     pass
 
 
+class CryptoAllocationError(ValueError):
+    pass
+
+
+class ProfileAllocationError(ValueError):
+    pass
+
+
+def _upsert_portfolio_allocation(
+    session: Session,
+    portfolio_id: int,
+    asset_id: int,
+    profile: str,
+    target_percent: float,
+    analysis_link: str | None,
+) -> None:
+    existing = get_portfolio_allocation(session, portfolio_id, asset_id, profile)
+    if existing:
+        existing.target_percent = target_percent
+        existing.analysis_link = analysis_link
+        existing.updated_at = datetime.utcnow()
+        session.add(existing)
+    else:
+        session.add(
+            PortfolioAssetAllocation(
+                portfolio_id=portfolio_id,
+                asset_id=asset_id,
+                profile=profile,
+                target_percent=target_percent,
+                analysis_link=analysis_link,
+            )
+        )
+
+
+def save_profile_allocations(
+    session: Session,
+    portfolio_id: int,
+    profile: str,
+    allocations: list[dict],
+) -> None:
+    if profile not in _PROFILE_REQUIRED_DISPLAY_CLASS:
+        raise ProfileAllocationError(f"Invalid allocation profile: {profile}")
+    if not allocations:
+        raise ProfileAllocationError("At least one allocation is required")
+
+    pending_ids = get_pending_asset_ids(session, portfolio_id)
+    active_allocations = [
+        item for item in allocations if int(item["asset_id"]) not in pending_ids
+    ]
+    if not active_allocations:
+        raise ProfileAllocationError("At least one non-pending allocation is required")
+
+    total = sum(float(item["target_percent"]) for item in active_allocations)
+    if abs(total - 100.0) > 0.01:
+        raise ProfileAllocationError("target_percent allocations must sum to 100")
+
+    required_display_class = _PROFILE_REQUIRED_DISPLAY_CLASS[profile]
+    for item in allocations:
+        asset_id = int(item["asset_id"])
+        asset = session.get(Asset, asset_id)
+        if asset is None:
+            raise ProfileAllocationError(f"Asset not found: {asset_id}")
+        display_class = infer_display_class(asset.asset_type, asset.market, asset.etf_subtype)
+        if display_class != required_display_class:
+            raise ProfileAllocationError(
+                f"Asset {asset_id} is not eligible for profile {profile}"
+            )
+
+        target_pct = float(item["target_percent"])
+        if target_pct < 0 or target_pct > 100:
+            raise ProfileAllocationError(f"Invalid target_percent for asset {asset_id}")
+
+        link = item.get("analysis_link")
+        link_text = link.strip() if isinstance(link, str) and link.strip() else None
+
+        _upsert_portfolio_allocation(
+            session,
+            portfolio_id,
+            asset_id,
+            profile,
+            target_pct,
+            link_text,
+        )
+
+    session.commit()
+
+
+def save_etf_intl_allocations(
+    session: Session,
+    portfolio_id: int,
+    allocations: list[dict],
+) -> None:
+    try:
+        save_profile_allocations(session, portfolio_id, PROFILE_ETF_INTL, allocations)
+    except ProfileAllocationError as exc:
+        raise EtfIntlAllocationError(str(exc)) from exc
+
+
+def save_crypto_allocations(
+    session: Session,
+    portfolio_id: int,
+    allocations: list[dict],
+) -> None:
+    try:
+        save_profile_allocations(session, portfolio_id, PROFILE_CRYPTO, allocations)
+    except ProfileAllocationError as exc:
+        raise CryptoAllocationError(str(exc)) from exc
+
+
+def save_stock_br_allocations(
+    session: Session,
+    portfolio_id: int,
+    allocations: list[dict],
+) -> None:
+    save_profile_allocations(session, portfolio_id, PROFILE_STOCK_BR, allocations)
+
+
+def save_fii_br_allocations(
+    session: Session,
+    portfolio_id: int,
+    allocations: list[dict],
+) -> None:
+    save_profile_allocations(session, portfolio_id, PROFILE_FII_BR, allocations)
+
+
 def parse_target_percent_from_refs(score_refs: dict[str, str | None]) -> float | None:
     raw = score_refs.get(TARGET_PERCENT_CODE)
     if raw is None:
@@ -716,103 +933,30 @@ def _upsert_score_ref(
         )
 
 
-class CryptoAllocationError(ValueError):
-    pass
-
-
-def save_crypto_allocations(
-    session: Session,
-    allocations: list[dict],
-) -> None:
-    if not allocations:
-        raise CryptoAllocationError("At least one allocation is required")
-
-    total = sum(float(item["target_percent"]) for item in allocations)
-    if abs(total - 100.0) > 0.01:
-        raise CryptoAllocationError("target_percent allocations must sum to 100")
-
-    for item in allocations:
-        asset_id = int(item["asset_id"])
-        asset = session.get(Asset, asset_id)
-        if asset is None:
-            raise CryptoAllocationError(f"Asset not found: {asset_id}")
-        display_class = infer_display_class(asset.asset_type, asset.market, asset.etf_subtype)
-        if display_class != DisplayClass.CRYPTO:
-            raise CryptoAllocationError(f"Asset {asset_id} is not in the crypto strategy")
-
-        target_pct = float(item["target_percent"])
-        if target_pct < 0 or target_pct > 100:
-            raise CryptoAllocationError(f"Invalid target_percent for asset {asset_id}")
-
-        link = item.get("analysis_link")
-        link_text = link.strip() if isinstance(link, str) and link.strip() else None
-
-        _upsert_score_ref(
-            session,
-            asset_id,
-            TARGET_PERCENT_CODE,
-            f"{target_pct:.4f}".rstrip("0").rstrip("."),
-        )
-        _upsert_score_ref(session, asset_id, ANALYSIS_LINK_CODE, link_text)
-
-    session.commit()
-
-
-def save_etf_intl_allocations(
-    session: Session,
-    allocations: list[dict],
-) -> None:
-    if not allocations:
-        raise EtfIntlAllocationError("At least one allocation is required")
-
-    total = sum(float(item["target_percent"]) for item in allocations)
-    if abs(total - 100.0) > 0.01:
-        raise EtfIntlAllocationError("target_percent allocations must sum to 100")
-
-    for item in allocations:
-        asset_id = int(item["asset_id"])
-        asset = session.get(Asset, asset_id)
-        if asset is None:
-            raise EtfIntlAllocationError(f"Asset not found: {asset_id}")
-        display_class = infer_display_class(asset.asset_type, asset.market, asset.etf_subtype)
-        if display_class != DisplayClass.INTERNATIONAL:
-            raise EtfIntlAllocationError(f"Asset {asset_id} is not an international ETF")
-
-        target_pct = float(item["target_percent"])
-        if target_pct < 0 or target_pct > 100:
-            raise EtfIntlAllocationError(f"Invalid target_percent for asset {asset_id}")
-
-        link = item.get("analysis_link")
-        link_text = link.strip() if isinstance(link, str) and link.strip() else None
-
-        _upsert_score_ref(
-            session,
-            asset_id,
-            TARGET_PERCENT_CODE,
-            f"{target_pct:.4f}".rstrip("0").rstrip("."),
-        )
-        _upsert_score_ref(session, asset_id, ANALYSIS_LINK_CODE, link_text)
-
-    session.commit()
-
-
 def build_asset_analysis_read(
     session: Session,
     asset: Asset,
     profile: str,
+    portfolio_id: int | None = None,
 ) -> tuple[dict[str, int | None], dict[str, str | None], AnalysisSummary, list[CriterionDefinition], list[ViabilityRule]]:
     criteria, rules = get_profile_config(session, profile)
     scores, score_refs = get_asset_scores(session, asset.id)
+    score_refs = merge_score_refs_for_profile(session, asset.id, profile, score_refs, portfolio_id)
     summary = summarize_analysis(scores, criteria, rules)
     return scores, score_refs, summary, criteria, rules
 
 
-def list_assets_with_analysis(session: Session, profile: str) -> list[tuple[Asset, dict[str, int | None], dict[str, str | None], AnalysisSummary]]:
+def list_assets_with_analysis(
+    session: Session,
+    profile: str,
+    portfolio_id: int | None = None,
+) -> list[tuple[Asset, dict[str, int | None], dict[str, str | None], AnalysisSummary]]:
     criteria, rules = get_profile_config(session, profile)
     assets = list_eligible_assets(session, profile)
     result: list[tuple[Asset, dict[str, int | None], dict[str, str | None], AnalysisSummary]] = []
     for asset in assets:
         scores, score_refs = get_asset_scores(session, asset.id)
+        score_refs = merge_score_refs_for_profile(session, asset.id, profile, score_refs, portfolio_id)
         summary = summarize_analysis(scores, criteria, rules)
         result.append((asset, scores, score_refs, summary))
     return result

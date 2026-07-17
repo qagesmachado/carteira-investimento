@@ -2,9 +2,9 @@ import { expect, test } from '../fixtures/test';
 
 import {
   assetRebalanceTableSection,
-  balanceamentoTableSection,
   fillInvestmentAmount,
-  gotoRebalancePage
+  gotoRebalancePage,
+  simulationPanel
 } from '../helpers/rebalancePage';
 import { seedRebalanceTwoStocksScored } from '../helpers/seedRebalance';
 
@@ -31,6 +31,6 @@ test.describe('UI-REB-007', () => {
     await expect(aaaRow.locator('td').nth(-1)).not.toHaveText('—');
     await expect(aaaRow.locator('td').nth(-1)).toHaveText(/R\$/);
 
-    await expect(balanceamentoTableSection(page).getByText(/Patrimônio final:/)).toBeVisible();
+    await expect(simulationPanel(page).getByTestId('rebalance-simulation-final-patrimony')).toBeVisible();
   });
 });

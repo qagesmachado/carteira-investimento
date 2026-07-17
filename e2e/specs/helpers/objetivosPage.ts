@@ -45,8 +45,10 @@ export async function savePensionContributionUi(
   contributed: string
 ): Promise<void> {
   await page.getByTestId('pension-edit-btn').click();
+  await expect(page.getByTestId('pension-year-edit-modal')).toBeVisible();
   await page.getByTestId('pension-contributed-input').fill(contributed);
   await page.getByTestId('pension-save-btn').click();
+  await expect(page.getByTestId('pension-year-edit-modal')).not.toBeVisible();
 }
 
 export async function addPensionYearUi(

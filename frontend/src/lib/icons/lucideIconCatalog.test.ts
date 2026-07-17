@@ -121,6 +121,12 @@ describe('lucideIconCatalog', () => {
     expect(getLucideIconComponent('Trash2')).toBeTruthy();
   });
 
+  it('registra icones da metodologia de analise AUVP', () => {
+    expect(getLucideIconComponent('GitBranch')).toBeTruthy();
+    expect(getLucideIconComponent('Scale')).toBeTruthy();
+    expect(getLucideIconComponent('ExternalLink')).toBeTruthy();
+  });
+
   it('falha para nome desconhecido', () => {
     expect(() => getLucideIconComponent('Unknown' as never)).toThrow(/desconhecido/);
   });

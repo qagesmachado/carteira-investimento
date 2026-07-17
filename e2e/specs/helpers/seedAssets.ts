@@ -34,8 +34,15 @@ export async function createAssetViaApi(
   request: APIRequestContext,
   payload: AssetPayload
 ): Promise<{ id: number; symbol: string }> {
-  const response = await request.post(`${getWorkerApiBaseUrl()}/assets`, { data: payload });
-  expect(response.ok()).toBeTruthy();
+  await deleteAssetBySymbolIfExists(request, payload.symbol);
+  const response = await request.post(`${getWorkerApiBaseUrl()}/assets`, {
+    data: payload,
+    timeout: 30_000
+  });
+  if (!response.ok()) {
+    const body = await response.text();
+    throw new Error(`POST /assets failed (${response.status()}): ${body}`);
+  }
   const body = (await response.json()) as { id: number; symbol: string };
   return body;
 }

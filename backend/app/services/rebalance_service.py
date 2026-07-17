@@ -12,6 +12,8 @@ from app.schemas.rebalance import (
 )
 from app.services.analysis_defaults import PROFILE_CRYPTO, PROFILE_ETF_INTL, PROFILE_FII_BR, PROFILE_STOCK_BR
 from app.services.analysis_engine import compute_table_sum_score
+from app.services.analysis_methodology_service import get_portfolio_methodology, is_allocation_methodology
+from app.services.analysis_pending_service import get_pending_asset_ids
 from app.services.analysis_service import (
     build_asset_analysis_read,
     get_profile_table_display,
@@ -29,8 +31,10 @@ from app.services.rebalance_engine import (
     compute_class_rows,
     compute_crypto_asset_rows,
     compute_fund_asset_rows,
+    compute_fund_asset_rows_by_allocation,
     compute_international_asset_rows,
     compute_stock_asset_rows,
+    compute_stock_asset_rows_by_allocation,
     compute_stocks_sub_rows,
     parse_allocation_targets,
 )
@@ -61,6 +65,7 @@ def build_rebalance_snapshot(
         portfolio_id,
         usd_brl_rate=usd_brl_rate,
     )
+    pending_asset_ids = get_pending_asset_ids(portfolios_session, portfolio_id)
 
     current_by_class: dict[str, float] = {}
     current_by_sub: dict[str, float] = {"etf": 0.0, "stock": 0.0}
@@ -74,27 +79,65 @@ def build_rebalance_snapshot(
     sum_settings = table_display.sum_column
     fii_table_display = get_profile_table_display(assets_session, PROFILE_FII_BR)
     fii_sum_settings = fii_table_display.sum_column
+    stock_uses_allocation = is_allocation_methodology(
+        portfolios_session, portfolio_id, PROFILE_STOCK_BR
+    )
+    fii_uses_allocation = is_allocation_methodology(
+        portfolios_session, portfolio_id, PROFILE_FII_BR
+    )
 
     for position in positions:
         asset = get_asset_by_id(assets_session, position.asset_id)
         if asset is None:
-            continue
-        brl = _position_value_brl(position, asset, usd_brl_rate)
-        if brl is None:
-            continue
-        brl = compute_rebalance_value_brl(
-            position,
-            asset,
-            usd_brl_rate=usd_brl_rate,
-            excluded_brl=excluded_by_asset.get(position.asset_id, 0.0),
-        )
-        if brl is None or brl <= 1e-9:
             continue
         display_class = infer_display_class(
             asset.asset_type, asset.market, asset.etf_subtype
         ).value
         if display_class not in _REBALANCE_CLASSES:
             continue
+
+        raw_brl = _position_value_brl(position, asset, usd_brl_rate)
+        rebalance_brl: float | None = None
+        if raw_brl is not None:
+            rebalance_brl = compute_rebalance_value_brl(
+                position,
+                asset,
+                usd_brl_rate=usd_brl_rate,
+                excluded_brl=excluded_by_asset.get(position.asset_id, 0.0),
+            )
+
+        if display_class == DisplayClass.CRYPTO.value:
+            if rebalance_brl is not None and rebalance_brl > 1e-9:
+                patrimony_brl += rebalance_brl
+                current_by_class[display_class] = (
+                    current_by_class.get(display_class, 0.0) + rebalance_brl
+                )
+                current_brl_for_row: float | None = rebalance_brl
+            elif raw_brl is None:
+                current_brl_for_row = None
+            else:
+                current_brl_for_row = 0.0
+
+            scores, score_refs, _, _, _ = build_asset_analysis_read(
+                assets_session, asset, PROFILE_CRYPTO, portfolio_id
+            )
+            target_percent = parse_target_percent_from_refs(score_refs)
+            crypto_assets_input.append(
+                {
+                    "asset_id": asset.id,
+                    "symbol": asset.symbol,
+                    "name": asset.name,
+                    "asset_type": asset.asset_type.value,
+                    "current_brl": current_brl_for_row,
+                    "target_percent": target_percent,
+                    "is_pending": asset.id in pending_asset_ids,
+                }
+            )
+            continue
+
+        if rebalance_brl is None or rebalance_brl <= 1e-9:
+            continue
+        brl = rebalance_brl
         patrimony_brl += brl
         current_by_class[display_class] = current_by_class.get(display_class, 0.0) + brl
 
@@ -105,24 +148,29 @@ def build_rebalance_snapshot(
                 current_by_sub["stock"] += brl
 
             scores, score_refs, summary, _, _ = build_asset_analysis_read(
-                assets_session, asset, PROFILE_STOCK_BR
+                assets_session,
+                asset,
+                PROFILE_STOCK_BR,
+                portfolio_id if stock_uses_allocation else None,
             )
-            sum_score = compute_table_sum_score(
-                scores, summary, sum_settings, PROFILE_STOCK_BR
-            )
-            stock_assets_input.append(
-                {
-                    "asset_id": asset.id,
-                    "symbol": asset.symbol,
-                    "name": asset.name,
-                    "asset_type": asset.asset_type.value,
-                    "current_brl": brl,
-                    "sum_score": sum_score,
-                }
-            )
+            stock_entry: dict = {
+                "asset_id": asset.id,
+                "symbol": asset.symbol,
+                "name": asset.name,
+                "asset_type": asset.asset_type.value,
+                "current_brl": brl,
+                "is_pending": asset.id in pending_asset_ids,
+            }
+            if stock_uses_allocation:
+                stock_entry["target_percent"] = parse_target_percent_from_refs(score_refs)
+            else:
+                stock_entry["sum_score"] = compute_table_sum_score(
+                    scores, summary, sum_settings, PROFILE_STOCK_BR
+                )
+            stock_assets_input.append(stock_entry)
         elif display_class == DisplayClass.INTERNATIONAL.value:
             scores, score_refs, _, _, _ = build_asset_analysis_read(
-                assets_session, asset, PROFILE_ETF_INTL
+                assets_session, asset, PROFILE_ETF_INTL, portfolio_id
             )
             target_percent = parse_target_percent_from_refs(score_refs)
             international_assets_input.append(
@@ -133,51 +181,52 @@ def build_rebalance_snapshot(
                     "asset_type": asset.asset_type.value,
                     "current_brl": brl,
                     "target_percent": target_percent,
+                    "is_pending": asset.id in pending_asset_ids,
                 }
             )
         elif display_class == DisplayClass.FUNDS.value:
             scores, score_refs, summary, _, _ = build_asset_analysis_read(
-                assets_session, asset, PROFILE_FII_BR
+                assets_session,
+                asset,
+                PROFILE_FII_BR,
+                portfolio_id if fii_uses_allocation else None,
             )
-            sum_score = compute_table_sum_score(
-                scores, summary, fii_sum_settings, PROFILE_FII_BR
-            )
-            fund_assets_input.append(
-                {
-                    "asset_id": asset.id,
-                    "symbol": asset.symbol,
-                    "name": asset.name,
-                    "asset_type": asset.asset_type.value,
-                    "current_brl": brl,
-                    "sum_score": sum_score,
-                }
-            )
-        elif display_class == DisplayClass.CRYPTO.value:
-            scores, score_refs, _, _, _ = build_asset_analysis_read(
-                assets_session, asset, PROFILE_CRYPTO
-            )
-            target_percent = parse_target_percent_from_refs(score_refs)
-            crypto_assets_input.append(
-                {
-                    "asset_id": asset.id,
-                    "symbol": asset.symbol,
-                    "name": asset.name,
-                    "asset_type": asset.asset_type.value,
-                    "current_brl": brl,
-                    "target_percent": target_percent,
-                }
-            )
+            fund_entry: dict = {
+                "asset_id": asset.id,
+                "symbol": asset.symbol,
+                "name": asset.name,
+                "asset_type": asset.asset_type.value,
+                "current_brl": brl,
+                "is_pending": asset.id in pending_asset_ids,
+            }
+            if fii_uses_allocation:
+                fund_entry["target_percent"] = parse_target_percent_from_refs(score_refs)
+            else:
+                fund_entry["sum_score"] = compute_table_sum_score(
+                    scores, summary, fii_sum_settings, PROFILE_FII_BR
+                )
+            fund_assets_input.append(fund_entry)
 
     class_rows = compute_class_rows(patrimony_brl, current_by_class, targets)
     stocks_current = current_by_class.get(DisplayClass.STOCKS.value, 0.0)
     sub_rows = compute_stocks_sub_rows(
         patrimony_brl, stocks_current, current_by_sub, targets
     )
-    asset_rows = compute_stock_asset_rows(patrimony_brl, stock_assets_input, targets)
+    if stock_uses_allocation:
+        asset_rows = compute_stock_asset_rows_by_allocation(
+            patrimony_brl, stock_assets_input, targets
+        )
+    else:
+        asset_rows = compute_stock_asset_rows(patrimony_brl, stock_assets_input, targets)
     international_rows = compute_international_asset_rows(
         patrimony_brl, international_assets_input, targets
     )
-    fund_rows = compute_fund_asset_rows(patrimony_brl, fund_assets_input, targets)
+    if fii_uses_allocation:
+        fund_rows = compute_fund_asset_rows_by_allocation(
+            patrimony_brl, fund_assets_input, targets
+        )
+    else:
+        fund_rows = compute_fund_asset_rows(patrimony_brl, fund_assets_input, targets)
     crypto_rows = compute_crypto_asset_rows(patrimony_brl, crypto_assets_input, targets)
     total_gap = sum(r.gap_brl for r in class_rows)
     without_score = sum(1 for r in asset_rows if not r.score_included)

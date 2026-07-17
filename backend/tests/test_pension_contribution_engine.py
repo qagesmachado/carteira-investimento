@@ -67,6 +67,26 @@ def test_past_year_has_zero_months_remaining():
     assert metrics.monthly_needed_brl is None
 
 
+def test_july_monthly_needed_divides_remaining_by_months_until_december():
+    metrics = compute_pension_contribution_metrics(
+        plan_year=2026,
+        annual_gross_income_brl=216_000.0,
+        contributed_ytd_brl=12_800.0,
+        reference_date=date(2026, 7, 16),
+    )
+    assert metrics.remaining_brl == 13_120.0
+    assert metrics.months_remaining == 6
+    assert metrics.monthly_needed_brl == pytest.approx(13_120.0 / 6)
+
+
+def test_higher_contributions_lower_monthly_needed():
+    ref = date(2026, 7, 16)
+    low = compute_pension_contribution_metrics(2026, 216_000.0, 6_000.0, ref)
+    high = compute_pension_contribution_metrics(2026, 216_000.0, 20_000.0, ref)
+    assert high.remaining_brl < low.remaining_brl
+    assert high.monthly_needed_brl < low.monthly_needed_brl
+
+
 def test_zero_income_gives_zero_target():
     metrics = compute_pension_contribution_metrics(
         plan_year=2026,

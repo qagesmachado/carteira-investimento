@@ -5,6 +5,7 @@ import json
 from fastapi.testclient import TestClient
 
 from app.services.analysis_engine import VIABILIDADE_CODE
+from tests.analysis_test_helpers import create_portfolio_auvp, set_methodology_auvp
 
 
 def _create_stock(
@@ -93,7 +94,7 @@ def test_get_rebalance_with_positions_and_scores(client: TestClient) -> None:
     _set_scores(client, stock_b, _minimal_scores(lucros=3))
     _set_scores(client, etf_id, _minimal_scores(roe=2, cagr=2))
 
-    portfolio_id = client.post("/portfolios", json={"name": "Rebalance"}).json()["id"]
+    portfolio_id = create_portfolio_auvp(client, "Rebalance")
     client.post(
         f"/portfolios/{portfolio_id}/positions",
         json={"asset_id": stock_a, "quantity": 100, "average_price": 80},
@@ -123,7 +124,7 @@ def test_get_rebalance_with_positions_and_scores(client: TestClient) -> None:
     assert stocks["current_value_brl"] == 25_000.0
     rf = next(c for c in body["classes"] if c["display_class"] == "fixed_income")
     assert rf["current_value_brl"] == 40_000.0
-    assert len(body["stocks_sub_types"]) == 2
+    assert len(body["stocks_sub_types"]) == 0
     assert len(body["stock_assets"]) == 3
     scored = [a for a in body["stock_assets"] if a["score_included"]]
     assert len(scored) == 3
@@ -193,7 +194,7 @@ def test_get_rebalance_excludes_pension_from_patrimony(client: TestClient) -> No
     assert pension_id.status_code == 201
     pension_asset_id = pension_id.json()["id"]
 
-    portfolio_id = client.post("/portfolios", json={"name": "Com previdência"}).json()["id"]
+    portfolio_id = create_portfolio_auvp(client, "Com previdência")
     client.post(
         f"/portfolios/{portfolio_id}/positions",
         json={"asset_id": stock_id, "quantity": 10, "average_price": 80},
@@ -285,7 +286,7 @@ def test_get_rebalance_international_with_allocation(client: TestClient) -> None
     )
     alloc = client.put(
         "/analysis/profiles/etf-intl/allocations",
-        json={"allocations": [{"asset_id": voo_id, "target_percent": 100}]},
+        json={"portfolio_id": portfolio_id, "allocations": [{"asset_id": voo_id, "target_percent": 100}]},
     )
     assert alloc.status_code == 200
     fx = client.post("/fx/usd-brl/refresh")
@@ -329,6 +330,7 @@ def test_get_rebalance_fii_assets_with_scores(client: TestClient) -> None:
     _set_fii_scores(client, fii_b, _minimal_fii_scores(vacancia=3))
 
     portfolio_id = client.post("/portfolios", json={"name": "FIIs scored"}).json()["id"]
+    set_methodology_auvp(client, portfolio_id, "fii_br")
     client.post(
         f"/portfolios/{portfolio_id}/positions",
         json={"asset_id": fii_a, "quantity": 20, "average_price": 140},

@@ -32,4 +32,17 @@ describe('PortfolioWorkspaceBarPanel', () => {
     expect(select.value).toBe('1');
     expect(screen.getByTestId('dashboard-status-badges')).toBeTruthy();
   });
+
+  it('oculta badges de cotação quando showQuoteStatus é false', () => {
+    render(PortfolioWorkspaceBarPanel, {
+      props: {
+        portfolios,
+        activeId: 1,
+        activePortfolioName: 'Carteira Gabriel',
+        showQuoteStatus: false
+      }
+    });
+
+    expect(screen.queryByTestId('dashboard-status-badges')).toBeNull();
+  });
 });

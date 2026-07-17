@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy.engine import Engine
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine, select
 
 import app.models  # noqa: F401
 from app.core.config import settings
@@ -16,6 +16,9 @@ from app.models.analysis import (
     AnalysisSegmentCatalog,
     AnalysisViabilityRule,
     AssetAnalysisScore,
+    PortfolioAssetAllocation,
+    PortfolioAssetAnalysisStatus,
+    PortfolioAnalysisMethodology,
 )
 from app.models.asset import Asset
 from app.models.crypto_fee import CryptoFee, CryptoFeeType
@@ -48,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 # Versão do schema esperada pelo código. Incrementar ao adicionar uma migração
 # nova; é comparada com o `PRAGMA user_version` gravado dentro do arquivo do banco.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 5
 
 engine = create_engine(
     settings.database_url,
@@ -70,6 +73,9 @@ ASSET_TABLES = [
 PORTFOLIO_TABLES = [
     Portfolio.__table__,
     Position.__table__,
+    PortfolioAssetAllocation.__table__,
+    PortfolioAssetAnalysisStatus.__table__,
+    PortfolioAnalysisMethodology.__table__,
     PortfolioYearSnapshot.__table__,
     PositionSnapshot.__table__,
     AppPreference.__table__,
@@ -506,9 +512,87 @@ def init_db() -> None:
     _migrate_manual_patrimony_cash_to_emergency_reserve(engine)
     _ensure_budget_columns(engine)
     _ensure_default_objectives(engine)
+    _migrate_global_allocations_to_portfolio(engine)
 
     if needs_migration:
         _write_user_version(engine, SCHEMA_VERSION)
+
+
+def _migrate_global_allocations_to_portfolio(engine_param: Engine) -> None:
+    """Copia alocações globais legadas (asset_analysis_score) para cada carteira com posição."""
+    from app.models.asset import DisplayClass
+    from app.services.analysis_defaults import (
+        ANALYSIS_LINK_CODE,
+        PROFILE_CRYPTO,
+        PROFILE_ETF_INTL,
+        TARGET_PERCENT_CODE,
+    )
+    from app.services.asset_service import get_asset_by_id, infer_display_class
+
+    with engine_param.begin() as connection:
+        tables = {
+            row[0]
+            for row in connection.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        if "portfolio_asset_allocation" not in tables:
+            return
+
+    with Session(engine_param) as session:
+        existing_count = session.exec(select(PortfolioAssetAllocation)).first()
+        if existing_count is not None:
+            return
+
+        score_rows = session.exec(select(AssetAnalysisScore)).all()
+        by_asset: dict[int, dict[str, str | None]] = {}
+        for row in score_rows:
+            if row.criterion_code not in (TARGET_PERCENT_CODE, ANALYSIS_LINK_CODE):
+                continue
+            by_asset.setdefault(row.asset_id, {})[row.criterion_code] = row.value_text
+
+        if not by_asset:
+            return
+
+        positions = session.exec(select(Position)).all()
+        positions_by_asset: dict[int, set[int]] = {}
+        for position in positions:
+            positions_by_asset.setdefault(position.asset_id, set()).add(position.portfolio_id)
+
+        for asset_id, refs in by_asset.items():
+            asset = get_asset_by_id(session, asset_id)
+            if asset is None:
+                continue
+            display_class = infer_display_class(asset.asset_type, asset.market, asset.etf_subtype)
+            if display_class == DisplayClass.CRYPTO:
+                profile = PROFILE_CRYPTO
+            elif display_class == DisplayClass.INTERNATIONAL:
+                profile = PROFILE_ETF_INTL
+            else:
+                continue
+
+            target_raw = refs.get(TARGET_PERCENT_CODE)
+            if target_raw is None or not str(target_raw).strip():
+                continue
+            try:
+                target_percent = float(str(target_raw).strip().replace(",", "."))
+            except ValueError:
+                continue
+
+            link_raw = refs.get(ANALYSIS_LINK_CODE)
+            analysis_link = link_raw.strip() if isinstance(link_raw, str) and link_raw.strip() else None
+
+            for portfolio_id in positions_by_asset.get(asset_id, set()):
+                session.add(
+                    PortfolioAssetAllocation(
+                        portfolio_id=portfolio_id,
+                        asset_id=asset_id,
+                        profile=profile,
+                        target_percent=target_percent,
+                        analysis_link=analysis_link,
+                    )
+                )
+        session.commit()
 
 
 def _migrate_pension_contribution_years(engine_param: Engine) -> None:

@@ -257,7 +257,7 @@
         contributed_ytd_brl: event.detail.contributedYtdBrl
       });
       selectedPensionYear = event.detail.planYear;
-      pensionDetail?.exitEditMode();
+      pensionDetail?.closeEditModalAfterSave();
       await loadSnapshot(activeId);
     } catch (err) {
       pensionError = parseApiError(err, 'Não foi possível salvar dados previdenciários.');
@@ -301,7 +301,7 @@
       const updated = await deletePensionYear(activeId, selectedObjective.id, planYear);
       const years = sortPensionYears(updated.pension_contribution?.years ?? []);
       selectedPensionYear = years[0]?.plan_year ?? null;
-      pensionDetail?.exitEditMode();
+      pensionDetail?.closeEditModalAfterSave();
       await loadSnapshot(activeId);
     } catch (err) {
       pensionError = parseApiError(err, 'Não foi possível excluir ano previdenciário.');

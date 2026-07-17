@@ -3,6 +3,7 @@ import { expect, type APIRequestContext } from '@playwright/test';
 import { getWorkerApiBaseUrl } from './workerContext';
 import { E2E_PORTFOLIO_PRINCIPAL } from './e2eFixtures';
 import { clearAllTestAssets, createAssetViaApi } from './seedAssets';
+import { setPortfolioMethodologyAuvp, expectPortfolioMethodology } from './seedAnalysis';
 import {
   clearAllPortfolios,
   createPortfolio,
@@ -182,6 +183,8 @@ export async function seedRebalanceTwoStocksScored(
   await setAssetScores(request, bbbId, { roe: 1, cagr: 0 });
 
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
+  await setPortfolioMethodologyAuvp(request, portfolio.id, 'stock-br');
+  await expectPortfolioMethodology(request, portfolio.id, 'stock-br', 'auvp');
   await createPosition(request, portfolio.id, aaaId, { quantity: 10, average_price: 80 });
   await createPosition(request, portfolio.id, bbbId, { quantity: 10, average_price: 80 });
   await setActivePortfolio(request, portfolio.id);
@@ -221,6 +224,8 @@ export async function seedRebalanceTwoFiisScored(
   await setFiiScores(request, xplgId, { vacancia: 3 });
 
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
+  await setPortfolioMethodologyAuvp(request, portfolio.id, 'fii-br');
+  await expectPortfolioMethodology(request, portfolio.id, 'fii-br', 'auvp');
   await createPosition(request, portfolio.id, hglgId, { quantity: 20, average_price: 140 });
   await createPosition(request, portfolio.id, xplgId, { quantity: 10, average_price: 90 });
   await setActivePortfolio(request, portfolio.id);

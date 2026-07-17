@@ -19,6 +19,15 @@ export async function gotoAcoesBrPage(page: Page): Promise<void> {
   await responses;
 }
 
+export async function waitStockBrMethodologyLoaded(page: Page): Promise<void> {
+  await page.waitForResponse(
+    (r) =>
+      r.url().includes('/profiles/stock-br/methodology') &&
+      r.request().method() === 'GET' &&
+      r.ok()
+  );
+}
+
 export async function gotoInternacionalPage(page: Page): Promise<void> {
   const assetsResponse = page.waitForResponse(
     (r) => isApiAnalysisAssetsListResponse(r) && r.url().includes('profile=etf_intl') && r.ok()
@@ -36,7 +45,7 @@ export async function gotoCriptomoedasPage(page: Page): Promise<void> {
 }
 
 export function cryptoAnalysisTableSection(page: Page): Locator {
-  return page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Criptomoedas' }) });
+  return page.getByTestId('analysis-cripto-section');
 }
 
 export function cryptoAnalysisTable(page: Page): Locator {
@@ -64,14 +73,39 @@ export async function gotoFiisPage(page: Page): Promise<void> {
   await responses;
 }
 
+export async function gotoAnaliseHub(page: Page): Promise<void> {
+  await gotoAnaliseConfigPage(page);
+}
+
+export function analysisSectionTabs(page: Page): Locator {
+  return page.getByTestId('analysis-section-tabs');
+}
+
 export function analysisConfigProfileTabs(page: Page): Locator {
-  return page.getByRole('tablist', { name: 'Perfil da configuração' });
+  return page.getByTestId('analysis-config-profile-tabs');
+}
+
+export function analysisOverviewSection(page: Page): Locator {
+  return page.getByTestId('analysis-overview-section');
 }
 
 export async function gotoFiiConfigPage(page: Page): Promise<void> {
-  const configResponse = page.waitForResponse((r) => isApiAnalysisConfigGetResponse(r) && r.ok());
-  await page.goto('/analise/configuracao?perfil=fiis');
-  await configResponse;
+  await gotoFiisPage(page);
+}
+
+export function analysisSumConfigSection(page: Page, profile: 'acoes' | 'fiis' = 'acoes'): Locator {
+  const testId =
+    profile === 'fiis' ? 'analysis-fiis-sum-config-section' : 'analysis-acoes-sum-config-section';
+  return page.getByTestId(testId);
+}
+
+export function analysisSumConfigModal(page: Page): Locator {
+  return page.getByTestId('analysis-sum-config-modal');
+}
+
+export async function openSumColumnConfigModal(page: Page): Promise<void> {
+  await page.getByTestId('analysis-sum-config-open').click();
+  await expect(analysisSumConfigModal(page)).toBeVisible();
 }
 
 export async function gotoFiiSegmentosPage(page: Page): Promise<void> {
@@ -82,20 +116,21 @@ export async function gotoFiiSegmentosPage(page: Page): Promise<void> {
   await segmentsResponse;
 }
 
+export async function gotoAnaliseSumarioPage(page: Page): Promise<void> {
+  await page.goto('/analise/sumario');
+  await expect(page.getByTestId('analysis-summary-kpi-cards')).toBeVisible();
+}
+
 export async function gotoAnaliseConfigPage(page: Page): Promise<void> {
-  const configResponse = page.waitForResponse(
-    (r) => isApiAnalysisConfigGetResponse(r) && r.ok()
-  );
-  await page.goto('/analise/configuracao');
-  await configResponse;
+  await gotoAnaliseSumarioPage(page);
 }
 
 export function analysisTableSection(page: Page): Locator {
-  return page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Ações e ETFs (Brasil)' }) });
+  return page.getByTestId('analysis-acoes-table-section');
 }
 
 export function etfIntlAnalysisTableSection(page: Page): Locator {
-  return page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'ETFs internacionais' }) });
+  return page.getByTestId('analysis-internacional-section');
 }
 
 export function etfIntlAnalysisTable(page: Page): Locator {
@@ -114,7 +149,7 @@ export async function saveEtfIntlAllocation(page: Page): Promise<void> {
 }
 
 export function fiiAnalysisTableSection(page: Page): Locator {
-  return page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Fundos imobiliários (FIIs)' }) });
+  return page.getByTestId('analysis-fiis-table-section');
 }
 
 export function fiiAnalysisTable(page: Page): Locator {
@@ -176,6 +211,32 @@ export async function expectUnsavedChangesWarning(
   }
 }
 
+export function analysisPendingToggle(page: Page): Locator {
+  return analysisPanel(page).getByTestId('analysis-pending-toggle').getByRole('checkbox');
+}
+
+export async function toggleAnalysisPendingDraft(page: Page, checked: boolean): Promise<void> {
+  const checkbox = analysisPendingToggle(page);
+  if (checked) {
+    await checkbox.check();
+  } else {
+    await checkbox.uncheck();
+  }
+}
+
+export async function expectAnalysisRowPendingBadge(
+  page: Page,
+  ticker: string,
+  visible = true
+): Promise<void> {
+  const badge = analysisRow(page, ticker).getByText('Pendente', { exact: true });
+  if (visible) {
+    await expect(badge).toBeVisible();
+  } else {
+    await expect(badge).toHaveCount(0);
+  }
+}
+
 export async function selectFundamentalScore(
   page: Page,
   label: string,
@@ -216,10 +277,21 @@ export async function clickClassificarOnFiiRow(page: Page, ticker: string): Prom
   await fiiAnalysisRow(page, ticker).getByRole('button', { name: 'Classificar' }).click();
 }
 
-export async function saveAnalysisPanel(page: Page): Promise<void> {
-  const saveResponse = page.waitForResponse((r) => isApiAnalysisScoresPutResponse(r) && r.ok());
+export async function saveAnalysisPanel(
+  page: Page,
+  options?: { withPending?: boolean }
+): Promise<void> {
+  const scoresPromise = page.waitForResponse((r) => isApiAnalysisScoresPutResponse(r) && r.ok());
+  const pendingPromise = options?.withPending
+    ? page.waitForResponse(
+        (r) => r.url().includes('/pending') && r.request().method() === 'PUT' && r.ok()
+      )
+    : null;
   await analysisPanel(page).getByRole('button', { name: 'Salvar classificação' }).click();
-  await saveResponse;
+  await scoresPromise;
+  if (pendingPromise) {
+    await pendingPromise;
+  }
 }
 
 export async function cancelAnalysisPanel(page: Page): Promise<void> {
@@ -260,7 +332,11 @@ export async function expectResetConfirmVisible(page: Page, visible = true): Pro
 
 export async function saveAnalysisConfig(page: Page): Promise<void> {
   const saveResponse = page.waitForResponse((r) => isApiAnalysisConfigPutResponse(r) && r.ok());
-  await page.getByRole('button', { name: 'Salvar configuração' }).click();
+  const modal = analysisSumConfigModal(page);
+  const saveButton = (await modal.isVisible())
+    ? modal.getByTestId('analysis-methodology-save')
+    : page.getByRole('button', { name: 'Salvar configuração' });
+  await saveButton.click();
   await saveResponse;
 }
 
@@ -289,8 +365,60 @@ export async function expectEmptyAnalysisState(page: Page): Promise<void> {
   await expect(page.getByText(/Crie ou selecione uma carteira/i)).toBeVisible();
 }
 
-export function setSumColumnDiagramMultiplier(page: Page, value: string): Promise<void> {
-  return page.getByLabel('Multiplicador do diagrama').fill(value);
+export async function setSumColumnDiagramMultiplier(page: Page, value: string): Promise<void> {
+  if (!(await analysisSumConfigModal(page).isVisible())) {
+    await openSumColumnConfigModal(page);
+  }
+  await analysisSumConfigModal(page).getByTestId('analysis-methodology-diagram-multiplier').fill(value);
+}
+
+export async function setAnalysisMethodologyComponents(
+  page: Page,
+  options: { fundamental?: boolean; diagram?: boolean }
+): Promise<void> {
+  if (!(await analysisSumConfigModal(page).isVisible())) {
+    await openSumColumnConfigModal(page);
+  }
+  const modal = analysisSumConfigModal(page);
+  if (options.fundamental != null) {
+    const checkbox = modal.getByTestId('analysis-methodology-use-fundamental');
+    if (options.fundamental) {
+      await checkbox.check();
+    } else {
+      await checkbox.uncheck();
+    }
+  }
+  if (options.diagram != null) {
+    const checkbox = modal.getByTestId('analysis-methodology-use-diagram');
+    if (options.diagram) {
+      await checkbox.check();
+    } else {
+      await checkbox.uncheck();
+    }
+  }
+}
+
+export function analysisMethodologySelector(page: Page): Locator {
+  return page.getByTestId('analysis-methodology-selector');
+}
+
+export async function selectAnalysisMethodology(
+  page: Page,
+  methodology: 'simples' | 'auvp',
+  options: { acceptConfirm?: boolean } = {}
+): Promise<void> {
+  const { acceptConfirm = true } = options;
+  if (acceptConfirm) {
+    page.once('dialog', async (dialog) => {
+      expect(dialog.type()).toBe('confirm');
+      await dialog.accept();
+    });
+  }
+  const putResponse = page.waitForResponse(
+    (r) => r.url().includes('/methodology') && r.request().method() === 'PUT' && r.ok()
+  );
+  await page.getByTestId(`analysis-methodology-option-${methodology}`).click();
+  await putResponse;
 }
 
 export async function clickClassificarInPortfolios(page: Page, ticker: string): Promise<void> {
@@ -306,7 +434,6 @@ export async function clickClassificarInPortfolios(page: Page, ticker: string): 
 }
 
 export async function expectNoClassificarInRow(page: Page, ticker: string): Promise<void> {
-  await expect(
-    page.locator('table tbody tr').filter({ hasText: ticker }).getByRole('button', { name: 'Classificar' })
-  ).toHaveCount(0);
+  const row = page.locator('table tbody tr').filter({ hasText: ticker });
+  await expect(row.getByRole('button', { name: 'Classificar', disabled: false })).toHaveCount(0);
 }

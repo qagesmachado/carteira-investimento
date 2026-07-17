@@ -54,6 +54,47 @@ class AssetAnalysisScore(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
+class PortfolioAssetAllocation(SQLModel, table=True):
+    """Alocação percentual manual por carteira (cripto e ETF internacional)."""
+
+    __tablename__ = "portfolio_asset_allocation"
+    __table_args__ = (UniqueConstraint("portfolio_id", "asset_id", "profile"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    portfolio_id: int = Field(foreign_key="portfolio.id", index=True)
+    asset_id: int = Field(index=True)
+    profile: str = Field(index=True)
+    target_percent: float
+    analysis_link: str | None = None
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PortfolioAssetAnalysisStatus(SQLModel, table=True):
+    """Status de análise por ativo na carteira (ex.: pendente — excluído dos totais)."""
+
+    __tablename__ = "portfolio_asset_analysis_status"
+    __table_args__ = (UniqueConstraint("portfolio_id", "asset_id"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    portfolio_id: int = Field(foreign_key="portfolio.id", index=True)
+    asset_id: int = Field(index=True)
+    is_pending: bool = Field(default=False)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PortfolioAnalysisMethodology(SQLModel, table=True):
+    """Metodologia de análise por carteira e perfil (Simples ou AUVP)."""
+
+    __tablename__ = "portfolio_analysis_methodology"
+    __table_args__ = (UniqueConstraint("portfolio_id", "profile"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    portfolio_id: int = Field(foreign_key="portfolio.id", index=True)
+    profile: str = Field(index=True)
+    methodology: str
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class AnalysisSegmentCatalog(SQLModel, table=True):
     __tablename__ = "analysis_segment_catalog"
     __table_args__ = (UniqueConstraint("profile", "slug"),)

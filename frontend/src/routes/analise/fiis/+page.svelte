@@ -3,11 +3,16 @@
 
   import {
     PROFILE_FII_BR,
+    getAnalysisMethodology,
     getFiiBrConfig,
     getFiiSegments,
     listFiiBrAnalysis,
+    saveAnalysisMethodology,
     saveAssetAnalysisScores,
+    saveFiiBrAllocations,
+    setAssetPending,
     type AnalysisConfig,
+    type AnalysisMethodology,
     type AssetAnalysis,
     type SegmentCatalogEntry,
     type TableDisplaySettings
@@ -22,9 +27,11 @@
     type Position
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import AssetAnalysisPanel from '$lib/features/analise/AssetAnalysisPanel.svelte';
   import {
-    computeTableSumScore,
+    computeCombinedTableScore,
+    computeFundamentalTableScore,
     isPvpDiscarded
   } from '$lib/features/analise/computeAnalysis';
   import { filterAnalysisByPortfolio } from '$lib/features/analise/filterAnalysisByPortfolio';
@@ -40,9 +47,15 @@
     formatViabilityLabelForDisplay,
     viabilityBadgeClass
   } from '$lib/features/analise/viabilityBadge';
-  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
-  import { formatAssetTypeForDisplay } from '$lib/assetLabels';
-  import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
+  import AnalysisMethodologySelector from '$lib/features/analise/AnalysisMethodologySelector.svelte';
+  import AnalysisSimpleAllocationPanel from '$lib/features/analise/AnalysisSimpleAllocationPanel.svelte';
+  import AnalysisSumColumnConfigModal from '$lib/features/analise/AnalysisSumColumnConfigModal.svelte';
+  import AnalysisTableAssetTypeCell from '$lib/features/analise/AnalysisTableAssetTypeCell.svelte';
+  import AnalysisTableRowActions from '$lib/features/analise/AnalysisTableRowActions.svelte';
+  import AnalysisTableSortIcon from '$lib/features/analise/AnalysisTableSortIcon.svelte';
+  import AnalysisTableTickerCell from '$lib/features/analise/AnalysisTableTickerCell.svelte';
+  import PortfolioWorkspaceBarPanel from '$lib/features/portfolios/PortfolioWorkspaceBarPanel.svelte';
+  import RebalanceTableFilter from '$lib/features/rebalance/RebalanceTableFilter.svelte';
 
   const FUNDAMENTAL_COLUMN_CODES = ['vacancia', 'qtd_ativos', 'alavancagem', 'segmento_fii'] as const;
   const FUNDAMENTAL_COLUMN_LABELS: Record<(typeof FUNDAMENTAL_COLUMN_CODES)[number], string> = {
@@ -69,27 +82,46 @@
   let message = '';
   let panelOpen = false;
   let selected: AssetAnalysis | null = null;
+  let methodology: AnalysisMethodology = 'auvp';
+  let sumModalOpen = false;
+  let simpleAllocationPanel: AnalysisSimpleAllocationPanel;
 
   $: assetIdsInPortfolio = new Set(positions.map((p) => p.asset_id));
   $: portfolioRows = filterAnalysisByPortfolio(rows, assetIdsInPortfolio);
   $: sumColumn = tableDisplay?.sum_column;
-  $: showSumColumn = sumColumn?.enabled ?? true;
-  $: sumColumnLabel = sumColumn?.label?.trim() || 'Soma';
+  $: showFundamentalColumn = sumColumn?.use_fundamental ?? true;
+  $: showDiagramColumn = sumColumn?.use_diagram ?? true;
+  $: if (sumColumn && sortKey === 'fundamental' && !showFundamentalColumn) sortKey = 'symbol';
+  $: if (sumColumn && sortKey === 'diagrama' && !showDiagramColumn) sortKey = 'symbol';
   $: filteredRows = portfolioRows.filter((row) => {
     const q = filterText.trim().toLowerCase();
     if (!q) return true;
     return row.symbol.toLowerCase().includes(q) || row.name.toLowerCase().includes(q);
   });
   $: displayedRows = sortAnalysisRows(filteredRows, sortKey, sortDir, sumColumn, PROFILE_FII_BR);
+  $: activePortfolioName = portfolios.find((portfolio) => portfolio.id === activeId)?.name ?? '';
 
   function scoreValue(row: AssetAnalysis, code: string): number | null {
     return row.scores[code] ?? null;
   }
 
-  function tableSum(row: AssetAnalysis): string {
+  function tableFundamental(row: AssetAnalysis): string {
     if (!sumColumn || isPvpDiscarded(row.scores)) return '—';
-    const total = computeTableSumScore(row.scores, row.summary, sumColumn, PROFILE_FII_BR);
+    const total = computeFundamentalTableScore(row.scores, sumColumn, PROFILE_FII_BR);
     return formatTableSumForDisplay(total);
+  }
+
+  function tableCombined(row: AssetAnalysis): string {
+    if (!sumColumn || isPvpDiscarded(row.scores)) return '—';
+    const total = computeCombinedTableScore(row.scores, row.summary, sumColumn, PROFILE_FII_BR);
+    return formatTableSumForDisplay(total);
+  }
+
+  function handleMethodologyConfigSaved(next: TableDisplaySettings) {
+    tableDisplay = structuredClone(next);
+    if (config) {
+      config = { ...config, table_display: tableDisplay };
+    }
   }
 
   function viabilityBadge(row: AssetAnalysis): { label: string; className: string } {
@@ -127,24 +159,47 @@
     positions = await listPositions(activeId);
   }
 
+  async function loadAnalysisRows() {
+    rows = activeId != null ? await listFiiBrAnalysis(activeId) : await listFiiBrAnalysis();
+  }
+
+  async function loadMethodology() {
+    if (activeId == null) {
+      methodology = 'auvp';
+      return;
+    }
+    const result = await getAnalysisMethodology('fii-br', activeId);
+    methodology = result.methodology;
+  }
+
+  async function reloadSimpleAllocation() {
+    if (simpleAllocationPanel && activeId != null) {
+      await simpleAllocationPanel.reload(activeId);
+    }
+  }
+
   async function loadData() {
     loading = true;
     error = '';
     try {
-      const [analysisRows, analysisConfig, segmentList, portfolioList, active] = await Promise.all([
-        listFiiBrAnalysis(),
+      const [analysisConfig, segmentList, portfolioList, active] = await Promise.all([
         getFiiBrConfig(),
         getFiiSegments(),
         listPortfolios(),
         getActivePortfolioId()
       ]);
-      rows = analysisRows;
       config = analysisConfig;
       segments = segmentList;
       tableDisplay = analysisConfig.table_display;
       portfolios = portfolioList;
       activeId = active ?? (portfolioList[0]?.id ?? null);
       await loadPositionsForActive();
+      await loadMethodology();
+      if (methodology === 'auvp') {
+        await loadAnalysisRows();
+      } else {
+        await reloadSimpleAllocation();
+      }
     } catch (err) {
       rows = [];
       config = null;
@@ -169,8 +224,30 @@
     try {
       await setActivePortfolioId(id);
       await loadPositionsForActive();
+      await loadMethodology();
+      if (methodology === 'auvp') {
+        await loadAnalysisRows();
+      } else {
+        await reloadSimpleAllocation();
+      }
     } catch (err) {
       error = parseApiError(err, 'Não foi possível trocar a carteira.');
+    }
+  }
+
+  async function handleMethodologyChange(next: AnalysisMethodology) {
+    if (activeId == null || next === methodology) return;
+    error = '';
+    try {
+      const result = await saveAnalysisMethodology('fii-br', activeId, next);
+      methodology = result.methodology;
+      if (methodology === 'auvp') {
+        await loadAnalysisRows();
+      } else {
+        await reloadSimpleAllocation();
+      }
+    } catch (err) {
+      error = parseApiError(err, 'Não foi possível alterar a metodologia.');
     }
   }
 
@@ -190,19 +267,24 @@
 
   async function handleSaveScores(
     scores: Record<string, number | null>,
-    scoreRefs: Record<string, string | null>
+    scoreRefs: Record<string, string | null>,
+    pending?: boolean
   ) {
-    if (!selected) return;
+    if (!selected || activeId == null) return;
     saving = true;
     error = '';
     message = '';
+    const wasPending = selected.is_pending ?? false;
     try {
-      const updated = await saveAssetAnalysisScores(
+      let updated = await saveAssetAnalysisScores(
         selected.asset_id,
         scores,
         PROFILE_FII_BR,
         scoreRefs
       );
+      if (pending != null && pending !== wasPending) {
+        updated = await setAssetPending(selected.asset_id, activeId, pending, PROFILE_FII_BR);
+      }
       rows = rows.map((row) => (row.asset_id === updated.asset_id ? updated : row));
       message = 'Classificação salva.';
       panelOpen = false;
@@ -219,43 +301,52 @@
 </svelte:head>
 
 <div class="flex flex-col gap-3">
-  <div class="card bg-base-100 shadow">
-    <div class="card-body flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div class="form-control min-w-[12rem] max-w-xs">
-        <span class="label-text text-xs font-semibold">Carteira</span>
-        <PortfolioSelect
-          {portfolios}
-          {activeId}
-          disabled={portfolios.length === 0}
-          on:select={(event) => void handlePortfolioSelect(event.detail)}
-        />
-      </div>
-      <div class="flex gap-2">
-        <a class="btn btn-outline btn-sm" href="/analise/configuracao?perfil=fiis">Configuração Soma</a>
+  <PortfolioWorkspaceBarPanel
+    {portfolios}
+    {activeId}
+    {activePortfolioName}
+    disabled={portfolios.length === 0}
+    portfolioSelectTestId="analysis-portfolio-select"
+    testId="analysis-portfolio-bar"
+    showQuoteStatus={false}
+    on:select={(event) => void handlePortfolioSelect(event.detail)}
+  />
+
+  <AnalysisMethodologySelector
+    profileSlug="fii-br"
+    value={methodology}
+    disabled={loading || saving || activeId == null}
+    onChange={(next) => void handleMethodologyChange(next)}
+  />
+
+  {#if methodology === 'auvp'}
+    <div class="flex justify-end gap-2">
+      <button
+        type="button"
+        class="btn btn-outline btn-sm"
+        data-testid="analysis-sum-config-open"
+        on:click={() => (sumModalOpen = true)}
+      >
+        Configurar metodologia de análise
+      </button>
+    </div>
+
+    <PageSection title="Fundos imobiliários (FIIs)" testId="analysis-fiis-table-section">
+    <svelte:fragment slot="actions">
+      <div class="flex flex-wrap items-end gap-2">
+        <RebalanceTableFilter bind:value={filterText} testId="analysis-fiis-table-filter" />
         <a class="btn btn-outline btn-sm" href="/analise/fiis/segmentos">Segmentos</a>
       </div>
-    </div>
-  </div>
+    </svelte:fragment>
 
-  <section class="card bg-base-100 shadow">
-    <div class="card-body">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <h2 class="card-title">Fundos imobiliários (FIIs)</h2>
-        <input
-          class="input input-bordered input-sm w-full max-w-xs"
-          placeholder="Ticker ou nome"
-          bind:value={filterText}
-        />
-      </div>
+    {#if message}
+      <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
+    {/if}
+    {#if error}
+      <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
+    {/if}
 
-      {#if message}
-        <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
-      {/if}
-      {#if error}
-        <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
-      {/if}
-
-      {#if !activeId}
+    {#if !activeId}
         <p class="text-sm text-base-content/70">
           Crie ou selecione uma carteira em <a class="link link-primary" href="/portfolios">Carteiras</a>.
         </p>
@@ -275,8 +366,8 @@
           {/if}
         </p>
       {:else}
-        <div class="overflow-x-auto px-6 md:px-10">
-          <table class="table table-sm">
+        <div class="w-full min-w-0 overflow-x-auto rounded-lg border border-base-300 bg-base-100 p-3 sm:px-4 sm:py-4">
+          <table class="table table-sm w-full">
             <thead>
               <tr>
                 <th>
@@ -288,9 +379,7 @@
                     on:click={() => toggleSort('symbol')}
                   >
                     Ticker
-                    {#if sortKey === 'symbol'}
-                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                    {/if}
+                    <AnalysisTableSortIcon active={sortKey === 'symbol'} direction={sortDir} />
                   </button>
                 </th>
                 <th>
@@ -302,9 +391,7 @@
                     on:click={() => toggleSort('name')}
                   >
                     Nome
-                    {#if sortKey === 'name'}
-                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                    {/if}
+                    <AnalysisTableSortIcon active={sortKey === 'name'} direction={sortDir} />
                   </button>
                 </th>
                 <th>
@@ -316,9 +403,7 @@
                     on:click={() => toggleSort('asset_type')}
                   >
                     Tipo
-                    {#if sortKey === 'asset_type'}
-                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                    {/if}
+                    <AnalysisTableSortIcon active={sortKey === 'asset_type'} direction={sortDir} />
                   </button>
                 </th>
                 {#each FUNDAMENTAL_COLUMN_CODES as code}
@@ -331,9 +416,7 @@
                       on:click={() => toggleSort(code)}
                     >
                       {FUNDAMENTAL_COLUMN_LABELS[code]}
-                      {#if sortKey === code}
-                        <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                      {/if}
+                      <AnalysisTableSortIcon active={sortKey === code} direction={sortDir} />
                     </button>
                   </th>
                 {/each}
@@ -346,51 +429,62 @@
                     on:click={() => toggleSort('viabilidade')}
                   >
                     Viabilidade
-                    {#if sortKey === 'viabilidade'}
-                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                    {/if}
+                    <AnalysisTableSortIcon active={sortKey === 'viabilidade'} direction={sortDir} />
                   </button>
                 </th>
-                <th class="text-center">
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
-                      'diagrama'
-                    )}"
-                    on:click={() => toggleSort('diagrama')}
-                  >
-                    Diagrama
-                    {#if sortKey === 'diagrama'}
-                      <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                    {/if}
-                  </button>
-                </th>
-                {#if showSumColumn}
+                {#if showFundamentalColumn}
                   <th class="text-center">
                     <button
                       type="button"
                       class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
-                        'soma'
+                        'fundamental'
                       )}"
-                      on:click={() => toggleSort('soma')}
+                      on:click={() => toggleSort('fundamental')}
                     >
-                      {sumColumnLabel}
-                      {#if sortKey === 'soma'}
-                        <span class="text-xs opacity-90" aria-hidden="true">{sortDir === 'asc' ? '▲' : '▼'}</span>
-                      {/if}
+                      Fundamental
+                      <AnalysisTableSortIcon active={sortKey === 'fundamental'} direction={sortDir} />
                     </button>
                   </th>
                 {/if}
-                <th>Ações</th>
+                {#if showDiagramColumn}
+                  <th class="text-center">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+                        'diagrama'
+                      )}"
+                      on:click={() => toggleSort('diagrama')}
+                    >
+                      Diagrama
+                      <AnalysisTableSortIcon active={sortKey === 'diagrama'} direction={sortDir} />
+                    </button>
+                  </th>
+                {/if}
+                <th class="text-center">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 whitespace-nowrap px-1 font-normal normal-case {headerSortClass(
+                      'soma'
+                    )}"
+                    on:click={() => toggleSort('soma')}
+                  >
+                    Soma
+                    <AnalysisTableSortIcon active={sortKey === 'soma'} direction={sortDir} />
+                  </button>
+                </th>
+                <th class="align-bottom w-24"><span class="sr-only">Ações</span></th>
               </tr>
             </thead>
             <tbody>
               {#each displayedRows as row (row.asset_id)}
                 {@const badge = viabilityBadge(row)}
                 <tr class:opacity-60={isPvpDiscarded(row.scores)}>
-                  <td>{formatTickerForDisplay(row.symbol)}</td>
-                  <td>{row.name}</td>
-                  <td>{formatAssetTypeForDisplay(row.asset_type)}</td>
+                  <td><AnalysisTableTickerCell symbol={row.symbol} /></td>
+                  <td
+                    class="max-w-[10rem] truncate sm:max-w-[14rem] lg:max-w-[18rem]"
+                    title={row.name}>{row.name}</td
+                  >
+                  <td><AnalysisTableAssetTypeCell assetType={row.asset_type} /></td>
                   {#each FUNDAMENTAL_COLUMN_CODES as code}
                     <td class="text-center">
                       <FundamentalScoreCell value={scoreValue(row, code)} />
@@ -401,14 +495,18 @@
                       >{badge.label}</span
                     >
                   </td>
-                  <td class="text-center">{formatDiagramScoreForDisplay(row.summary.diagrama.score)}</td>
-                  {#if showSumColumn}
-                    <td class="text-center font-semibold">{tableSum(row)}</td>
+                  {#if showFundamentalColumn}
+                    <td class="text-center font-medium">{tableFundamental(row)}</td>
                   {/if}
-                  <td>
-                    <button type="button" class="btn btn-ghost btn-xs" on:click={() => openPanel(row)}>
-                      Classificar
-                    </button>
+                  {#if showDiagramColumn}
+                    <td class="text-center">{formatDiagramScoreForDisplay(row.summary.diagrama.score)}</td>
+                  {/if}
+                  <td class="text-center font-semibold">{tableCombined(row)}</td>
+                  <td class="whitespace-nowrap px-1">
+                    <AnalysisTableRowActions
+                      isPending={row.is_pending ?? false}
+                      onClassify={() => openPanel(row)}
+                    />
                   </td>
                 </tr>
               {/each}
@@ -416,9 +514,33 @@
           </table>
         </div>
       {/if}
-    </div>
-  </section>
+    </PageSection>
+  {:else}
+    <AnalysisSimpleAllocationPanel
+      bind:this={simpleAllocationPanel}
+      profile={PROFILE_FII_BR}
+      sectionTitle="Fundos imobiliários (FIIs)"
+      sectionTestId="analysis-fiis-allocation-section"
+      filterTestId="analysis-fiis-table-filter"
+      description="Defina o percentual desejado de cada FII (soma 100%) e opcionalmente um link externo de análise."
+      emptyMessage="Nenhum FII nesta carteira. Adicione posições em Carteiras."
+      classDisplayClass="funds"
+      rebalanceAssetsKey="fund_assets"
+      {activeId}
+      {positions}
+      {loading}
+      listAnalysis={listFiiBrAnalysis}
+      saveAllocations={saveFiiBrAllocations}
+    />
+  {/if}
 </div>
+
+<AnalysisSumColumnConfigModal
+  profile="fii_br"
+  open={sumModalOpen}
+  onClose={() => (sumModalOpen = false)}
+  onSaved={handleMethodologyConfigSaved}
+/>
 
 <AssetAnalysisPanel
   open={panelOpen}
@@ -432,6 +554,8 @@
   scores={selected?.scores ?? {}}
   scoreRefs={selected?.score_refs ?? {}}
   loading={saving}
+  isPending={selected?.is_pending ?? false}
+  showPendingToggle={activeId != null}
   onSave={handleSaveScores}
   onClose={closePanel}
 />

@@ -14,6 +14,7 @@
   export let disabled = false;
   export let portfolioSelectTestId = 'dashboard-portfolio-select';
   export let testId = 'portfolio-workspace-bar';
+  export let showQuoteStatus = true;
 
   const dispatch = createEventDispatcher<{ select: number }>();
 </script>
@@ -28,6 +29,7 @@
     {quotesRefreshedAt}
     {disabled}
     {portfolioSelectTestId}
+    {showQuoteStatus}
     on:select={(event) => dispatch('select', event.detail)}
   />
 </PageSection>

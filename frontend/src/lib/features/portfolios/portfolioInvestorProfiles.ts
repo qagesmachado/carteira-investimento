@@ -1,5 +1,6 @@
 import {
   DEFAULT_STOCKS_SPLIT,
+  DEFAULT_STOCKS_SPLIT_MODE,
   serializeAllocationTargets,
   type AllocationTargets,
   type ClassTargets
@@ -45,7 +46,8 @@ export const INVESTOR_PROFILES: InvestorProfile[] = [
     description: 'Prioriza renda fixa e preservação de capital.',
     targets: {
       classes: { ...CONSERVATIVE_CLASS_TARGETS },
-      stocks_split: { ...DEFAULT_STOCKS_SPLIT }
+      stocks_split: { ...DEFAULT_STOCKS_SPLIT },
+      stocks_split_mode: DEFAULT_STOCKS_SPLIT_MODE
     }
   },
   {
@@ -54,7 +56,8 @@ export const INVESTOR_PROFILES: InvestorProfile[] = [
     description: 'Equilíbrio entre crescimento e estabilidade.',
     targets: {
       classes: { ...MODERATE_CLASS_TARGETS },
-      stocks_split: { ...DEFAULT_STOCKS_SPLIT }
+      stocks_split: { ...DEFAULT_STOCKS_SPLIT },
+      stocks_split_mode: DEFAULT_STOCKS_SPLIT_MODE
     }
   },
   {
@@ -63,7 +66,8 @@ export const INVESTOR_PROFILES: InvestorProfile[] = [
     description: 'Maior exposição a ações, internacional e cripto.',
     targets: {
       classes: { ...BOLD_CLASS_TARGETS },
-      stocks_split: { ...DEFAULT_STOCKS_SPLIT }
+      stocks_split: { ...DEFAULT_STOCKS_SPLIT },
+      stocks_split_mode: DEFAULT_STOCKS_SPLIT_MODE
     }
   },
   {
@@ -72,10 +76,17 @@ export const INVESTOR_PROFILES: InvestorProfile[] = [
     description: 'Defina as metas por classe abaixo.',
     targets: {
       classes: { ...MODERATE_CLASS_TARGETS },
-      stocks_split: { ...DEFAULT_STOCKS_SPLIT }
+      stocks_split: { ...DEFAULT_STOCKS_SPLIT },
+      stocks_split_mode: DEFAULT_STOCKS_SPLIT_MODE
     }
   }
 ];
+
+export type PresetInvestorProfileId = Exclude<InvestorProfileId, 'custom'>;
+
+export const PRESET_INVESTOR_PROFILES = INVESTOR_PROFILES.filter(
+  (profile): profile is InvestorProfile & { id: PresetInvestorProfileId } => profile.id !== 'custom'
+);
 
 export function getInvestorProfile(id: InvestorProfileId): InvestorProfile {
   return INVESTOR_PROFILES.find((profile) => profile.id === id) ?? INVESTOR_PROFILES[1];

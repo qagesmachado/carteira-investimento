@@ -3,18 +3,10 @@
 ## Metadados
 
 - **ID:** `UI-REB-003`
-- **Status:** aprovado
+- **Status:** removido
 - **Página:** `/rebalanceamento`
-- **Arquivo de teste:** `e2e/specs/rebalanceamento/03-subdivisao-etf-acao.spec.ts`
+- **Arquivo de teste:** — (painel retirado da UI em 2026-07-15)
 
-## Cenário
+## Nota
 
-**Como** investidor  
-**Quero** ver a relação ETF/Ação dentro de Ações/ETF BR  
-**Para** acompanhar a sub-meta 70/30 da planilha
-
-### Passo a passo
-
-1. Carteira com posições em ações, ETF e renda fixa (seed mix).
-2. Abro `/rebalanceamento`.
-3. Bloco «Relação ETF / Ação» exibe linhas ETF (70%) e Ação (30%).
+O bloco «Relação ETF / Ação» foi removido da página de rebalanceamento. A sub-meta ETF/Ação (70/30) permanece na **configuração** (`/rebalanceamento/configuracao`) e no cálculo do snapshot da API.

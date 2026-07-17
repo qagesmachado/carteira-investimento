@@ -27,11 +27,16 @@
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
   import { lucideIconForAssetType } from './consolidada/consolidadaAssetTypeIcons';
+  import {
+    canClassifyPortfolioAsset,
+    type PortfolioMethodologies
+  } from './portfolioClassifyEligibility';
 
   export let rows: PositionRow[] = [];
   export let sortKey: SortKey = 'ticker';
   export let sortDir: 'asc' | 'desc' = 'asc';
   export let expandedPositionId: number | null = null;
+  export let portfolioMethodologies: PortfolioMethodologies = {};
 
   export let formatOptionalMoney: (value: number | null, currency: string | undefined) => string = () =>
     '—';
@@ -84,7 +89,7 @@
   }
 
   function canClassify(row: PositionRow): boolean {
-    return row.asset.display_class === 'stocks' || row.asset.display_class === 'funds';
+    return canClassifyPortfolioAsset(row.asset, portfolioMethodologies);
   }
 </script>
 
@@ -119,7 +124,7 @@
             </button>
           </th>
         {/each}
-        <th class="align-bottom min-w-[10rem] whitespace-nowrap"><span class="sr-only">Ações</span></th>
+        <th class="align-bottom min-w-[14.5rem] whitespace-nowrap"><span class="sr-only">Ações</span></th>
       </tr>
     </thead>
     <tbody>
@@ -185,7 +190,10 @@
             {/if}
           </td>
           <td class="whitespace-nowrap px-1">
-            <div class="flex flex-wrap items-center gap-1">
+            <div
+              class="grid min-w-[14.5rem] grid-cols-4 gap-1"
+              data-testid="portfolio-row-actions-{ticker}"
+            >
               <button
                 class="btn btn-outline btn-xs gap-1"
                 type="button"
@@ -212,7 +220,21 @@
                   class="btn btn-outline btn-xs gap-1"
                   type="button"
                   aria-label="Classificar"
+                  data-testid="portfolio-classify-{ticker}"
                   on:click={() => dispatch('classify', asset.id)}
+                >
+                  <LucideIcon name={PORTFOLIO_POSITIONS_CLASSIFY_LUCIDE_ICON} size="sm" />
+                  <span class="hidden sm:inline">Classificar</span>
+                </button>
+              {:else}
+                <button
+                  class="btn btn-outline btn-xs btn-disabled pointer-events-none gap-1 opacity-40"
+                  type="button"
+                  disabled
+                  aria-label="Classificar"
+                  aria-disabled="true"
+                  data-testid="portfolio-classify-disabled-{ticker}"
+                  tabindex="-1"
                 >
                   <LucideIcon name={PORTFOLIO_POSITIONS_CLASSIFY_LUCIDE_ICON} size="sm" />
                   <span class="hidden sm:inline">Classificar</span>
@@ -222,6 +244,7 @@
                 class="btn btn-outline btn-xs gap-1 text-error"
                 type="button"
                 aria-label="Remover"
+                data-testid="portfolio-remove-{ticker}"
                 on:click={() => dispatch('remove', position.id)}
               >
                 <LucideIcon name={PORTFOLIO_POSITIONS_REMOVE_LUCIDE_ICON} size="sm" />

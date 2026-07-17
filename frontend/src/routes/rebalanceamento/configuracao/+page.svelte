@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
 
   import { parseApiError } from '$lib/api/parseApiError';
+  import { getAnalysisMethodology, type AnalysisMethodology } from '$lib/api/analysis';
   import {
     getActivePortfolioId,
     listPortfolios,
@@ -10,17 +11,25 @@
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import AppPageShell from '$lib/components/AppPageShell.svelte';
-  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
   import {
-    CLASS_TARGET_FIELDS,
+    cloneAllocationTargets,
     defaultAllocationTargets,
     parseAllocationTargets,
     serializeAllocationTargets,
     validateAllocationTargets,
     type AllocationTargets
   } from '$lib/features/rebalance/allocationTargets';
+  import RebalanceClassTargetsEditor from '$lib/features/rebalance/RebalanceClassTargetsEditor.svelte';
+  import RebalanceProfilePresetModal from '$lib/features/rebalance/RebalanceProfilePresetModal.svelte';
+  import RebalanceStocksSplitEditor from '$lib/features/rebalance/RebalanceStocksSplitEditor.svelte';
+  import RebalanceTargetsPreview from '$lib/features/rebalance/RebalanceTargetsPreview.svelte';
+  import { enforceStocksSplitUnifiedForSimples } from '$lib/features/rebalance/stocksSplitSimplesLock';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
+  import { PORTFOLIO_POSITIONS_BACK_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
+  import { PAGE_HERO_DASHBOARD_BACK_BTN_CLASS } from '$lib/layout/pageVisual';
 
   let portfolios: Portfolio[] = [];
   let activeId: number | null = null;
@@ -29,14 +38,27 @@
   let saving = false;
   let error = '';
   let message = '';
+  let presetModalOpen = false;
+  let stockBrMethodology: AnalysisMethodology = 'auvp';
 
-  $: classSum =
-    targets.classes.stocks +
-    targets.classes.funds +
-    targets.classes.international +
-    targets.classes.fixed_income +
-    targets.classes.crypto;
-  $: splitSum = targets.stocks_split.etf + targets.stocks_split.stock;
+  $: stocksSplitLocked = stockBrMethodology === 'simples';
+  $: if (stocksSplitLocked && targets.stocks_split_mode !== 'unified') {
+    enforceStocksSplitUnifiedForSimples(targets);
+  }
+
+  $: canSave = activeId != null && validateAllocationTargets(targets) == null && !saving;
+
+  async function loadStockBrMethodology() {
+    if (activeId == null) {
+      stockBrMethodology = 'auvp';
+      return;
+    }
+    const result = await getAnalysisMethodology('stock-br', activeId);
+    stockBrMethodology = result.methodology;
+    if (stockBrMethodology === 'simples') {
+      enforceStocksSplitUnifiedForSimples(targets);
+    }
+  }
 
   async function loadPage() {
     loading = true;
@@ -48,6 +70,7 @@
       if (portfolio) {
         targets = parseAllocationTargets(portfolio.allocation_targets_json);
       }
+      await loadStockBrMethodology();
     } catch (err) {
       error = parseApiError(err, 'Não foi possível carregar carteiras.');
     } finally {
@@ -65,6 +88,9 @@
     if (!portfolio) return;
     activeId = id;
     targets = parseAllocationTargets(portfolio.allocation_targets_json);
+    void loadStockBrMethodology();
+    message = '';
+    error = '';
   }
 
   async function handleSave() {
@@ -90,8 +116,18 @@
     }
   }
 
-  function handleReset() {
-    targets = defaultAllocationTargets();
+  function handleApplyPreset(appliedTargets: AllocationTargets) {
+    targets = cloneAllocationTargets(appliedTargets);
+    message = '';
+    error = '';
+  }
+
+  function openPresetModal() {
+    presetModalOpen = true;
+  }
+
+  function closePresetModal() {
+    presetModalOpen = false;
   }
 </script>
 
@@ -100,107 +136,84 @@
 </svelte:head>
 
 <main class="min-h-screen w-full bg-base-200">
-<AppPageShell paddingY="py-2-px-4" class="flex flex-col gap-3">
-  <PageHeader
-    title="Metas de rebalanceamento"
-    subtitle="Percentuais alvo por classe e relação ETF/Ação."
-  >
-    <a slot="actions" class="btn btn-sm btn-ghost" href="/rebalanceamento">Voltar</a>
-  </PageHeader>
+  <AppPageShell paddingY="py-4" class="flex flex-col gap-3">
+    <PageHero
+      title="Metas de rebalanceamento"
+      subtitle="Percentuais alvo por classe e relação ETF/Ação"
+      variant="dashboard"
+    >
+      <a
+        slot="actions"
+        class={PAGE_HERO_DASHBOARD_BACK_BTN_CLASS}
+        href="/rebalanceamento"
+        data-testid="rebalance-config-back"
+      >
+        <LucideIcon name={PORTFOLIO_POSITIONS_BACK_LUCIDE_ICON} size="md" class="text-white" />
+        Voltar
+      </a>
+    </PageHero>
 
-  {#if error}
     <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
-  {/if}
-  {#if message}
     <DismissibleAlert variant="success" text={message} on:dismiss={() => (message = '')} />
-  {/if}
 
-  {#if loading}
-    <p class="text-sm opacity-70">Carregando…</p>
-  {:else if portfolios.length === 0}
-    <p class="text-sm opacity-70">Cadastre uma carteira antes de definir metas.</p>
-  {:else}
-    <PageSection>
-      <label class="form-control w-full max-w-md">
-        <span class="label-text">Carteira</span>
-        <PortfolioSelect
-          {portfolios}
-          {activeId}
-          selectClass="select select-bordered"
-          ariaLabel="Carteira"
-          on:select={(event) => handlePortfolioSelect(event.detail)}
-        />
-      </label>
+    {#if loading}
+      <p class="text-sm opacity-70">Carregando…</p>
+    {:else if portfolios.length === 0}
+      <PageSection>
+        <p class="text-sm opacity-70">Cadastre uma carteira antes de definir metas.</p>
+      </PageSection>
+    {:else}
+      <PageSection title="Carteira" testId="rebalance-config-portfolio-section">
+        <label class="form-control w-full max-w-md">
+          <span class="label-text">Carteira ativa</span>
+          <PortfolioSelect
+            {portfolios}
+            {activeId}
+            selectClass="select select-bordered"
+            ariaLabel="Carteira"
+            on:select={(event) => handlePortfolioSelect(event.detail)}
+          />
+        </label>
+      </PageSection>
 
-      <div>
-        <h2 class="mb-2 font-semibold">Classes (% do patrimônio)</h2>
-        <div class="grid gap-3 sm:grid-cols-2">
-          {#each CLASS_TARGET_FIELDS as field (field.key)}
-            <label class="form-control" for="class-{field.key}">
-              <span class="label-text">{field.label}</span>
-              <input
-                id="class-{field.key}"
-                class="input input-bordered"
-                type="number"
-                min="0"
-                max="100"
-                step="1"
-                bind:value={targets.classes[field.key]}
-              />
-            </label>
-          {/each}
+      <div class="grid gap-3 lg:grid-cols-3" data-testid="rebalance-config-editor-grid">
+        <div class="flex flex-col gap-3 lg:col-span-2">
+          <RebalanceClassTargetsEditor bind:targets showSum={false} />
+          <RebalanceStocksSplitEditor bind:targets showSum={false} locked={stocksSplitLocked} />
         </div>
-        <p class="mt-2 text-sm" class:text-error={Math.abs(classSum - 100) > 0.01}>
-          Soma das classes: {classSum.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}%
-        </p>
-      </div>
 
-      <div>
-        <h2 class="mb-2 font-semibold">Relação ETF / Ação (% dentro de Ações/ETF BR)</h2>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <label class="form-control">
-            <span class="label-text">ETF</span>
-            <input
-              class="input input-bordered"
-              type="number"
-              min="0"
-              max="100"
-              step="1"
-              bind:value={targets.stocks_split.etf}
-            />
-          </label>
-          <label class="form-control">
-            <span class="label-text">Ação</span>
-            <input
-              class="input input-bordered"
-              type="number"
-              min="0"
-              max="100"
-              step="1"
-              bind:value={targets.stocks_split.stock}
-            />
-          </label>
+        <div class="lg:col-span-1">
+          <RebalanceTargetsPreview {targets} />
         </div>
-        <p class="mt-2 text-sm" class:text-error={Math.abs(splitSum - 100) > 0.01}>
-          Soma ETF + Ação: {splitSum.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}%
-        </p>
       </div>
 
-      <div class="flex flex-wrap gap-2">
-        <button class="btn btn-primary" disabled={saving} on:click={handleSave}>
-          {saving ? 'Salvando…' : 'Salvar metas'}
-        </button>
-        <button class="btn btn-ghost" type="button" disabled={saving} on:click={handleReset}>
-          Restaurar padrão
-        </button>
-      </div>
-    </PageSection>
-  {/if}
-</AppPageShell>
+      <PageSection testId="rebalance-config-actions">
+        <div class="flex flex-wrap gap-2">
+          <button
+            class="btn btn-primary"
+            disabled={!canSave}
+            data-testid="rebalance-config-save"
+            on:click={handleSave}
+          >
+            {saving ? 'Salvando…' : 'Salvar metas'}
+          </button>
+          <button
+            class="btn btn-outline"
+            type="button"
+            disabled={saving}
+            data-testid="rebalance-config-apply-preset"
+            on:click={openPresetModal}
+          >
+            Perfis predefinidos
+          </button>
+        </div>
+      </PageSection>
+
+      <RebalanceProfilePresetModal
+        open={presetModalOpen}
+        onClose={closePresetModal}
+        onApply={handleApplyPreset}
+      />
+    {/if}
+  </AppPageShell>
 </main>

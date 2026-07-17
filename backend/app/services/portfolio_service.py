@@ -21,6 +21,10 @@ from app.schemas.portfolio import (
 )
 from app.services.asset_service import apply_asset_update, build_asset
 from app.services.rebalance_engine import validate_allocation_targets_json
+from app.services.analysis_methodology_service import (
+    AnalysisMethodologyError,
+    assert_stocks_split_allowed_for_stock_br_methodology,
+)
 
 _UNIFIED_ASSET_TYPES = frozenset({AssetType.FIXED_INCOME, AssetType.PENSION})
 
@@ -94,6 +98,9 @@ def create_portfolio(session: Session, payload: PortfolioCreate) -> Portfolio:
     from app.services.objective_service import ensure_default_objective
 
     ensure_default_objective(session, portfolio.id)
+    from app.services.analysis_methodology_service import seed_portfolio_analysis_methodologies
+
+    seed_portfolio_analysis_methodologies(session, portfolio.id)
     return portfolio
 
 
@@ -104,6 +111,14 @@ def update_portfolio(session: Session, portfolio_id: int, payload: PortfolioUpda
     if "allocation_targets_json" in data and data["allocation_targets_json"] is not None:
         try:
             validate_allocation_targets_json(data["allocation_targets_json"])
+            assert_stocks_split_allowed_for_stock_br_methodology(
+                session, portfolio_id, data["allocation_targets_json"]
+            )
+        except AnalysisMethodologyError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=str(exc),
+            ) from exc
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -171,6 +186,9 @@ def delete_portfolio(
     delete_objectives_for_portfolio(session, portfolio_id)
     delete_property_financings_for_portfolio(session, portfolio_id)
     delete_manual_patrimony_items_for_portfolio(session, portfolio_id)
+    from app.services.analysis_methodology_service import delete_portfolio_analysis_methodologies
+
+    delete_portfolio_analysis_methodologies(session, portfolio_id)
     session.delete(portfolio)
     pref = session.get(AppPreference, ACTIVE_PORTFOLIO_KEY)
     if pref and pref.value == str(portfolio_id):

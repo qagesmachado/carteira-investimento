@@ -21,7 +21,9 @@ from app.services.rebalance_engine import (
 def test_parse_allocation_targets_defaults_when_null() -> None:
     targets = parse_allocation_targets(None)
     assert targets.classes.stocks == 30.0
-    assert targets.stocks_split.etf == 70.0
+    assert targets.stocks_split.etf == 50.0
+    assert targets.stocks_split.stock == 50.0
+    assert targets.stocks_split_mode == "unified"
 
 
 def test_parse_allocation_targets_from_json() -> None:
@@ -97,7 +99,11 @@ def test_compute_class_rows() -> None:
 
 
 def test_compute_stocks_sub_rows() -> None:
-    targets = parse_allocation_targets(None)
+    targets = AllocationTargets(
+        classes=ClassTargets(stocks=30, funds=5, international=20, fixed_income=40, crypto=5),
+        stocks_split=StocksSplitTargets(etf=70, stock=30),
+        stocks_split_mode="by_subtype",
+    )
     current_by_sub = {"etf": 33_600.0, "stock": 14_400.0}
     rows = compute_stocks_sub_rows(160_000.0, 48_000.0, current_by_sub, targets)
     assert len(rows) == 2
@@ -109,8 +115,53 @@ def test_compute_stocks_sub_rows() -> None:
     assert stock.target_value_brl == pytest.approx(14_400.0)
 
 
+def test_compute_stock_asset_rows_unified_mode() -> None:
+    targets = AllocationTargets(
+        classes=ClassTargets(stocks=30, funds=5, international=20, fixed_income=40, crypto=5),
+        stocks_split=StocksSplitTargets(etf=70, stock=30),
+        stocks_split_mode="unified",
+    )
+    assets = [
+        {"asset_id": 1, "symbol": "AAA3", "name": "A", "asset_type": AssetType.STOCK.value, "current_brl": 10_000.0, "sum_score": 30.0},
+        {"asset_id": 2, "symbol": "BBB3", "name": "B", "asset_type": AssetType.STOCK.value, "current_brl": 4_400.0, "sum_score": 20.0},
+        {"asset_id": 3, "symbol": "BOVA11", "name": "ETF", "asset_type": AssetType.ETF.value, "current_brl": 33_600.0, "sum_score": 50.0},
+    ]
+    rows = compute_stock_asset_rows(160_000.0, assets, targets)
+    aaa = next(r for r in rows if r.symbol == "AAA3")
+    bbb = next(r for r in rows if r.symbol == "BBB3")
+    etf = next(r for r in rows if r.symbol == "BOVA11")
+    assert aaa.target_percent == pytest.approx(30.0)
+    assert bbb.target_percent == pytest.approx(20.0)
+    assert etf.target_percent == pytest.approx(50.0)
+    assert aaa.target_value_brl == pytest.approx(14_400.0)
+    assert etf.target_value_brl == pytest.approx(24_000.0)
+
+
+def test_compute_stocks_sub_rows_empty_when_unified() -> None:
+    targets = AllocationTargets(
+        classes=ClassTargets(stocks=30, funds=5, international=20, fixed_income=40, crypto=5),
+        stocks_split=StocksSplitTargets(etf=70, stock=30),
+        stocks_split_mode="unified",
+    )
+    rows = compute_stocks_sub_rows(160_000.0, 48_000.0, {"etf": 33_600.0, "stock": 14_400.0}, targets)
+    assert rows == []
+
+
+def test_validate_allows_invalid_split_when_unified() -> None:
+    targets = AllocationTargets(
+        classes=ClassTargets(stocks=30, funds=5, international=20, fixed_income=40, crypto=5),
+        stocks_split=StocksSplitTargets(etf=80, stock=30),
+        stocks_split_mode="unified",
+    )
+    targets.validate_sums()
+
+
 def test_compute_stock_asset_rows_score_weighted() -> None:
-    targets = parse_allocation_targets(None)
+    targets = AllocationTargets(
+        classes=ClassTargets(stocks=30, funds=5, international=20, fixed_income=40, crypto=5),
+        stocks_split=StocksSplitTargets(etf=70, stock=30),
+        stocks_split_mode="by_subtype",
+    )
     assets = [
         {"asset_id": 1, "symbol": "AAA3", "name": "A", "asset_type": AssetType.STOCK.value, "current_brl": 10_000.0, "sum_score": 30.0},
         {"asset_id": 2, "symbol": "BBB3", "name": "B", "asset_type": AssetType.STOCK.value, "current_brl": 4_400.0, "sum_score": 20.0},

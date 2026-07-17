@@ -27,8 +27,8 @@ export type AssetRebalanceRow = {
   symbol: string;
   name: string;
   asset_type: string;
-  current_value_brl: number;
-  current_percent: number;
+  current_value_brl: number | null;
+  current_percent: number | null;
   target_percent: number | null;
   target_value_brl: number | null;
   gap_brl: number | null;

@@ -34,9 +34,12 @@
   export let scores: Record<string, number | null> = {};
   export let scoreRefs: Record<string, string | null> = {};
   export let loading = false;
+  export let isPending = false;
+  export let showPendingToggle = false;
   export let onSave: (
     scores: Record<string, number | null>,
-    scoreRefs: Record<string, string | null>
+    scoreRefs: Record<string, string | null>,
+    pending?: boolean
   ) => void | Promise<void> = () => undefined;
   export let onClose: () => void = () => undefined;
 
@@ -49,6 +52,8 @@
   let draftScoreRefs: Record<string, string | null> = {};
   let baselineScores: Record<string, number | null> = {};
   let baselineScoreRefs: Record<string, string | null> = {};
+  let draftPending = false;
+  let baselinePending = false;
   let wasOpen = false;
   let loadedAssetKey = '';
   let draftSyncGeneration = 0;
@@ -85,12 +90,16 @@
     })),
     []
   );
-  $: hasUnsavedChanges = open && hasUnsavedAnalysisDraft(
-    draftScores,
-    baselineScores,
-    draftScoreRefs,
-    baselineScoreRefs
-  );
+  $: hasUnsavedChanges =
+    open &&
+    hasUnsavedAnalysisDraft(
+      draftScores,
+      baselineScores,
+      draftScoreRefs,
+      baselineScoreRefs,
+      showPendingToggle ? draftPending : undefined,
+      showPendingToggle ? baselinePending : undefined
+    );
   $: currentAssetKey =
     assetId != null ? `id:${assetId}` : symbol ? `${profile}:${symbol}` : '';
   $: draftContentKey = `${loadedAssetKey}:${draftSyncGeneration}`;
@@ -108,6 +117,8 @@
     draftScoreRefs = {};
     baselineScores = {};
     baselineScoreRefs = {};
+    draftPending = false;
+    baselinePending = false;
     loadedAssetKey = '';
     draftSyncGeneration += 1;
   }
@@ -117,6 +128,8 @@
     baselineScoreRefs = normalizeRefMap(scoreRefs);
     draftScores = { ...baselineScores };
     draftScoreRefs = { ...baselineScoreRefs };
+    baselinePending = isPending;
+    draftPending = isPending;
     loadedAssetKey = currentAssetKey;
     draftSyncGeneration += 1;
   }
@@ -204,8 +217,16 @@
     resetConfirmOpen = false;
   }
 
+  function setPending(checked: boolean) {
+    draftPending = checked;
+  }
+
   async function handleSubmit() {
-    await onSave(draftScores, draftScoreRefs);
+    await onSave(
+      draftScores,
+      draftScoreRefs,
+      showPendingToggle ? draftPending : undefined
+    );
   }
 </script>
 
@@ -378,6 +399,27 @@
             Há alterações não salvas. Clique em <strong>Salvar classificação</strong> para aplicar.
           </span>
         </div>
+      {/if}
+
+      {#if showPendingToggle}
+        <label
+          class="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-warning/40 bg-warning/5 p-3"
+          data-testid="analysis-pending-toggle"
+        >
+          <input
+            type="checkbox"
+            class="checkbox checkbox-warning checkbox-sm mt-0.5"
+            checked={draftPending}
+            on:change={(event) => setPending(event.currentTarget.checked)}
+          />
+          <span>
+            <span class="font-medium">Marcar como pendente</span>
+            <span class="mt-1 block text-sm text-base-content/80">
+              O ativo deixa de entrar nos totais de alocação e percentuais desta carteira até ser
+              desmarcado.
+            </span>
+          </span>
+        </label>
       {/if}
 
       <div class="modal-action flex-wrap items-center">

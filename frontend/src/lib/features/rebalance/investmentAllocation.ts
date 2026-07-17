@@ -19,7 +19,7 @@ export type ClassInvestmentPlan = {
 
 export type AssetRowForAllocation = {
   asset_id: number;
-  current_value_brl: number;
+  current_value_brl: number | null;
   target_value_brl: number | null;
   gap_brl: number | null;
 };
@@ -42,7 +42,7 @@ function computeIdealGap(currentValueBrl: number, idealTargetBrl: number): numbe
 }
 
 function computeAssetIdealGap(
-  currentValueBrl: number,
+  currentValueBrl: number | null,
   targetValueBrl: number | null | undefined,
   currentPatrimonyBrl: number,
   finalPatrimonyBrl: number
@@ -56,7 +56,8 @@ function computeAssetIdealGap(
     return 0;
   }
   const scaledTarget = targetValueBrl * (finalPatrimonyBrl / currentPatrimonyBrl);
-  return computeIdealGap(currentValueBrl, scaledTarget);
+  const effectiveCurrent = currentValueBrl ?? 0;
+  return computeIdealGap(effectiveCurrent, scaledTarget);
 }
 
 function computeAssetIdealTarget(
@@ -266,3 +267,22 @@ export const ASSET_GROUP_TO_DISPLAY_CLASS: Record<string, string> = {
   funds: 'funds',
   crypto: 'crypto'
 };
+
+export type SimulationMode = 'final_total' | 'invest_amount';
+
+export function resolveInvestmentAmount(
+  mode: SimulationMode,
+  inputBrl: number,
+  currentPatrimonyBrl: number
+): number {
+  if (!Number.isFinite(inputBrl) || inputBrl <= 0) {
+    return 0;
+  }
+  if (mode === 'final_total') {
+    if (!Number.isFinite(currentPatrimonyBrl) || currentPatrimonyBrl < 0) {
+      return 0;
+    }
+    return Math.max(0, Math.round((inputBrl - currentPatrimonyBrl) * 100) / 100);
+  }
+  return inputBrl;
+}

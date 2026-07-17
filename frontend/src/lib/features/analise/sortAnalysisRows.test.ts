@@ -5,7 +5,8 @@ import type { AssetAnalysis, TableSumColumnSettings } from '$lib/api/analysis';
 import { sortAnalysisRows } from './sortAnalysisRows';
 
 const sumColumn: TableSumColumnSettings = {
-  enabled: true,
+  use_fundamental: true,
+  use_diagram: true,
   label: 'Soma',
   diagram_multiplier: 2,
   viabilidade_weights: {

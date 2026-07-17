@@ -42,6 +42,9 @@ function translateDetail(detail: string): string {
   if (detail.includes('portfolio not found')) {
     return 'Carteira não encontrada.';
   }
+  if (detail === 'Not Found') {
+    return 'Recurso da API não encontrado. Reinicie o backend para carregar a versão mais recente.';
+  }
   if (detail.includes('could not resolve unique portfolio name')) {
     return 'Não foi possível gerar um nome único para a carteira. Renomeie manualmente.';
   }

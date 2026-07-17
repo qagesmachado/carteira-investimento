@@ -16,6 +16,7 @@ export function monthsRemainingInYear(planYear: number, referenceDate = new Date
   const year = referenceDate.getFullYear();
   if (planYear > year) return 12;
   if (planYear < year) return 0;
+  // Mês corrente até dezembro, inclusive (getMonth: jan=0 … dez=11).
   return 12 - referenceDate.getMonth();
 }
 

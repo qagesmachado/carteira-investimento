@@ -33,20 +33,20 @@ test.describe('UI-REB-010', () => {
 
     const intlRow = table.getByRole('row').filter({ hasText: 'Internacional' });
     const stocksRow = table.getByRole('row').filter({ hasText: 'Ações/ETF BR' });
-    const stocksBefore = parseBrl(await stocksRow.locator('td').nth(6).innerText());
+    const stocksBefore = parseBrl(await stocksRow.locator('td').nth(10).innerText());
 
     await toggleClassInclusion(page, 'Internacional', false);
 
-    await expect(intlRow.locator('td').nth(6)).toHaveText(/R\$\s*0,00/);
+    await expect(intlRow.locator('td').nth(10)).toHaveText(/R\$\s*0,00/);
 
-    const stocksAfter = parseBrl(await stocksRow.locator('td').nth(6).innerText());
+    const stocksAfter = parseBrl(await stocksRow.locator('td').nth(10).innerText());
     expect(stocksAfter).toBeGreaterThan(stocksBefore);
 
     const dataRows = table.locator('tbody tr').filter({ hasNotText: 'TOTAL' });
     const rowCount = await dataRows.count();
     let totalAporte = 0;
     for (let index = 0; index < rowCount; index++) {
-      totalAporte += parseBrl(await dataRows.nth(index).locator('td').nth(6).innerText());
+      totalAporte += parseBrl(await dataRows.nth(index).locator('td').nth(10).innerText());
     }
     expect(totalAporte).toBeCloseTo(10_000, 2);
   });

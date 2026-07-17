@@ -18,7 +18,7 @@ test.describe('UI-REB-001', () => {
 
   test('exibe tabela de balanceamento com metas padrão', async ({ page }) => {
     await gotoRebalancePage(page);
-    await expect(page.getByRole('heading', { name: 'Balanceamento desejado' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Balanceamento por classe' })).toBeVisible();
     await expectRebalanceClassRow(page, 'Ações/ETF BR', '30,00%');
     await expectRebalanceClassRow(page, 'Renda fixa', '40,00%');
     await expect(page.getByRole('row', { name: /TOTAL/ })).toBeVisible();

@@ -135,6 +135,41 @@ describe('computeDashboardPatrimony', () => {
     );
 
     expect(result.currentBrl).toBeCloseTo(2_100);
+    expect(result.activePositions).toBe(1);
+  });
+
+  it('inclui previdência no contador quando filtro marcado', () => {
+    const pensionAsset: Asset = {
+      ...brAsset,
+      id: 3,
+      asset_type: 'pension',
+      display_class: 'pension'
+    };
+    const pensionPosition: Position = {
+      ...brPosition,
+      id: 3,
+      asset_id: 3,
+      invested_amount: 10_000,
+      current_value: 12_000
+    };
+
+    const withoutPension = computeDashboardPatrimony(
+      [brPosition, pensionPosition],
+      { 1: { ...brAsset, current_quote: 35 }, 3: pensionAsset },
+      null,
+      {},
+      { includeNonInvestment: false, includePension: false }
+    );
+    const withPension = computeDashboardPatrimony(
+      [brPosition, pensionPosition],
+      { 1: { ...brAsset, current_quote: 35 }, 3: pensionAsset },
+      null,
+      {},
+      { includeNonInvestment: false, includePension: true }
+    );
+
+    expect(withoutPension.activePositions).toBe(1);
+    expect(withPension.activePositions).toBe(2);
   });
 });
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/svelte';
+import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 
 import { defaultAllocationTargets } from '$lib/features/rebalance/allocationTargets';
@@ -6,27 +6,13 @@ import { defaultAllocationTargets } from '$lib/features/rebalance/allocationTarg
 import PortfolioCustomAllocationEditor from './PortfolioCustomAllocationEditor.svelte';
 
 describe('PortfolioCustomAllocationEditor', () => {
-  it('atualiza percentual ao mover slider', async () => {
+  it('delega para RebalanceClassTargetsEditor', () => {
     const targets = defaultAllocationTargets();
     render(PortfolioCustomAllocationEditor, {
       props: { targets }
     });
 
-    const slider = screen.getByTestId('custom-allocation-slider-fixed_income');
-    await fireEvent.input(slider, { target: { value: '60' } });
-
-    expect(targets.classes.fixed_income).toBe(60);
-    expect(screen.getByTestId('custom-allocation-sum').textContent).toContain('105%');
-    expect(screen.getByTestId('custom-allocation-sum').className).toContain('text-error');
-  });
-
-  it('indica soma valida quando totaliza 100%', () => {
-    const targets = defaultAllocationTargets();
-    render(PortfolioCustomAllocationEditor, {
-      props: { targets }
-    });
-
+    expect(screen.getByTestId('portfolio-custom-allocation-editor')).toBeTruthy();
     expect(screen.getByTestId('custom-allocation-sum').textContent).toContain('100%');
-    expect(screen.getByTestId('custom-allocation-sum').className).not.toContain('text-error');
   });
 });

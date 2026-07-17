@@ -34,6 +34,7 @@ describe('PortfolioPositionsTable', () => {
     render(PortfolioPositionsTable, {
       props: {
         rows,
+        portfolioMethodologies: { stock_br: 'auvp' },
         formatOptionalMoney: (value, currency) =>
           value != null && currency ? `R$ ${value.toFixed(2)}` : '—'
       }
@@ -67,7 +68,47 @@ describe('PortfolioPositionsTable', () => {
     expect(onEdit).toHaveBeenCalledWith(1);
   });
 
-  it('exibe lucro com badge percentual quando há ganho', () => {
+  it('desabilita classificar quando metodologia da area e simples', () => {
+    render(PortfolioPositionsTable, {
+      props: {
+        rows,
+        portfolioMethodologies: { stock_br: 'simples' },
+        formatOptionalMoney: () => '—'
+      }
+    });
+
+    expect(screen.getByTestId('portfolio-classify-disabled-BOVA11')).toBeTruthy();
+    expect(
+      (screen.getByTestId('portfolio-classify-disabled-BOVA11') as HTMLButtonElement).disabled
+    ).toBe(true);
+  });
+
+  it('mantem grade de acoes com classificar desabilitado quando nao aplicavel', () => {
+    const cryptoAsset: Asset = {
+      ...asset,
+      symbol: 'BTC-USD',
+      asset_type: 'crypto',
+      display_class: 'crypto'
+    };
+    render(PortfolioPositionsTable, {
+      props: {
+        rows: [{ position, asset: cryptoAsset }],
+        formatOptionalMoney: () => '—'
+      }
+    });
+
+    const actions = screen.getByTestId('portfolio-row-actions-BTC-USD');
+    const buttons = actions.querySelectorAll('button');
+    expect(buttons.length).toBe(4);
+    expect(screen.getByTestId('portfolio-classify-disabled-BTC-USD')).toBeTruthy();
+    expect((screen.getByTestId('portfolio-classify-disabled-BTC-USD') as HTMLButtonElement).disabled).toBe(
+      true
+    );
+    expect(screen.getByTestId('portfolio-remove-BTC-USD')).toBeTruthy();
+    expect(buttons[3].getAttribute('data-testid')).toBe('portfolio-remove-BTC-USD');
+  });
+
+  it('exibe lucro com badge percentual quando ha ganho', () => {
     const profitableAsset: Asset = {
       ...asset,
       current_quote: 110

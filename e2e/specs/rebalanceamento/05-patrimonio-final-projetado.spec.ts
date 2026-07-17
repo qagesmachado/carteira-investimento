@@ -3,7 +3,8 @@ import { expect, test } from '../fixtures/test';
 import {
   balanceamentoTableSection,
   fillInvestmentAmount,
-  gotoRebalancePage
+  gotoRebalancePage,
+  simulationPanel
 } from '../helpers/rebalancePage';
 import { seedRebalanceWithMix } from '../helpers/seedRebalance';
 
@@ -21,11 +22,11 @@ test.describe('UI-REB-005', () => {
     const table = balanceamentoTableSection(page);
     await fillInvestmentAmount(page, '10000');
 
-    await expect(table.getByText(/Patrimônio final:/)).toBeVisible();
+    await expect(simulationPanel(page).getByTestId('rebalance-simulation-final-patrimony')).toBeVisible();
 
     const intlRow = table.getByRole('row').filter({ hasText: 'Internacional' });
-    await expect(intlRow.locator('td').nth(5)).not.toHaveText('—');
-    await expect(intlRow.locator('td').nth(6)).not.toHaveText('—');
-    await expect(table.getByText(/Aporte: R\$/)).toBeVisible();
+    await expect(intlRow.locator('td').nth(9)).not.toHaveText('—');
+    await expect(intlRow.locator('td').nth(10)).not.toHaveText('—');
+    await expect(simulationPanel(page).getByTestId('rebalance-simulation-total-contribution')).toBeVisible();
   });
 });

@@ -7,6 +7,7 @@
   import {
     PROFILE_FII_BR,
     PROFILE_STOCK_BR,
+    getAnalysisMethodology,
     getFiiBrConfig,
     getFiiSegments,
     getStockBrConfig,
@@ -48,7 +49,7 @@
     PORTFOLIO_POSITIONS_BACK_LUCIDE_ICON,
     PORTFOLIO_POSITIONS_SEARCH_LUCIDE_ICON
   } from '$lib/icons/lucideIconCatalog';
-  import { PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS } from '$lib/layout/pageVisual';
+  import { PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS, PAGE_HERO_DASHBOARD_BACK_BTN_CLASS } from '$lib/layout/pageVisual';
   import {
     computePortfolioSummary,
     usesManualPositionValues
@@ -68,6 +69,8 @@
   import EditPortfolioModal from '$lib/features/portfolios/EditPortfolioModal.svelte';
   import PortfolioDetailSummaryPanel from '$lib/features/portfolios/PortfolioDetailSummaryPanel.svelte';
   import PortfolioPositionsTable from '$lib/features/portfolios/PortfolioPositionsTable.svelte';
+  import type { PortfolioMethodologies } from '$lib/features/portfolios/portfolioClassifyEligibility';
+  import { canClassifyPortfolioAsset } from '$lib/features/portfolios/portfolioClassifyEligibility';
   import PortfolioWorkspaceBarPanel from '$lib/features/portfolios/PortfolioWorkspaceBarPanel.svelte';
   import { confirmPortfolioDelete } from '$lib/features/portfolios/portfolioDelete';
 
@@ -106,6 +109,7 @@
   let usdBrlRefreshedAt: string | null = null;
   let quotesRefreshedAt: string | null = null;
   let dataLoadedAt: string | null = null;
+  let portfolioMethodologies: PortfolioMethodologies = {};
 
   $: summaryByPortfolioId = Object.fromEntries(
     summaries.map((summary) => [summary.portfolio_id, summary])
@@ -172,11 +176,27 @@
     }
   }
 
+  async function loadPortfolioMethodologies(portfolioId: number) {
+    try {
+      const [stockBr, fiiBr] = await Promise.all([
+        getAnalysisMethodology('stock-br', portfolioId),
+        getAnalysisMethodology('fii-br', portfolioId)
+      ]);
+      portfolioMethodologies = {
+        [PROFILE_STOCK_BR]: stockBr.methodology,
+        [PROFILE_FII_BR]: fiiBr.methodology
+      };
+    } catch {
+      portfolioMethodologies = {};
+    }
+  }
+
   async function syncActiveAndPositions() {
     if (!routePortfolioIdValid) {
       activeId = null;
       positions = [];
       objectivesSnapshot = null;
+      portfolioMethodologies = {};
       return;
     }
 
@@ -185,6 +205,7 @@
       activeId = null;
       positions = [];
       objectivesSnapshot = null;
+      portfolioMethodologies = {};
       return;
     }
 
@@ -194,7 +215,10 @@
       await setActivePortfolioId(routePortfolioId);
     }
     positions = await listPositions(routePortfolioId);
-    await loadObjectivesSnapshot(routePortfolioId);
+    await Promise.all([
+      loadObjectivesSnapshot(routePortfolioId),
+      loadPortfolioMethodologies(routePortfolioId)
+    ]);
   }
 
   function assetPartitionFor(assetId: number) {
@@ -301,6 +325,9 @@
   }
 
   async function handleClassifyAsset(asset: Asset) {
+    if (!canClassifyPortfolioAsset(asset, portfolioMethodologies)) {
+      return;
+    }
     error = '';
     message = '';
     try {
@@ -432,11 +459,11 @@
     >
       <svelte:fragment slot="actions">
         <a
-          class={PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS}
+          class={PAGE_HERO_DASHBOARD_BACK_BTN_CLASS}
           href="/portfolios"
           data-testid="portfolio-positions-back"
         >
-          <LucideIcon name={PORTFOLIO_POSITIONS_BACK_LUCIDE_ICON} size="md" />
+          <LucideIcon name={PORTFOLIO_POSITIONS_BACK_LUCIDE_ICON} size="md" class="text-white" />
           Todas as carteiras
         </a>
         <button
@@ -533,6 +560,7 @@
               {sortKey}
               {sortDir}
               {expandedPositionId}
+              {portfolioMethodologies}
               {formatOptionalMoney}
               {assetPartitionFor}
               {positionDetailPanelId}

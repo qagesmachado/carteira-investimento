@@ -111,19 +111,17 @@
   <title>Análise FIIs — Segmentos</title>
 </svelte:head>
 
-<PageSection>
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 class="card-title">Catálogo de segmentos</h2>
-        <a class="link link-primary text-sm" href="/analise/fiis">← Voltar à análise</a>
-      </div>
+<div class="flex flex-col gap-3">
+  <PageSection title="Catálogo de segmentos" testId="analysis-fiis-segmentos-section">
+    <svelte:fragment slot="actions">
       <div class="flex gap-2">
+        <a class="btn btn-outline btn-sm" href="/analise/fiis">Voltar à análise</a>
         <button type="button" class="btn btn-outline btn-sm" on:click={addSegment}>Adicionar</button>
         <button type="button" class="btn btn-primary btn-sm" disabled={saving || loading} on:click={handleSave}>
           {saving ? 'Salvando…' : 'Salvar'}
         </button>
       </div>
-    </div>
+    </svelte:fragment>
 
     {#if message}
       <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
@@ -170,4 +168,5 @@
         {/each}
       </div>
     {/if}
-</PageSection>
+  </PageSection>
+</div>

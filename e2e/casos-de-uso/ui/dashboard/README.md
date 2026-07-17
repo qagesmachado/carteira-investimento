@@ -16,5 +16,6 @@ Prefixo: **UI-DASH-**
 | UI-DASH-010 | [10-destaques-classe-provento.md](10-destaques-classe-provento.md) | aprovado | [10-destaques-classe-provento.spec.ts](../../../specs/dashboard/10-destaques-classe-provento.spec.ts) |
 | UI-DASH-011 | [11-atalhos-inferiores.md](11-atalhos-inferiores.md) | aprovado | [11-atalhos-inferiores.spec.ts](../../../specs/dashboard/11-atalhos-inferiores.spec.ts) |
 | UI-DASH-012 | [12-toolbar-hero.md](12-toolbar-hero.md) | aprovado | [12-toolbar-hero.spec.ts](../../../specs/dashboard/12-toolbar-hero.spec.ts) |
+| UI-DASH-013 | [13-posicoes-ativas-filtro-previdencia.md](13-posicoes-ativas-filtro-previdencia.md) | aprovado | [13-posicoes-ativas-filtro-previdencia.spec.ts](../../../specs/dashboard/13-posicoes-ativas-filtro-previdencia.spec.ts) |
 
-**Total:** 12 casos · **12 specs**
+**Total:** 13 casos · **13 specs**

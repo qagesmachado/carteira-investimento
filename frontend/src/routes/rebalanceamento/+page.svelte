@@ -2,48 +2,71 @@
   import { onMount } from 'svelte';
 
   import { parseApiError } from '$lib/api/parseApiError';
+  import { getUsdBrl, refreshUsdBrl } from '$lib/api/fx';
   import {
     getActivePortfolioId,
     listPortfolios,
+    refreshPortfolioQuotes,
     setActivePortfolioId,
     type Portfolio
   } from '$lib/api/portfolios';
   import { getPortfolioRebalance, type RebalanceSnapshot } from '$lib/api/rebalance';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import AppPageShell from '$lib/components/AppPageShell.svelte';
-  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
-  import {
-    formatBrl,
-    formatPercent
-  } from '$lib/features/rebalance/allocationTargets';
+  import DashboardHeroToolbar from '$lib/features/dashboard/DashboardHeroToolbar.svelte';
+  import DashboardPortfolioBar from '$lib/features/dashboard/DashboardPortfolioBar.svelte';
+  import AssetRebalanceTable from '$lib/features/rebalance/AssetRebalanceTable.svelte';
+  import RebalanceAssetGroupTabs from '$lib/features/rebalance/RebalanceAssetGroupTabs.svelte';
+  import RebalanceClassTable from '$lib/features/rebalance/RebalanceClassTable.svelte';
+  import RebalanceKpiCards from '$lib/features/rebalance/RebalanceKpiCards.svelte';
+  import RebalanceSimulationPanel from '$lib/features/rebalance/RebalanceSimulationPanel.svelte';
+  import RebalanceTableFilter from '$lib/features/rebalance/RebalanceTableFilter.svelte';
+  import type { RebalanceAssetGroupTab } from '$lib/features/rebalance/rebalanceAssetGroupTabs';
   import {
     computeClassInvestmentAllocation,
     defaultIncludedClasses,
-    getClassContributionFromPlan
+    getClassContributionFromPlan,
+    resolveInvestmentAmount,
+    type SimulationMode
   } from '$lib/features/rebalance/investmentAllocation';
-  import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
-  import AssetRebalanceTable from '$lib/features/rebalance/AssetRebalanceTable.svelte';
-  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
+  import {
+    filterConfiguredRebalanceClasses,
+    resolveAssetGroupTab,
+    sumClassRebalanceGapBrl,
+    visibleAssetGroupTabs
+  } from '$lib/features/rebalance/rebalanceVisibility';
 
-  type AssetGroupTab = 'stocks' | 'international' | 'funds' | 'crypto';
-
-  const ASSET_GROUP_TABS: { id: AssetGroupTab; label: string }[] = [
-    { id: 'stocks', label: 'Ações/ETF BR' },
-    { id: 'international', label: 'ETF internacional' },
-    { id: 'funds', label: 'FII' },
-    { id: 'crypto', label: 'Criptomoedas' }
-  ];
+  type AssetGroupTab = RebalanceAssetGroupTab;
 
   let portfolios: Portfolio[] = [];
   let activeId: number | null = null;
   let snapshot: RebalanceSnapshot | null = null;
   let loading = true;
   let error = '';
-  /** Valor a investir (R$); 0 = não informado. */
-  let investmentAmountInput = 0;
+  let simulationMode: SimulationMode = 'final_total';
+  let simulationInput = 0;
   let includedClasses: Record<string, boolean> = {};
   let assetGroupTab: AssetGroupTab = 'stocks';
+  let assetFilterText = '';
+
+  let usdBrlRate: number | null = null;
+  let usdBrlRefreshedAt: string | null = null;
+  let quotesRefreshedAt: string | null = null;
+  let dataLoadedAt: string | null = null;
+  let refreshingQuotes = false;
+  let refreshingFx = false;
+  let quotesMessage = '';
+  let quotesError = '';
+  let fxMessage = '';
+  let fxError = '';
+
+  $: activePortfolio = portfolios.find((portfolio) => portfolio.id === activeId) ?? null;
+
+  $: visibleClasses = snapshot ? filterConfiguredRebalanceClasses(snapshot.classes) : [];
+  $: visibleAssetTabs = snapshot ? visibleAssetGroupTabs(snapshot.classes) : [];
+  $: visibleTotalGapBrl = sumClassRebalanceGapBrl(snapshot?.classes ?? []);
 
   $: activeAssetRows =
     assetGroupTab === 'stocks'
@@ -62,12 +85,17 @@
           ? 'Nenhuma posição na estratégia Criptomoeda nesta carteira.'
           : 'Nenhuma posição em FII nesta carteira.';
 
+  $: resolvedInvestmentAmount =
+    snapshot != null
+      ? resolveInvestmentAmount(simulationMode, simulationInput, snapshot.patrimony_brl)
+      : 0;
+
   $: investmentPlan =
-    snapshot != null && investmentAmountInput > 0
+    snapshot != null && resolvedInvestmentAmount > 0
       ? computeClassInvestmentAllocation(
-          snapshot.classes,
+          visibleClasses,
           snapshot.patrimony_brl,
-          investmentAmountInput,
+          resolvedInvestmentAmount,
           includedClasses
         )
       : null;
@@ -89,12 +117,24 @@
           : 'funds'
   );
 
+  function handleAssetGroupSelect(tab: AssetGroupTab) {
+    assetGroupTab = tab;
+    assetFilterText = '';
+  }
+
   function initializeIncludedClasses() {
     if (snapshot == null) {
       includedClasses = {};
       return;
     }
-    includedClasses = defaultIncludedClasses(snapshot.classes);
+    includedClasses = defaultIncludedClasses(filterConfiguredRebalanceClasses(snapshot.classes));
+  }
+
+  function resolveActiveAssetTab(preferred: AssetGroupTab = 'stocks'): AssetGroupTab {
+    if (snapshot == null) {
+      return preferred;
+    }
+    return resolveAssetGroupTab(snapshot.classes, preferred);
   }
 
   function toggleClassInclusion(displayClass: string, checked: boolean) {
@@ -112,14 +152,35 @@
     toggleClassInclusion(displayClass, target.checked);
   }
 
+  async function loadFx() {
+    try {
+      const fx = await getUsdBrl();
+      usdBrlRate = fx.rate;
+      usdBrlRefreshedAt = fx.refreshed_at;
+      if (usdBrlRate == null) {
+        try {
+          const refreshed = await refreshUsdBrl();
+          usdBrlRate = refreshed.rate;
+          usdBrlRefreshedAt = refreshed.refreshed_at;
+        } catch {
+          /* usuário pode usar Atualizar câmbio */
+        }
+      }
+    } catch {
+      usdBrlRate = null;
+      usdBrlRefreshedAt = null;
+    }
+  }
+
   async function loadSnapshot(portfolioId: number) {
     loading = true;
     error = '';
     try {
       snapshot = await getPortfolioRebalance(portfolioId);
-      investmentAmountInput = 0;
+      simulationInput = 0;
       initializeIncludedClasses();
-      assetGroupTab = 'stocks';
+      assetGroupTab = resolveActiveAssetTab('stocks');
+      dataLoadedAt = new Date().toISOString();
     } catch (err) {
       snapshot = null;
       error = parseApiError(err, 'Não foi possível carregar o rebalanceamento.');
@@ -135,6 +196,7 @@
       portfolios = await listPortfolios();
       activeId = await getActivePortfolioId();
       const id = activeId ?? portfolios[0]?.id ?? null;
+      await loadFx();
       if (id != null) {
         activeId = id;
         await loadSnapshot(id);
@@ -162,6 +224,47 @@
       error = parseApiError(err, 'Não foi possível trocar a carteira.');
     }
   }
+
+  async function handleRefreshQuotes() {
+    if (activeId == null) {
+      return;
+    }
+    refreshingQuotes = true;
+    quotesError = '';
+    quotesMessage = '';
+    try {
+      const result = await refreshPortfolioQuotes(activeId);
+      quotesRefreshedAt = result.refreshed_at;
+      await loadSnapshot(activeId);
+      const failedCount = result.failed.length;
+      quotesMessage = `Cotações atualizadas: ${result.updated}. Ignoradas (sem mercado): ${result.skipped}.${
+        failedCount > 0 ? ` Falhas: ${failedCount}.` : ''
+      }`;
+    } catch (err) {
+      quotesError = parseApiError(err, 'Não foi possível atualizar as cotações.');
+    } finally {
+      refreshingQuotes = false;
+    }
+  }
+
+  async function handleRefreshFx() {
+    refreshingFx = true;
+    fxError = '';
+    fxMessage = '';
+    try {
+      const result = await refreshUsdBrl();
+      usdBrlRate = result.rate;
+      usdBrlRefreshedAt = result.refreshed_at;
+      fxMessage = 'Câmbio USD/BRL atualizado.';
+      if (activeId != null) {
+        await loadSnapshot(activeId);
+      }
+    } catch (err) {
+      fxError = parseApiError(err, 'Não foi possível atualizar o câmbio USD/BRL.');
+    } finally {
+      refreshingFx = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -169,202 +272,138 @@
 </svelte:head>
 
 <main class="min-h-screen w-full bg-base-200">
-<AppPageShell paddingY="py-2-px-4" class="flex flex-col gap-3">
-  <PageHeader
-    title="Rebalanceamento"
-    subtitle="Compare alocação atual com metas da carteira e veja quanto falta por classe e por ativo."
-  >
-    <div slot="actions" class="flex flex-wrap items-center gap-2">
-      {#if portfolios.length > 0}
-        <PortfolioSelect
-          {portfolios}
-          {activeId}
-          selectClass="select select-bordered select-sm"
-          ariaLabel="Carteira"
-          on:select={(event) => void handlePortfolioSelect(event.detail)}
-        />
-      {/if}
-      <a class="btn btn-sm btn-outline" href="/rebalanceamento/configuracao">Configurar metas</a>
-    </div>
-  </PageHeader>
+  <AppPageShell paddingY="py-4" class="flex w-full min-w-0 flex-col gap-3">
+    <PageHero
+      title="Rebalanceamento"
+      subtitle="Compare alocação atual com metas e simule aportes"
+      variant="dashboard"
+    >
+      <DashboardHeroToolbar
+        slot="actions"
+        {loading}
+        {refreshingQuotes}
+        {refreshingFx}
+        quotesDisabled={activeId == null}
+        onRefreshQuotes={handleRefreshQuotes}
+        onRefreshFx={handleRefreshFx}
+      />
+    </PageHero>
 
-  {#if error}
-    <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
-  {/if}
+    <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
+    <DismissibleAlert text={quotesMessage} variant="success" on:dismiss={() => (quotesMessage = '')} />
+    <DismissibleAlert text={quotesError} variant="error" on:dismiss={() => (quotesError = '')} />
+    <DismissibleAlert text={fxMessage} variant="success" on:dismiss={() => (fxMessage = '')} />
+    <DismissibleAlert text={fxError} variant="error" on:dismiss={() => (fxError = '')} />
 
-  {#if loading}
-    <p class="text-sm opacity-70">Carregando…</p>
-  {:else if !snapshot}
-    <p class="text-sm opacity-70">Nenhuma carteira selecionada.</p>
-  {:else}
-    <PageSection title="Balanceamento desejado">
-      <p class="text-sm opacity-70">
-        Patrimônio (balanceamento): {formatBrl(snapshot.patrimony_brl)} — previdência e outros
-        excluídos da soma
-        {#if investmentPlan != null}
-          · Patrimônio final: {formatBrl(investmentPlan.finalPatrimonyBrl)}
-        {/if}
-        {#if snapshot.usd_brl_rate != null}
-          · USD/BRL: {snapshot.usd_brl_rate.toLocaleString('pt-BR', {
-            minimumFractionDigits: 4,
-            maximumFractionDigits: 4
-          })}
-        {/if}
-      </p>
-      {#if investmentAmountInput > 0 && includedClassCount === 0}
-        <DismissibleAlert
-          variant="warning"
-          text="Selecione ao menos uma classe para distribuir o aporte."
-        />
-      {/if}
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th class="w-10">
-                <span class="sr-only">Incluir no aporte</span>
-              </th>
-              <th>Ativo</th>
-              <th class="text-right">Valor (R$)</th>
-              <th class="text-right">Porcentagem</th>
-              <th class="text-right">Faltando</th>
-              <th class="text-right min-w-[10rem]">Deveria ter</th>
-              <th class="text-right min-w-[10rem]">Aporte sugerido</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each snapshot.classes as row (row.display_class)}
-              {@const allocation = allocationByClass.get(row.display_class)}
-              <tr>
-                <td>
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-sm"
-                    checked={includedClasses[row.display_class] !== false}
-                    aria-label="Incluir {row.label} no aporte"
-                    disabled={includedClasses[row.display_class] !== false && includedClassCount <= 1}
-                    on:change={(event) => handleClassInclusionChange(row.display_class, event)}
-                  />
-                </td>
-                <td>{row.label}</td>
-                <td class="text-right">{formatBrl(row.current_value_brl)}</td>
-                <td class="text-right">{formatPercent(row.target_percent)}</td>
-                <td class="text-right">{formatBrl(row.gap_brl)}</td>
-                <td class="text-right">
-                  {formatBrl(allocation?.idealTargetBrl ?? null)}
-                </td>
-                <td class="text-right">
-                  {formatBrl(allocation?.suggestedContributionBrl ?? null)}
-                </td>
-              </tr>
-            {/each}
-            <tr class="font-semibold">
-              <td></td>
-              <td>TOTAL</td>
-              <td class="text-right">{formatBrl(snapshot.patrimony_brl)}</td>
-              <td class="text-right">100,00%</td>
-              <td class="text-right">{formatBrl(snapshot.total_gap_brl)}</td>
-              <td class="text-right">
-                {formatBrl(investmentPlan?.finalPatrimonyBrl ?? null)}
-              </td>
-              <td class="text-right">
-                <div class="flex flex-col items-end gap-1">
-                  <BrDecimalInput
-                    bind:value={investmentAmountInput}
-                    label="Valor a investir"
-                    inputClass="input input-bordered input-sm w-full max-w-[11rem] text-right font-normal"
-                  />
-                  {#if investmentPlan != null}
-                    <span class="text-xs font-normal opacity-70">
-                      Aporte: {formatBrl(investmentPlan.totalSuggestedContributionBrl)}
-                    </span>
-                  {/if}
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </PageSection>
-
-    <PageSection title="Relação ETF / Ação">
-      <p class="text-sm opacity-70">Sub-divisão dentro de Ações/ETF BR.</p>
-      <div class="overflow-x-auto">
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th>Tipo</th>
-              <th class="text-right">Valor atual</th>
-              <th class="text-right">Meta (% da classe)</th>
-              <th class="text-right">Valor alvo</th>
-              <th class="text-right">Faltando</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each snapshot.stocks_sub_types as row (row.sub_type)}
-              <tr>
-                <td>{row.label}</td>
-                <td class="text-right">{formatBrl(row.current_value_brl)}</td>
-                <td class="text-right">{formatPercent(row.target_percent_of_stocks)}</td>
-                <td class="text-right">{formatBrl(row.target_value_brl)}</td>
-                <td class="text-right">{formatBrl(row.gap_brl)}</td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    </PageSection>
-
-    <PageSection title="Por ativo">
-      <div class="tabs tabs-boxed mb-4 w-fit" role="tablist" aria-label="Grupo de ativos">
-        {#each ASSET_GROUP_TABS as tab (tab.id)}
-          <button
-            type="button"
-            role="tab"
-            class="tab"
-            class:tab-active={assetGroupTab === tab.id}
-            aria-selected={assetGroupTab === tab.id}
-            on:click={() => (assetGroupTab = tab.id)}
-          >
-            {tab.label}
-          </button>
-        {/each}
-      </div>
-      {#if assetGroupTab === 'stocks' && snapshot.assets_without_score_count > 0}
-        <DismissibleAlert
-          variant="warning"
-          text="Há {snapshot.assets_without_score_count} ativo(s) sem pontuação (Soma). Classifique em Análise de ativos (aba Ações/ETF BR) para calcular % desejada."
-        />
-      {/if}
-      {#if assetGroupTab === 'funds' && snapshot.fund_assets_without_score_count > 0}
-        <DismissibleAlert
-          variant="warning"
-          text="Há {snapshot.fund_assets_without_score_count} FII(s) sem pontuação (Soma). Classifique em Análise de ativos (aba FIIs) para calcular % desejada."
-        />
-      {/if}
-      {#if assetGroupTab === 'crypto' && snapshot.crypto_assets_without_allocation_count > 0}
-        <DismissibleAlert
-          variant="warning"
-          text="Há {snapshot.crypto_assets_without_allocation_count} ativo(s) sem alocação definida. Configure em Análise → Criptomoedas."
-        />
-      {/if}
-      {#if assetGroupTab === 'international' && snapshot.usd_brl_rate == null}
-        <DismissibleAlert
-          variant="warning"
-          text="Câmbio USD/BRL indisponível — valores monetários exibem «—» até atualizar a cotação."
-        />
-      {/if}
-      <AssetRebalanceTable
-        rows={activeAssetRows}
-        emptyMessage={activeAssetEmptyMessage}
-        showSumColumn={assetGroupTab === 'stocks' || assetGroupTab === 'funds'}
-        showUsdPrimary={assetGroupTab === 'international'}
-        usdBrlRate={snapshot.usd_brl_rate}
-        currentPatrimonyBrl={snapshot.patrimony_brl}
-        finalPatrimonyBrl={investmentPlan?.finalPatrimonyBrl ?? null}
-        classContributionBrl={activeClassContribution}
+    <PageSection>
+      <DashboardPortfolioBar
+        {portfolios}
+        {activeId}
+        activePortfolioName={activePortfolio?.name ?? ''}
+        {usdBrlRate}
+        {usdBrlRefreshedAt}
+        quotesRefreshedAt={quotesRefreshedAt ?? dataLoadedAt}
+        disabled={portfolios.length === 0}
+        portfolioSelectTestId="rebalance-portfolio-select"
+        on:select={(event) => void handlePortfolioSelect(event.detail)}
       />
     </PageSection>
-  {/if}
-</AppPageShell>
+
+    {#if loading}
+      <p class="text-sm opacity-70">Carregando…</p>
+    {:else if !snapshot}
+      <p class="text-sm opacity-70">Nenhuma carteira selecionada.</p>
+    {:else}
+      <PageSection testId="rebalance-simulation-section">
+        <RebalanceSimulationPanel
+          bind:mode={simulationMode}
+          bind:amountInput={simulationInput}
+          patrimonyBrl={snapshot.patrimony_brl}
+          resolvedInvestmentBrl={resolvedInvestmentAmount}
+          finalPatrimonyBrl={investmentPlan?.finalPatrimonyBrl ?? null}
+          totalSuggestedContributionBrl={investmentPlan?.totalSuggestedContributionBrl ?? null}
+        />
+      </PageSection>
+
+      <PageSection testId="rebalance-kpi-section">
+        <RebalanceKpiCards
+          classes={visibleClasses}
+          patrimonyBrl={snapshot.patrimony_brl}
+          totalGapBrl={visibleTotalGapBrl}
+          finalPatrimonyBrl={investmentPlan?.finalPatrimonyBrl ?? null}
+        />
+      </PageSection>
+
+      <PageSection title="Balanceamento por classe" testId="rebalance-class-section">
+        <RebalanceClassTable
+          classes={visibleClasses}
+          patrimonyBrl={snapshot.patrimony_brl}
+          totalGapBrl={visibleTotalGapBrl}
+          {includedClasses}
+          {includedClassCount}
+          {allocationByClass}
+          finalPatrimonyBrl={investmentPlan?.finalPatrimonyBrl ?? null}
+          hasActiveSimulation={resolvedInvestmentAmount > 0}
+          onClassInclusionChange={handleClassInclusionChange}
+        />
+      </PageSection>
+
+      <PageSection title="Por ativo" testId="rebalance-asset-section">
+        <div class="flex flex-col gap-4">
+          {#if visibleAssetTabs.length === 0}
+            <p class="text-sm text-base-content/70">
+              Nenhuma classe com meta de pelo menos 1% possui detalhamento por ativo.
+            </p>
+          {:else}
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <RebalanceAssetGroupTabs
+              activeTab={assetGroupTab}
+              tabs={visibleAssetTabs}
+              onSelect={handleAssetGroupSelect}
+            />
+            <RebalanceTableFilter
+              bind:value={assetFilterText}
+              testId="rebalance-asset-filter"
+            />
+          </div>
+        {#if assetGroupTab === 'stocks' && snapshot.assets_without_score_count > 0}
+          <DismissibleAlert
+            variant="warning"
+            text="Há {snapshot.assets_without_score_count} ativo(s) sem pontuação (Soma). Classifique em Análise de ativos (aba Ações/ETF BR) para calcular % desejada."
+          />
+        {/if}
+        {#if assetGroupTab === 'funds' && snapshot.fund_assets_without_score_count > 0}
+          <DismissibleAlert
+            variant="warning"
+            text="Há {snapshot.fund_assets_without_score_count} FII(s) sem pontuação (Soma). Classifique em Análise de ativos (aba FIIs) para calcular % desejada."
+          />
+        {/if}
+        {#if assetGroupTab === 'crypto' && snapshot.crypto_assets_without_allocation_count > 0}
+          <DismissibleAlert
+            variant="warning"
+            text="Há {snapshot.crypto_assets_without_allocation_count} ativo(s) sem alocação definida. Configure em Análise → Criptomoedas."
+          />
+        {/if}
+        {#if assetGroupTab === 'international' && snapshot.usd_brl_rate == null}
+          <DismissibleAlert
+            variant="warning"
+            text="Câmbio USD/BRL indisponível — valores monetários exibem «—» até atualizar a cotação."
+          />
+        {/if}
+        <AssetRebalanceTable
+          rows={activeAssetRows}
+          emptyMessage={activeAssetEmptyMessage}
+          showSumColumn={assetGroupTab === 'stocks' || assetGroupTab === 'funds'}
+          showUsdPrimary={assetGroupTab === 'international'}
+          usdBrlRate={snapshot.usd_brl_rate}
+          currentPatrimonyBrl={snapshot.patrimony_brl}
+          finalPatrimonyBrl={investmentPlan?.finalPatrimonyBrl ?? null}
+          classContributionBrl={activeClassContribution}
+          bind:filterText={assetFilterText}
+        />
+          {/if}
+        </div>
+      </PageSection>
+    {/if}
+  </AppPageShell>
 </main>

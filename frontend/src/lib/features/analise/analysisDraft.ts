@@ -52,9 +52,17 @@ export function hasUnsavedAnalysisDraft(
   draftScores: Record<string, number | null | undefined>,
   savedScores: Record<string, number | null | undefined>,
   draftRefs: Record<string, string | null | undefined>,
-  savedRefs: Record<string, string | null | undefined>
+  savedRefs: Record<string, string | null | undefined>,
+  draftPending?: boolean,
+  savedPending?: boolean
 ): boolean {
-  return !scoreMapsEqual(draftScores, savedScores) || !refMapsEqual(draftRefs, savedRefs);
+  const pendingChanged =
+    draftPending != null && savedPending != null && draftPending !== savedPending;
+  return (
+    !scoreMapsEqual(draftScores, savedScores) ||
+    !refMapsEqual(draftRefs, savedRefs) ||
+    pendingChanged
+  );
 }
 
 export function buildEmptyAnalysisDraft(
