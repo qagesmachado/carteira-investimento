@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import { getWorkerApiBaseUrl } from '../../helpers/workerContext';
@@ -14,7 +14,7 @@ import {
   selectObjectiveCard
 } from '../../helpers/objetivosPage';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/07-bloqueio-edicao-com-divergencia.md */
+/** @see ../../../casos-de-uso/ui/objetivos/07-bloqueio-edicao-com-divergencia.md */
 test.describe('UI-OBJ-007', () => {
   test('bloqueia alocação enquanto há divergência', async ({ page, request }) => {
     const { portfolioId, assetId } = await seedObjetivosWithStock(request, 'PETR4', 100);

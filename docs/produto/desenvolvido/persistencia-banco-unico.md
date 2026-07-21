@@ -53,6 +53,16 @@ Na subida (`init_db`), se existir `portfolios.db` no `LOCAL_DATA_DIR` e a migra�
 
 Arquivos `.bak` e `.migrated` podem ser apagados manualmente após validar o app.
 
+## Schema versionado (`PRAGMA user_version`)
+
+A constante `SCHEMA_VERSION` em `backend/app/db/session.py` é comparada ao `user_version` do arquivo. Se o banco existente estiver desatualizado, o `init_db()` cria `carteira.db.bak-v{N}-{timestamp}` e aplica migrações idempotentes.
+
+| Versão | Mudança relevante |
+|--------|-------------------|
+| 7 | `propertyfinancing.portfolio_id` → `profile_id` (hierarquia Financeiro); ver [controle-financiamento-imovel.md](controle-financiamento-imovel.md) |
+
+Em outro PC com dados salvos: instalar o build novo e abrir o app — a migração roda sozinha no path padrão (`%LOCALAPPDATA%\carteira-investimento\carteira.db`). Em problema, restaurar o `.bak` ao lado do arquivo.
+
 ## Git
 
 `carteira.db` **nunca** é versionado. Apenas schema/código e `backend/seed/assets.json`.

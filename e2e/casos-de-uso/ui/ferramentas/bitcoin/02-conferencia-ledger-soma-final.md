@@ -1,11 +1,11 @@
-# UI-BTC-002 — Conferência Ledger (soma Final BTC)
+﻿# UI-BTC-002 — Conferência Ledger (soma Final BTC)
 
 - **ID:** `UI-BTC-002`
 - **Status:** aprovado
-- **Rota:** `/ferramentas/bitcoin`
+- **Rota:** `/taxas-cripto`
 - **Funcionalidade:** card de conferência — soma Final (BTC) das transferências para Ledger
 - **Depende de:** `UI-BTC-001`
-- **Arquivo de teste:** `e2e/specs/ferramentas/bitcoin/02-conferencia-ledger-soma-final.spec.ts`
+- **Arquivo de teste:** `e2e/specs/taxas-cripto/02-conferencia-ledger-soma-final.spec.ts`
 
 ## História
 
@@ -16,5 +16,5 @@
 ## Cenário
 
 **Dado** carteira com posição BTC e um lançamento `transfer` (movimentado `0.00083916`, taxa `0.00003`, final `0.00080916`)  
-**Quando** abro `/ferramentas/bitcoin`  
+**Quando** abro `/taxas-cripto`  
 **Então** o card **Conferência Ledger** exibe `0,00080916` e indica `1 transferência`.

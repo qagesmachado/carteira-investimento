@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+﻿import { expect, type Page } from '@playwright/test';
 
 import { pickAssetViaTrigger } from './assetPicker';
 
@@ -11,7 +11,7 @@ async function fillBrDecimalTestInput(page: Page, testId: string, value: string)
 }
 
 export async function gotoCalculoPrecoMedioPage(page: Page): Promise<void> {
-  await page.goto('/ferramentas/calculo-preco-medio');
+  await page.goto('/calculo-preco-medio');
   await expect(page.getByRole('heading', { name: 'Cálculo de preço médio' })).toBeVisible();
   await expect(page.getByTestId('average-price-calculator')).toBeVisible();
 }

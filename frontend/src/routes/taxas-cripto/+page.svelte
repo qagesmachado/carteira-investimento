@@ -19,15 +19,17 @@
     setActivePortfolioId,
     type Portfolio
   } from '$lib/api/portfolios';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
-  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
-  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
-  import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
   import BitcoinSummaryCards from '$lib/features/bitcoin/BitcoinSummaryCards.svelte';
   import CryptoFeeForm from '$lib/features/bitcoin/CryptoFeeForm.svelte';
   import CryptoFeeList from '$lib/features/bitcoin/CryptoFeeList.svelte';
+  import PortfolioWorkspaceBarPanel from '$lib/features/portfolios/PortfolioWorkspaceBarPanel.svelte';
+  import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
+  import { PAGE_BACKGROUND_CLASS } from '$lib/layout/pageVisual';
 
   let assets: Asset[] = [];
   let portfolios: Portfolio[] = [];
@@ -38,6 +40,9 @@
   let loading = false;
   let error = '';
   let message = '';
+
+  $: activePortfolioName =
+    portfolios.find((portfolio) => portfolio.id === activePortfolioId)?.name ?? '';
 
   async function refreshData() {
     if (activePortfolioId == null) {
@@ -134,49 +139,53 @@
   <title>Criptomoedas — Carteira de Investimentos</title>
 </svelte:head>
 
-<div class="flex flex-col gap-3">
-  <PageHeader
-    title="Criptomoedas"
-    subtitle="Taxas de compra e transferência para criptoativos nativos (ex.: BTC-USD). ETFs de cripto usam a alocação em Análise → Criptomoedas."
-  >
-    <div slot="actions">
-      <PortfolioSelect
-        testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
-        {portfolios}
-        activeId={activePortfolioId}
-        on:select={(event) => handlePortfolioChange(event.detail)}
-      />
-    </div>
-  </PageHeader>
+<main class={PAGE_BACKGROUND_CLASS}>
+  <AppPageShell paddingY="py-4" class="flex flex-col gap-3">
+    <PageHero
+      title="Criptomoedas"
+      subtitle="Taxas de compra e transferência para criptoativos nativos (ex.: BTC-USD). ETFs de cripto usam a alocação em Análise → Criptomoedas."
+      variant="dashboard"
+    />
 
-  {#if error}
-    <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
-  {/if}
-  {#if message}
-    <DismissibleAlert variant="success" text={message} on:dismiss={() => (message = '')} />
-  {/if}
-
-  <PageSection>
-    <BitcoinSummaryCards {snapshot} />
-  </PageSection>
-
-  <PageSection>
-    <CryptoFeeForm
-      {assets}
+    <PortfolioWorkspaceBarPanel
       {portfolios}
-      {activePortfolioId}
-      editing={editingFee}
-      {loading}
-      onSubmit={handleSubmit}
-      onCancel={() => (editingFee = null)}
+      activeId={activePortfolioId}
+      {activePortfolioName}
+      showQuoteStatus={false}
+      portfolioSelectTestId={PORTFOLIO_SELECT_HEADER_TEST_ID}
+      testId="taxas-cripto-portfolio-bar"
+      on:select={(event) => void handlePortfolioChange(event.detail)}
     />
-  </PageSection>
 
-  <PageSection>
-    <CryptoFeeList
-      {fees}
-      onEdit={(fee) => (editingFee = fee)}
-      onDelete={handleDelete}
-    />
-  </PageSection>
-</div>
+    {#if error}
+      <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
+    {/if}
+    {#if message}
+      <DismissibleAlert variant="success" text={message} on:dismiss={() => (message = '')} />
+    {/if}
+
+    <PageSection>
+      <BitcoinSummaryCards {snapshot} />
+    </PageSection>
+
+    <PageSection>
+      <CryptoFeeForm
+        {assets}
+        {portfolios}
+        {activePortfolioId}
+        editing={editingFee}
+        {loading}
+        onSubmit={handleSubmit}
+        onCancel={() => (editingFee = null)}
+      />
+    </PageSection>
+
+    <PageSection>
+      <CryptoFeeList
+        {fees}
+        onEdit={(fee) => (editingFee = fee)}
+        onDelete={handleDelete}
+      />
+    </PageSection>
+  </AppPageShell>
+</main>

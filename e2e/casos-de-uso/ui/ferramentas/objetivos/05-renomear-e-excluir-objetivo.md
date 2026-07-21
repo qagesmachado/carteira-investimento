@@ -1,13 +1,13 @@
-# Renomear e excluir objetivo
+﻿# Renomear e excluir objetivo
 
 ## Metadados
 
 - **ID:** `UI-OBJ-005`
 - **Status:** aprovado
-- **Página:** `/ferramentas/objetivos`
+- **Página:** `/objetivos`
 - **Funcionalidade:** CRUD objetivo (exceto Livre)
 - **Depende de:** `UI-OBJ-003`
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/05-renomear-e-excluir-objetivo.spec.ts`
+- **Arquivo de teste:** `e2e/specs/objetivos/05-renomear-e-excluir-objetivo.spec.ts`
 - **Referência:** [objetivos-financeiros.md](../../../../../docs/produto/desenvolvido/objetivos-financeiros.md)
 
 ## Cenário — excluir devolve ao Livre

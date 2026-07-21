@@ -1,9 +1,9 @@
-import { expect, type Page } from '@playwright/test';
+﻿import { expect, type Page } from '@playwright/test';
 
 import { pickAssetViaTrigger } from './assetPicker';
 
 export async function gotoObjetivosPage(page: Page): Promise<void> {
-  await page.goto('/ferramentas/objetivos');
+  await page.goto('/objetivos');
   await expect(page.getByRole('heading', { name: 'Objetivos financeiros' })).toBeVisible();
 }
 

@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -10,7 +10,7 @@ import {
 } from '../../helpers/objetivosPage';
 import { expectDefaultObjectiveFreeQuantity, seedObjetivosWithStock } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/03-alocar-ativo-cotas.md */
+/** @see ../../../casos-de-uso/ui/objetivos/03-alocar-ativo-cotas.md */
 test.describe('UI-OBJ-003', () => {
   test('aloca 60 cotas PETR4 em Reserva', async ({ page, request }) => {
     const { portfolioId } = await seedObjetivosWithStock(request);

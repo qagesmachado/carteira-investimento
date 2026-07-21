@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import {
   applyEntryTemplateUi,
@@ -14,10 +14,10 @@ import {
 import { seedPropertyFinancingEmpty, todayBrDate } from '../../helpers/seedPropertyFinancing';
 import { getWorkerApiBaseUrl } from '../../helpers/workerContext';
 
-/** @see ../../../../casos-de-uso/ui/ferramentas/financiamento-imovel/08-padroes-lancamento.md UI-FERR-008 */
+/** @see ../../../../casos-de-uso/ui/financeiro/financiamento-imovel/08-padroes-lancamento.md UI-FERR-008 */
 test.describe('UI-FERR-008', () => {
   test('cria, aplica, edita e exclui padrão de lançamento', async ({ page, request }) => {
-    const portfolioId = await seedPropertyFinancingEmpty(request);
+    const profileId = await seedPropertyFinancingEmpty(request);
     await gotoFinanciamentoImovelPage(page);
     const financingAId = await createFinancingUi(page, {
       name: 'Apto Centro',
@@ -33,7 +33,7 @@ test.describe('UI-FERR-008', () => {
     });
 
     const snapshot = await request.get(
-      `${getWorkerApiBaseUrl()}/portfolios/${portfolioId}/property-financings`
+      `${getWorkerApiBaseUrl()}/budget/profiles/${profileId}/property-financings`
     );
     const templateId = (
       (await snapshot.json()) as {

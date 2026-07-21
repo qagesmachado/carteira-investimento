@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import {
   fillManualPatrimonyForm,
@@ -8,7 +8,7 @@ import {
 } from '../../helpers/patrimonyControlPage';
 import { seedPatrimonyControlWithStock } from '../../helpers/seedPatrimonyControl';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/controle-patrimonio/03-adicionar-dinheiro-especie.md */
+/** @see ../../../casos-de-uso/ui/controle-patrimonio/03-adicionar-dinheiro-especie.md */
 test.describe('UI-PAT-003', () => {
   test.beforeEach(async ({ request }) => {
     await seedPatrimonyControlWithStock(request);

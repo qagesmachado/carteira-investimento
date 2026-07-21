@@ -1,10 +1,10 @@
-# Ocultar valores persiste entre páginas
+﻿# Ocultar valores persiste entre páginas
 
 ## Metadados
 
 - **ID:** `UI-NAV-001`
 - **Status:** aprovado
-- **Página:** navbar global (`/dashboard`, `/ferramentas/objetivos`, …)
+- **Página:** navbar global (`/dashboard`, `/objetivos`, …)
 - **Funcionalidade:** toggle de privacidade para ocultar valores monetários
 - **Depende de:** seed consolidada mínima (carteira com patrimônio visível)
 - **Arquivo de teste:** `e2e/specs/nav/01-ocultar-valores-persiste.spec.ts`
@@ -28,7 +28,7 @@
 2. Abro `/dashboard` — cards exibem valores em reais.
 3. Clico no botão de olho no canto superior direito da navbar.
 4. Valores monetários passam a exibir máscara (`R$ ••••••`).
-5. Navego para `/ferramentas/objetivos` — valores continuam mascarados.
+5. Navego para `/objetivos` — valores continuam mascarados.
 6. Recarrego a página — preferência permanece (localStorage).
 7. Clico no toggle novamente — valores voltam a ser exibidos.
 

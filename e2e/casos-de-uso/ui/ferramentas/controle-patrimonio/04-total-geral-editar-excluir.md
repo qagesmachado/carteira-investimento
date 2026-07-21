@@ -1,13 +1,13 @@
-# Total geral — editar e excluir item
+﻿# Total geral — editar e excluir item
 
 ## Metadados
 
 - **ID:** `UI-PAT-004`
 - **Status:** aprovado
-- **Página:** `/ferramentas/controle-patrimonio`
+- **Página:** `/controle-patrimonio`
 - **Funcionalidade:** total geral reflete manuais; editar e excluir
 - **Depende de:** `UI-PAT-002`, `UI-PAT-003`
-- **Arquivo de teste:** `e2e/specs/ferramentas/controle-patrimonio/04-total-geral-editar-excluir.spec.ts`
+- **Arquivo de teste:** `e2e/specs/controle-patrimonio/04-total-geral-editar-excluir.spec.ts`
 - **Referência:** [controle-patrimonio.md](../../../../../docs/produto/desenvolvido/controle-patrimonio.md)
 
 ## Cenário — total e manutenção

@@ -1,13 +1,13 @@
-# Snapshot congela posições em 31/12
+﻿# Snapshot congela posições em 31/12
 
 ## Metadados
 
 - **ID:** `UI-IR-003`
 - **Status:** aprovado
-- **Página:** `/ferramentas/conferencia-ir`
+- **Página:** `/conferencia-ir`
 - **Funcionalidade:** congelar qty e preço médio; exibir na aba Posições
 - **Depende de:** posição cadastrada na carteira
-- **Arquivo de teste:** `e2e/specs/ferramentas/conferencia-ir/03-snapshot-congela-posicoes.spec.ts`
+- **Arquivo de teste:** `e2e/specs/conferencia-ir/03-snapshot-congela-posicoes.spec.ts`
 - **Referência:** [conferencia-ir-anual.md](../../../../../docs/produto/desenvolvido/conferencia-ir-anual.md)
 
 ## Cenário — congelamento manual

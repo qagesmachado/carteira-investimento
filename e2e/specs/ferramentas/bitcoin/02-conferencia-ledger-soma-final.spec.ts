@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import { gotoBitcoinPage } from '../../helpers/bitcoinPage';
@@ -6,7 +6,7 @@ import { seedBitcoinPortfolioWithTransfer } from '../../helpers/seedBitcoinTrans
 
 /**
  * UI-BTC-002 — Conferência Ledger (soma Final BTC)
- * @see ../../../casos-de-uso/ui/ferramentas/bitcoin/02-conferencia-ledger-soma-final.md
+ * @see ../../../casos-de-uso/ui/taxas-cripto/02-conferencia-ledger-soma-final.md
  */
 test.describe('UI-BTC-002', () => {
   test.beforeEach(async ({ request }) => {

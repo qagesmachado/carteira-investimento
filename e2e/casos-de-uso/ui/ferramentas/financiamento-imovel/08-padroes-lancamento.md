@@ -1,13 +1,13 @@
-# Padrões de lançamento — financiamento imóvel
+﻿# Padrões de lançamento — financiamento imóvel
 
 ## Metadados
 
 - **ID:** `UI-FERR-008`
 - **Status:** aprovado
-- **Página:** `/ferramentas/financiamento-imovel`
+- **Página:** `/financeiro/financiamento-imovel`
 - **Funcionalidade:** salvar, editar, excluir e aplicar padrões de pré-preenchimento no formulário «Registrar lançamento»
 - **Depende de:** `UI-FERR-002` (criar financiamento)
-- **Arquivo de teste:** `e2e/specs/ferramentas/financiamento-imovel/08-padroes-lancamento.spec.ts`
+- **Arquivo de teste:** `e2e/specs/financeiro/financiamento-imovel/08-padroes-lancamento.spec.ts`
 - **Referência:** [controle-financiamento-imovel.md](../../../../docs/produto/desenvolvido/controle-financiamento-imovel.md)
 
 ## Ambiente de teste
@@ -24,7 +24,7 @@
 
 ### Passo a passo
 
-1. Abrir `/ferramentas/financiamento-imovel` e selecionar um imóvel.
+1. Abrir `/financeiro/financiamento-imovel` e selecionar um imóvel.
 2. Preencher o formulário (sem data obrigatória para salvar padrão): Despesa, Financiamento, valor `3.000,00`, descrição «Parcela financiamento».
 3. Clicar em «Salvar como padrão», informar nome «Parcela financiamento» e confirmar.
 4. Limpar o formulário; selecionar o padrão no select e clicar «Aplicar».

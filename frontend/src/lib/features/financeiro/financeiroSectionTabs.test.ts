@@ -9,7 +9,7 @@ import {
 } from './financeiroSectionTabs';
 
 describe('FINANCEIRO_SECTION_TABS', () => {
-  it('mantém a ordem Painel, Orçamento, Despesas, Controle, Metas, Renda, Perfis', () => {
+  it('mantém a ordem Painel, Orçamento, Despesas, Controle, Metas, Renda, Financiamento, Perfis', () => {
     expect(FINANCEIRO_SECTION_TABS.map((tab) => tab.id)).toEqual([
       'painel',
       'orcamento',
@@ -17,6 +17,7 @@ describe('FINANCEIRO_SECTION_TABS', () => {
       'controle',
       'metas',
       'renda',
+      'financiamento',
       'perfis'
     ]);
   });
@@ -42,9 +43,13 @@ describe('financeiroSectionTabHref', () => {
   it('ignora o mês nas rotas fixas', () => {
     const painel = FINANCEIRO_SECTION_TABS.find((tab) => tab.id === 'painel')!;
     const metas = FINANCEIRO_SECTION_TABS.find((tab) => tab.id === 'metas')!;
+    const financiamento = FINANCEIRO_SECTION_TABS.find((tab) => tab.id === 'financiamento')!;
     const perfis = FINANCEIRO_SECTION_TABS.find((tab) => tab.id === 'perfis')!;
     expect(financeiroSectionTabHref(painel, '2026-07')).toBe('/financeiro');
     expect(financeiroSectionTabHref(metas, '2026-07')).toBe('/financeiro/metas');
+    expect(financeiroSectionTabHref(financiamento, '2026-07')).toBe(
+      '/financeiro/financiamento-imovel'
+    );
     expect(financeiroSectionTabHref(perfis, '2026-07')).toBe('/financeiro/perfis');
   });
 });
@@ -57,6 +62,7 @@ describe('financeiroSectionTabIsMonthly', () => {
     expect(financeiroSectionTabIsMonthly('renda')).toBe(true);
     expect(financeiroSectionTabIsMonthly('painel')).toBe(false);
     expect(financeiroSectionTabIsMonthly('metas')).toBe(false);
+    expect(financeiroSectionTabIsMonthly('financiamento')).toBe(false);
     expect(financeiroSectionTabIsMonthly('perfis')).toBe(false);
   });
 });
@@ -69,9 +75,10 @@ describe('resolveFinanceiroSectionTab', () => {
     expect(resolveFinanceiroSectionTab('/financeiro/renda/2026-07')).toBe('renda');
   });
 
-  it('resolve metas (inclusive tags) e perfis', () => {
+  it('resolve metas (inclusive tags), financiamento e perfis', () => {
     expect(resolveFinanceiroSectionTab('/financeiro/metas')).toBe('metas');
     expect(resolveFinanceiroSectionTab('/financeiro/metas/tags')).toBe('metas');
+    expect(resolveFinanceiroSectionTab('/financeiro/financiamento-imovel')).toBe('financiamento');
     expect(resolveFinanceiroSectionTab('/financeiro/perfis')).toBe('perfis');
   });
 

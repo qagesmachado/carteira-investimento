@@ -2,6 +2,7 @@ import {
   FINANCEIRO_BUDGET_LUCIDE_ICON,
   FINANCEIRO_CONTROLE_LUCIDE_ICON,
   FINANCEIRO_EXPENSES_LUCIDE_ICON,
+  FINANCEIRO_FINANCIAMENTO_LUCIDE_ICON,
   FINANCEIRO_GOALS_LUCIDE_ICON,
   FINANCEIRO_INCOME_LUCIDE_ICON,
   FINANCEIRO_PANEL_LUCIDE_ICON,
@@ -16,6 +17,7 @@ export type FinanceiroSectionTabId =
   | 'controle'
   | 'metas'
   | 'renda'
+  | 'financiamento'
   | 'perfis';
 
 export type FinanceiroSectionTabDef = {
@@ -33,6 +35,12 @@ export const FINANCEIRO_SECTION_TABS: FinanceiroSectionTabDef[] = [
   { id: 'controle', label: 'Controle', icon: FINANCEIRO_CONTROLE_LUCIDE_ICON, monthly: true },
   { id: 'metas', label: 'Metas', icon: FINANCEIRO_GOALS_LUCIDE_ICON, monthly: false },
   { id: 'renda', label: 'Renda', icon: FINANCEIRO_INCOME_LUCIDE_ICON, monthly: true },
+  {
+    id: 'financiamento',
+    label: 'Financiamento',
+    icon: FINANCEIRO_FINANCIAMENTO_LUCIDE_ICON,
+    monthly: false
+  },
   { id: 'perfis', label: 'Perfis', icon: FINANCEIRO_PROFILES_LUCIDE_ICON, monthly: false }
 ];
 
@@ -57,6 +65,8 @@ export function financeiroSectionTabHref(
       return `/financeiro/renda/${yearMonth}`;
     case 'metas':
       return '/financeiro/metas';
+    case 'financiamento':
+      return '/financeiro/financiamento-imovel';
     case 'perfis':
       return '/financeiro/perfis';
     default:
@@ -80,6 +90,9 @@ export function resolveFinanceiroSectionTab(pathname: string): FinanceiroSection
   if (pathname.startsWith('/financeiro/renda')) {
     return 'renda';
   }
+  if (pathname.startsWith('/financeiro/financiamento-imovel')) {
+    return 'financiamento';
+  }
   if (pathname.startsWith('/financeiro/perfis')) {
     return 'perfis';
   }
@@ -98,6 +111,8 @@ export function financeiroSectionSubtitle(tabId: FinanceiroSectionTabId): string
       return 'Distribua sua renda em metas percentuais e gerencie as tags.';
     case 'renda':
       return 'Cadastre as fontes de renda que abastecem o orçamento do mês.';
+    case 'financiamento':
+      return 'Registre receitas e despesas por imóvel e acompanhe lucro e capital investido.';
     case 'perfis':
       return 'Gerencie os perfis de orçamento (ex.: pessoal, família).';
     default:

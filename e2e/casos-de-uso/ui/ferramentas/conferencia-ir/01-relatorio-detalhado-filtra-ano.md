@@ -1,13 +1,13 @@
-# Relatório detalhado filtra por ano
+﻿# Relatório detalhado filtra por ano
 
 ## Metadados
 
 - **ID:** `UI-IR-001`
 - **Status:** aprovado
-- **Página:** `/ferramentas/conferencia-ir`
+- **Página:** `/conferencia-ir`
 - **Funcionalidade:** aba Detalhado exibe apenas proventos do ano selecionado
 - **Depende de:** base de teste com proventos em anos distintos
-- **Arquivo de teste:** `e2e/specs/ferramentas/conferencia-ir/01-relatorio-detalhado-filtra-ano.spec.ts`
+- **Arquivo de teste:** `e2e/specs/conferencia-ir/01-relatorio-detalhado-filtra-ano.spec.ts`
 - **Referência:** [conferencia-ir-anual.md](../../../../../docs/produto/desenvolvido/conferencia-ir-anual.md)
 
 ## Ambiente de teste
@@ -25,7 +25,7 @@
 ### Passo a passo
 
 1. Semear carteira com proventos em 2023 e 2024.
-2. Abrir `/ferramentas/conferencia-ir`.
+2. Abrir `/conferencia-ir`.
 3. Selecionar ano 2024.
 4. Na aba Detalhado, verificar que aparecem só lançamentos de 2024.
 

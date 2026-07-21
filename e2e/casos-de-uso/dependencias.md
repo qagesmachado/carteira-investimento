@@ -1,4 +1,4 @@
-# Dependências entre casos de uso E2E (UI)
+﻿# Dependências entre casos de uso E2E (UI)
 
 Ordem de execução documentada e estado compartilhado entre páginas. Os specs Playwright são autocontidos por arquivo (`beforeEach` com seed via API).
 
@@ -64,8 +64,8 @@ flowchart LR
 | `UI-ANL-` | `/analise` | `UI-ANL-002` |
 | `UI-REB-` | `/rebalanceamento` | `UI-REB-002` |
 | `UI-DAD-` | `/dados` | `UI-DAD-002` |
-| `UI-OBJ-` | `/ferramentas/objetivos` | `UI-OBJ-002` |
-| `UI-BTC-` | `/ferramentas/bitcoin` | `UI-BTC-001` |
+| `UI-OBJ-` | `/objetivos` | `UI-OBJ-002` |
+| `UI-BTC-` | `/taxas-cripto` | `UI-BTC-001` |
 
 ## Mapa rápido de dependências entre pastas
 
@@ -79,8 +79,8 @@ flowchart LR
 | [`ui/analise/`](ui/analise/README.md) | Seed API no spec (`seedAnalysis*`) — ativos stocks + config |
 | [`ui/rebalanceamento/`](ui/rebalanceamento/README.md) | Seed API no spec (`seedRebalance*`) — carteira + posições + scores |
 | [`ui/dados/`](ui/dados/README.md) | Seed API no spec (`seedDados*`, `seedPortfolios*`, `seedProventos*`) — export/import centralizado |
-| [`ui/ferramentas/objetivos/`](ui/ferramentas/objetivos/README.md) | Seed API no spec (`seedObjetivos*`) — carteira + posições + objetivos |
-| [`ui/ferramentas/bitcoin/`](ui/ferramentas/bitcoin/README.md) | Seed API no spec (`seedBitcoin*`) — carteira + posição BTC-USD |
+| [`ui/objetivos/`](ui/objetivos/README.md) | Seed API no spec (`seedObjetivos*`) — carteira + posições + objetivos |
+| [`ui/taxas-cripto/`](ui/taxas-cripto/README.md) | Seed API no spec (`seedBitcoin*`) — carteira + posição BTC-USD |
 
 ## Ordem sugerida de implementação (fase 2)
 

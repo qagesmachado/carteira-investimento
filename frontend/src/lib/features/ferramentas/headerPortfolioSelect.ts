@@ -1,11 +1,11 @@
-/** Rotas de Ferramentas que exibem o seletor de carteira no cabeçalho (PageHeader). */
+/** Rotas com seletor de carteira no painel Hub (hierarquia Carteira / Ferramentas). */
 export const FERRAMENTAS_HEADER_PORTFOLIO_ROUTES = [
-  { route: '/ferramentas/objetivos', heading: 'Objetivos financeiros' },
-  { route: '/ferramentas/criptomoedas', heading: 'Criptomoedas' },
-  { route: '/ferramentas/financiamento-imovel', heading: 'Financiamento imóvel' },
-  { route: '/ferramentas/calculo-preco-medio', heading: 'Cálculo de preço médio' },
-  { route: '/ferramentas/conferencia-ir', heading: 'Conferência anual de IR' },
-  { route: '/ferramentas/controle-patrimonio', heading: 'Controle de patrimônio' }
+  { route: '/objetivos', heading: 'Objetivos financeiros' },
+  { route: '/taxas-cripto', heading: 'Criptomoedas' },
+  { route: '/calculo-preco-medio', heading: 'Cálculo de preço médio' },
+  { route: '/conferencia-ir', heading: 'Conferência anual de IR' },
+  { route: '/controle-patrimonio', heading: 'Controle de patrimônio' }
 ] as const;
 
+/** Mantido para compatibilidade E2E — agora no PortfolioWorkspaceBarPanel. */
 export const PORTFOLIO_SELECT_HEADER_TEST_ID = 'portfolio-select-header';

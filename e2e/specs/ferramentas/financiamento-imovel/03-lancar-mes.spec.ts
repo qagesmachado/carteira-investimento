@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -8,7 +8,7 @@ import {
 } from '../../helpers/financiamentoImovelPage';
 import { seedPropertyFinancingEmpty, todayBrDate } from '../../helpers/seedPropertyFinancing';
 
-/** @see ../../../../casos-de-uso/ui/ferramentas/financiamento-imovel/README.md UI-FERR-003 */
+/** @see ../../../../casos-de-uso/ui/financeiro/financiamento-imovel/README.md UI-FERR-003 */
 test.describe('UI-FERR-003', () => {
   test('registra lançamento de parcela e aluguel', async ({ page, request }) => {
     await seedPropertyFinancingEmpty(request);

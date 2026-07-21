@@ -30,6 +30,17 @@ Toda interface do frontend usa ícones da biblioteca **[Lucide](https://lucide.d
 
 Exceção: assets não-Lucide documentados (ex.: bandeira `us-flag.svg` no badge USD/BRL).
 
+## Menus Carteira / Ferramentas / Financeiro (itens migrados)
+
+| Uso | Lucide | Constante |
+| --- | --- | --- |
+| Objetivos financeiros | [Target](https://lucide.dev/icons/target) | `CARTEIRA_OBJETIVOS_LUCIDE_ICON` |
+| Taxas cripto | [Bitcoin](https://lucide.dev/icons/bitcoin) | `CARTEIRA_TAXAS_CRIPTO_LUCIDE_ICON` |
+| Conferência anual de IR | [ScrollText](https://lucide.dev/icons/scroll-text) | `CARTEIRA_CONFERENCIA_IR_LUCIDE_ICON` |
+| Controle de patrimônio | [WalletMinimal](https://lucide.dev/icons/wallet-minimal) | `CARTEIRA_PATRIMONIO_LUCIDE_ICON` |
+| Cálculo de preço médio | [Calculator](https://lucide.dev/icons/calculator) | `FERRAMENTAS_PRECO_MEDIO_LUCIDE_ICON` |
+| Financiamento imóvel (aba Financeiro) | [Building2](https://lucide.dev/icons/building-2) | `FINANCEIRO_FINANCIAMENTO_LUCIDE_ICON` |
+
 ## Ícones do dashboard (referência)
 
 | Uso | Lucide | Constante |

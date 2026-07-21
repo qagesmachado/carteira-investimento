@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import { gotoObjetivosPage, selectObjectiveCard } from '../../helpers/objetivosPage';
@@ -8,7 +8,7 @@ import {
   seedObjetivosWithStock
 } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/10-metricas-custo-lucro.md */
+/** @see ../../../casos-de-uso/ui/objetivos/10-metricas-custo-lucro.md */
 test.describe('UI-OBJ-010', () => {
   test('exibe custo valor e lucro na alocação', async ({ page, request }) => {
     const { portfolioId, assetId } = await seedObjetivosWithStock(request);

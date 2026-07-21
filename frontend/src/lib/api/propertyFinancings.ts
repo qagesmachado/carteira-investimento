@@ -1,4 +1,4 @@
-import { API_BASE_URL } from './config';
+﻿import { API_BASE_URL } from './config';
 import { apiFetch } from './http';
 
 export type PropertyType =
@@ -44,7 +44,7 @@ export type FinancingEntryTemplate = {
 
 export type PropertyFinancing = {
   id: number;
-  portfolio_id: number;
+  profile_id: number;
   name: string;
   property_type: PropertyType;
   description: string | null;
@@ -69,7 +69,7 @@ export type PropertyFinancingConsolidated = {
 };
 
 export type PropertyFinancingSnapshot = {
-  portfolio_id: number;
+  profile_id: number;
   financings: PropertyFinancing[];
   consolidated: PropertyFinancingConsolidated;
 };
@@ -106,8 +106,8 @@ export type FinancingEntryTemplateUpdate = Partial<
   name?: string;
 };
 
-function baseUrl(portfolioId: number): string {
-  return `${API_BASE_URL}/portfolios/${portfolioId}/property-financings`;
+function baseUrl(profileId: number): string {
+  return `${API_BASE_URL}/budget/profiles/${profileId}/property-financings`;
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -118,17 +118,17 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export async function getPropertyFinancingSnapshot(
-  portfolioId: number
+  profileId: number
 ): Promise<PropertyFinancingSnapshot> {
-  const response = await apiFetch(`${baseUrl(portfolioId)}`);
+  const response = await apiFetch(`${baseUrl(profileId)}`);
   return parseResponse<PropertyFinancingSnapshot>(response);
 }
 
 export async function createPropertyFinancing(
-  portfolioId: number,
+  profileId: number,
   payload: PropertyFinancingCreate
 ): Promise<PropertyFinancing> {
-  const response = await apiFetch(`${baseUrl(portfolioId)}`, {
+  const response = await apiFetch(`${baseUrl(profileId)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -137,11 +137,11 @@ export async function createPropertyFinancing(
 }
 
 export async function updatePropertyFinancing(
-  portfolioId: number,
+  profileId: number,
   financingId: number,
   payload: PropertyFinancingUpdate
 ): Promise<PropertyFinancing> {
-  const response = await apiFetch(`${baseUrl(portfolioId)}/${financingId}`, {
+  const response = await apiFetch(`${baseUrl(profileId)}/${financingId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -150,21 +150,21 @@ export async function updatePropertyFinancing(
 }
 
 export async function deletePropertyFinancing(
-  portfolioId: number,
+  profileId: number,
   financingId: number
 ): Promise<void> {
-  const response = await apiFetch(`${baseUrl(portfolioId)}/${financingId}`, { method: 'DELETE' });
+  const response = await apiFetch(`${baseUrl(profileId)}/${financingId}`, { method: 'DELETE' });
   if (!response.ok) {
     throw new Error(await response.text());
   }
 }
 
 export async function createFinancingEntry(
-  portfolioId: number,
+  profileId: number,
   financingId: number,
   payload: FinancingEntryCreate
 ): Promise<FinancingEntry> {
-  const response = await apiFetch(`${baseUrl(portfolioId)}/${financingId}/entries`, {
+  const response = await apiFetch(`${baseUrl(profileId)}/${financingId}/entries`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -173,11 +173,11 @@ export async function createFinancingEntry(
 }
 
 export async function updateFinancingEntry(
-  portfolioId: number,
+  profileId: number,
   entryId: number,
   payload: FinancingEntryUpdate
 ): Promise<FinancingEntry> {
-  const response = await apiFetch(`${baseUrl(portfolioId)}/entries/${entryId}`, {
+  const response = await apiFetch(`${baseUrl(profileId)}/entries/${entryId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -186,10 +186,10 @@ export async function updateFinancingEntry(
 }
 
 export async function deleteFinancingEntry(
-  portfolioId: number,
+  profileId: number,
   entryId: number
 ): Promise<void> {
-  const response = await apiFetch(`${baseUrl(portfolioId)}/entries/${entryId}`, {
+  const response = await apiFetch(`${baseUrl(profileId)}/entries/${entryId}`, {
     method: 'DELETE'
   });
   if (!response.ok) {
@@ -198,12 +198,12 @@ export async function deleteFinancingEntry(
 }
 
 export async function createFinancingEntryTemplate(
-  portfolioId: number,
+  profileId: number,
   financingId: number,
   payload: FinancingEntryTemplateCreate
 ): Promise<FinancingEntryTemplate> {
   const response = await apiFetch(
-    `${baseUrl(portfolioId)}/${financingId}/entry-templates`,
+    `${baseUrl(profileId)}/${financingId}/entry-templates`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -214,11 +214,11 @@ export async function createFinancingEntryTemplate(
 }
 
 export async function updateFinancingEntryTemplate(
-  portfolioId: number,
+  profileId: number,
   templateId: number,
   payload: FinancingEntryTemplateUpdate
 ): Promise<FinancingEntryTemplate> {
-  const response = await apiFetch(`${baseUrl(portfolioId)}/entry-templates/${templateId}`, {
+  const response = await apiFetch(`${baseUrl(profileId)}/entry-templates/${templateId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -227,10 +227,10 @@ export async function updateFinancingEntryTemplate(
 }
 
 export async function deleteFinancingEntryTemplate(
-  portfolioId: number,
+  profileId: number,
   templateId: number
 ): Promise<void> {
-  const response = await apiFetch(`${baseUrl(portfolioId)}/entry-templates/${templateId}`, {
+  const response = await apiFetch(`${baseUrl(profileId)}/entry-templates/${templateId}`, {
     method: 'DELETE'
   });
   if (!response.ok) {

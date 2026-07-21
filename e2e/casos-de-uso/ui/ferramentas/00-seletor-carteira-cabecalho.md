@@ -1,4 +1,4 @@
-# Seletor de carteira no cabeçalho das Ferramentas
+﻿# Seletor de carteira no cabeçalho das Ferramentas
 
 ## Metadados
 
@@ -25,24 +25,24 @@
 ### Passo a passo
 
 1. Abro cada rota de ferramenta vinculada à carteira:
-   - `/ferramentas/objetivos`
-   - `/ferramentas/criptomoedas`
-   - `/ferramentas/financiamento-imovel`
-   - `/ferramentas/calculo-preco-medio`
-   - `/ferramentas/conferencia-ir`
+   - `/objetivos`
+   - `/taxas-cripto`
+   - `/financeiro/financiamento-imovel`
+   - `/calculo-preco-medio`
+   - `/conferencia-ir`
 2. Vejo o título da página (`h1`) e, à direita, o combobox **Selecionar carteira** (`data-testid="portfolio-select-header"`).
 3. Com carteira seedada, o combobox exibe o nome da carteira ativa.
 
 ### Cenário — Persistência global entre páginas
 
-1. Com duas carteiras cadastradas, abro `/ferramentas/financiamento-imovel`.
+1. Com duas carteiras cadastradas, abro `/financeiro/financiamento-imovel`.
 2. Troco o seletor do cabeçalho para a segunda carteira (PUT `/portfolios/active`).
-3. Navego para `/ferramentas/calculo-preco-medio` e `/ferramentas/objetivos`.
+3. Navego para `/calculo-preco-medio` e `/objetivos`.
 4. O combobox do cabeçalho mantém a mesma carteira selecionada.
 
 ### Cenário — Cálculo de preço médio (aba Carteira)
 
-1. Abro `/ferramentas/calculo-preco-medio`.
+1. Abro `/calculo-preco-medio`.
 2. Confirmo um único seletor no cabeçalho (`portfolio-select-header`).
 3. Abro a aba **Carteira**; o formulário interno pode ter outro seletor contextual, mas o do cabeçalho permanece visível e único com esse `testId`.
 

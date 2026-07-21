@@ -73,7 +73,7 @@ class PropertyFinancingEntryTemplateRead(BaseModel):
 
 class PropertyFinancingRead(BaseModel):
     id: int
-    portfolio_id: int
+    profile_id: int
     name: str
     property_type: str
     description: str | None
@@ -98,6 +98,6 @@ class PropertyFinancingConsolidatedRead(BaseModel):
 
 
 class PropertyFinancingSnapshotRead(BaseModel):
-    portfolio_id: int
+    profile_id: int
     financings: list[PropertyFinancingRead]
     consolidated: PropertyFinancingConsolidatedRead

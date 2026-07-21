@@ -181,10 +181,8 @@ def delete_portfolio(
         session.delete(position)
     from app.services.objective_service import delete_objectives_for_portfolio
     from app.services.patrimony_control_service import delete_manual_patrimony_items_for_portfolio
-    from app.services.property_financing_service import delete_property_financings_for_portfolio
 
     delete_objectives_for_portfolio(session, portfolio_id)
-    delete_property_financings_for_portfolio(session, portfolio_id)
     delete_manual_patrimony_items_for_portfolio(session, portfolio_id)
     from app.services.analysis_methodology_service import delete_portfolio_analysis_methodologies
     from app.services.analysis_pending_service import (

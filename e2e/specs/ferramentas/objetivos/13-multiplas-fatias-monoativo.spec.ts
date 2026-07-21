@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -8,7 +8,7 @@ import {
 } from '../../helpers/seedObjetivos';
 import { gotoObjetivosPage, selectObjectiveCard, expectAllocationSliceVisible } from '../../helpers/objetivosPage';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/13-multiplas-fatias-monoativo.md */
+/** @see ../../../casos-de-uso/ui/objetivos/13-multiplas-fatias-monoativo.md */
 test.describe('UI-OBJ-013', () => {
   test('adiciona duas fatias do mesmo ativo com nomes distintos', async ({ page, request }) => {
     const { portfolioId, assetId } = await seedObjetivosWithStock(request, 'AUPO11');

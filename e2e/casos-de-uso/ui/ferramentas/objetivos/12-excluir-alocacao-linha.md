@@ -1,11 +1,11 @@
-# Excluir alocação pela linha da tabela
+﻿# Excluir alocação pela linha da tabela
 
 ## Metadados
 
 - **ID:** `UI-OBJ-012`
 - **Status:** aprovado
-- **Página:** `/ferramentas/objetivos`
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/12-excluir-alocacao-linha.spec.ts`
+- **Página:** `/objetivos`
+- **Arquivo de teste:** `e2e/specs/objetivos/12-excluir-alocacao-linha.spec.ts`
 
 ## Cenário
 

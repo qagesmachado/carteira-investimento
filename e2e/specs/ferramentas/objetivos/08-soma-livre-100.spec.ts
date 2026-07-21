@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -10,7 +10,7 @@ import {
 } from '../../helpers/objetivosPage';
 import { expectDefaultObjectiveFreeQuantity, seedObjetivosWithStock } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/08-soma-livre-100.md */
+/** @see ../../../casos-de-uso/ui/objetivos/08-soma-livre-100.md */
 test.describe('UI-OBJ-008', () => {
   test('alocação explícita + Livre somam 100 cotas', async ({ page, request }) => {
     const { portfolioId } = await seedObjetivosWithStock(request, 'PETR4', 100);

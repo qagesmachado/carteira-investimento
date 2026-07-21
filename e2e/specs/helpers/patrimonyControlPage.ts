@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+﻿import { expect, type Page } from '@playwright/test';
 
 async function fillBrDecimalTestInput(page: Page, testId: string, value: string): Promise<void> {
   const input = page.getByTestId(testId);
@@ -9,7 +9,7 @@ async function fillBrDecimalTestInput(page: Page, testId: string, value: string)
 }
 
 export async function gotoPatrimonyControlPage(page: Page): Promise<void> {
-  await page.goto('/ferramentas/controle-patrimonio', { waitUntil: 'domcontentloaded' });
+  await page.goto('/controle-patrimonio', { waitUntil: 'domcontentloaded' });
   await expect(
     page.getByRole('heading', { name: 'Controle de patrimônio', exact: true })
   ).toBeVisible({ timeout: 15_000 });

@@ -1,10 +1,10 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import { gotoFinanciamentoImovelPage } from '../../helpers/financiamentoImovelPage';
 import { seedPropertyFinancingEmpty } from '../../helpers/seedPropertyFinancing';
 
-/** @see ../../../../casos-de-uso/ui/ferramentas/financiamento-imovel/README.md UI-FERR-001 */
+/** @see ../../../../casos-de-uso/ui/financeiro/financiamento-imovel/README.md UI-FERR-001 */
 test.describe('UI-FERR-001', () => {
   test.beforeEach(async ({ request }) => {
     await seedPropertyFinancingEmpty(request);

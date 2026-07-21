@@ -1,4 +1,4 @@
-# Casos E2E — Ferramentas (transversal)
+﻿# Casos E2E — Ferramentas (transversal)
 
 Prefixo transversal: **UI-FERR-000**
 
@@ -10,17 +10,17 @@ Helper compartilhado: `e2e/specs/helpers/ferramentasPage.ts`
 
 Rotas cobertas (seletor no cabeçalho):
 
-- `/ferramentas/objetivos`
-- `/ferramentas/criptomoedas`
-- `/ferramentas/financiamento-imovel`
-- `/ferramentas/calculo-preco-medio`
-- `/ferramentas/conferencia-ir`
-- `/ferramentas/controle-patrimonio`
+- `/objetivos`
+- `/taxas-cripto`
+- `/financeiro/financiamento-imovel`
+- `/calculo-preco-medio`
+- `/conferencia-ir`
+- `/controle-patrimonio`
 
 Subpastas por ferramenta:
 
 - [objetivos/](objetivos/README.md)
-- [bitcoin/](bitcoin/README.md) (Taxas cripto → `/ferramentas/criptomoedas`)
+- [bitcoin/](bitcoin/README.md) (Taxas cripto → `/taxas-cripto`)
 - [financiamento-imovel/](financiamento-imovel/README.md)
 - [calculo-preco-medio/](calculo-preco-medio/README.md)
 - [conferencia-ir/](conferencia-ir/README.md)

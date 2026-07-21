@@ -1,32 +1,29 @@
 import { expect, type APIRequestContext } from '@playwright/test';
 
-import { E2E_PORTFOLIO_PRINCIPAL, E2E_PORTFOLIO_SECONDARY } from './e2eFixtures';
-import { clearAllTestAssets } from './seedAssets';
 import {
-  clearAllPortfolios,
-  createPortfolio,
-  setActivePortfolio
-} from './testPortfolios';
+  clearAllBudgetProfiles,
+  createBudgetProfileViaApi,
+  setActiveBudgetProfileViaApi,
+  type BudgetProfileSeed
+} from './seedBudget';
 import { getWorkerApiBaseUrl } from './workerContext';
 
 export async function seedPropertyFinancingEmpty(
   request: APIRequestContext
 ): Promise<number> {
-  await clearAllTestAssets(request, getWorkerApiBaseUrl());
-  await clearAllPortfolios(request);
-  const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
-  await setActivePortfolio(request, portfolio.id);
-  return portfolio.id;
+  await clearAllBudgetProfiles(request);
+  const profile = await createBudgetProfileViaApi(request, 'Casa E2E Fin');
+  await setActiveBudgetProfileViaApi(request, profile.id);
+  return profile.id;
 }
 
-export async function seedPropertyFinancingTwoPortfolios(
+export async function seedPropertyFinancingTwoProfiles(
   request: APIRequestContext
 ): Promise<{ primaryId: number; secondaryId: number }> {
-  await clearAllTestAssets(request, getWorkerApiBaseUrl());
-  await clearAllPortfolios(request);
-  const primary = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
-  const secondary = await createPortfolio(request, E2E_PORTFOLIO_SECONDARY);
-  await setActivePortfolio(request, primary.id);
+  await clearAllBudgetProfiles(request);
+  const primary = await createBudgetProfileViaApi(request, 'Perfil Fin A');
+  const secondary = await createBudgetProfileViaApi(request, 'Perfil Fin B');
+  await setActiveBudgetProfileViaApi(request, primary.id);
 
   const today = new Date();
   const eventDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-15`;
@@ -49,14 +46,21 @@ export async function seedPropertyFinancingTwoPortfolios(
   return { primaryId: primary.id, secondaryId: secondary.id };
 }
 
+/** @deprecated Use seedPropertyFinancingTwoProfiles */
+export async function seedPropertyFinancingTwoPortfolios(
+  request: APIRequestContext
+): Promise<{ primaryId: number; secondaryId: number }> {
+  return seedPropertyFinancingTwoProfiles(request);
+}
+
 export async function createFinancingViaApi(
   request: APIRequestContext,
-  portfolioId: number,
+  profileId: number,
   name: string,
   propertyType = 'casa'
 ): Promise<number> {
   const response = await request.post(
-    `${getWorkerApiBaseUrl()}/portfolios/${portfolioId}/property-financings`,
+    `${getWorkerApiBaseUrl()}/budget/profiles/${profileId}/property-financings`,
     {
       data: { name, property_type: propertyType }
     }
@@ -67,7 +71,7 @@ export async function createFinancingViaApi(
 
 export async function createEntryViaApi(
   request: APIRequestContext,
-  portfolioId: number,
+  profileId: number,
   financingId: number,
   payload: {
     event_date: string;
@@ -78,7 +82,7 @@ export async function createEntryViaApi(
   }
 ): Promise<number> {
   const response = await request.post(
-    `${getWorkerApiBaseUrl()}/portfolios/${portfolioId}/property-financings/${financingId}/entries`,
+    `${getWorkerApiBaseUrl()}/budget/profiles/${profileId}/property-financings/${financingId}/entries`,
     { data: payload }
   );
   expect(response.ok()).toBeTruthy();
@@ -98,3 +102,5 @@ export function todayBrDate(): string {
   const day = String(today.getDate()).padStart(2, '0');
   return `${day}/${month}/${today.getFullYear()}`;
 }
+
+export type { BudgetProfileSeed };

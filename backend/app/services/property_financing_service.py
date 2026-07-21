@@ -1,4 +1,4 @@
-from datetime import date, datetime
+﻿from datetime import date, datetime
 
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
@@ -26,7 +26,7 @@ from app.schemas.property_financing import (
     PropertyFinancingUpdate,
     TimelineRowRead,
 )
-from app.services.portfolio_service import get_portfolio
+from app.services.budget.profile_service import get_budget_profile
 from app.services.property_financing_engine import (
     EntryInput,
     aggregate_annual_timeline,
@@ -87,22 +87,22 @@ def _validate_entry_type_category(
         )
 
 
-def _get_financing(session: Session, portfolio_id: int, financing_id: int) -> PropertyFinancing:
+def _get_financing(session: Session, profile_id: int, financing_id: int) -> PropertyFinancing:
     financing = session.get(PropertyFinancing, financing_id)
-    if financing is None or financing.portfolio_id != portfolio_id:
+    if financing is None or financing.profile_id != profile_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="financing not found")
     return financing
 
 
 def _get_entry_with_financing(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     entry_id: int,
 ) -> tuple[PropertyFinancingEntry, PropertyFinancing]:
     entry = session.get(PropertyFinancingEntry, entry_id)
     if entry is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="entry not found")
-    financing = _get_financing(session, portfolio_id, entry.financing_id)
+    financing = _get_financing(session, profile_id, entry.financing_id)
     return entry, financing
 
 
@@ -176,13 +176,13 @@ def _template_to_read(
 
 def _get_template_with_financing(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     template_id: int,
 ) -> tuple[PropertyFinancingEntryTemplate, PropertyFinancing]:
     template = session.get(PropertyFinancingEntryTemplate, template_id)
     if template is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="template not found")
-    financing = _get_financing(session, portfolio_id, template.financing_id)
+    financing = _get_financing(session, profile_id, template.financing_id)
     return template, financing
 
 
@@ -196,7 +196,7 @@ def _financing_to_read(
     metrics = compute_financing_metrics([_entry_to_input(e) for e in entries])
     return PropertyFinancingRead(
         id=financing.id,
-        portfolio_id=financing.portfolio_id,
+        profile_id=financing.profile_id,
         name=financing.name,
         property_type=financing.property_type.value,
         description=financing.description,
@@ -208,15 +208,15 @@ def _financing_to_read(
 
 def build_property_financing_snapshot(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     reference_date: date | None = None,
 ) -> PropertyFinancingSnapshotRead:
-    get_portfolio(session, portfolio_id)
+    get_budget_profile(session, profile_id)
     ref = reference_date or date.today()
     financings = list(
         session.exec(
             select(PropertyFinancing)
-            .where(PropertyFinancing.portfolio_id == portfolio_id)
+            .where(PropertyFinancing.profile_id == profile_id)
             .order_by(PropertyFinancing.name)
         ).all()
     )
@@ -233,7 +233,7 @@ def build_property_financing_snapshot(
     annual = aggregate_annual_timeline(all_inputs)
 
     return PropertyFinancingSnapshotRead(
-        portfolio_id=portfolio_id,
+        profile_id=profile_id,
         financings=financing_reads,
         consolidated=PropertyFinancingConsolidatedRead(
             financing_count=len(financing_reads),
@@ -264,24 +264,24 @@ def build_property_financing_snapshot(
 
 def create_property_financing(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     payload: PropertyFinancingCreate,
 ) -> PropertyFinancing:
-    get_portfolio(session, portfolio_id)
+    get_budget_profile(session, profile_id)
     property_type = _validate_property_type(payload.property_type)
     existing = session.exec(
         select(PropertyFinancing).where(
-            PropertyFinancing.portfolio_id == portfolio_id,
+            PropertyFinancing.profile_id == profile_id,
             PropertyFinancing.name == payload.name,
         )
     ).first()
     if existing is not None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="financing name already exists in portfolio",
+            detail="financing name already exists in profile",
         )
     financing = PropertyFinancing(
-        portfolio_id=portfolio_id,
+        profile_id=profile_id,
         name=payload.name,
         property_type=property_type,
         description=payload.description,
@@ -294,22 +294,22 @@ def create_property_financing(
 
 def update_property_financing(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     financing_id: int,
     payload: PropertyFinancingUpdate,
 ) -> PropertyFinancing:
-    financing = _get_financing(session, portfolio_id, financing_id)
+    financing = _get_financing(session, profile_id, financing_id)
     if payload.name is not None and payload.name != financing.name:
         duplicate = session.exec(
             select(PropertyFinancing).where(
-                PropertyFinancing.portfolio_id == portfolio_id,
+                PropertyFinancing.profile_id == profile_id,
                 PropertyFinancing.name == payload.name,
             )
         ).first()
         if duplicate is not None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="financing name already exists in portfolio",
+                detail="financing name already exists in profile",
             )
         financing.name = payload.name
     if payload.property_type is not None:
@@ -323,23 +323,23 @@ def update_property_financing(
     return financing
 
 
-def delete_property_financings_for_portfolio(session: Session, portfolio_id: int) -> None:
+def delete_property_financings_for_profile(session: Session, profile_id: int) -> None:
     financings = list(
         session.exec(
-            select(PropertyFinancing).where(PropertyFinancing.portfolio_id == portfolio_id)
+            select(PropertyFinancing).where(PropertyFinancing.profile_id == profile_id)
         ).all()
     )
     for financing in financings:
         assert financing.id is not None
-        delete_property_financing(session, portfolio_id, financing.id)
+        delete_property_financing(session, profile_id, financing.id)
 
 
 def delete_property_financing(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     financing_id: int,
 ) -> None:
-    _get_financing(session, portfolio_id, financing_id)
+    _get_financing(session, profile_id, financing_id)
     entries = list(
         session.exec(
             select(PropertyFinancingEntry).where(
@@ -366,11 +366,11 @@ def delete_property_financing(
 
 def create_property_financing_entry(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     financing_id: int,
     payload: PropertyFinancingEntryCreate,
 ) -> PropertyFinancingEntry:
-    _get_financing(session, portfolio_id, financing_id)
+    _get_financing(session, profile_id, financing_id)
     entry_type = _validate_entry_type(payload.entry_type)
     event_category = _validate_event_category(payload.event_category)
     _validate_entry_type_category(entry_type, event_category)
@@ -391,11 +391,11 @@ def create_property_financing_entry(
 
 def update_property_financing_entry(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     entry_id: int,
     payload: PropertyFinancingEntryUpdate,
 ) -> PropertyFinancingEntry:
-    entry, _ = _get_entry_with_financing(session, portfolio_id, entry_id)
+    entry, _ = _get_entry_with_financing(session, profile_id, entry_id)
     entry_type = entry.entry_type
     event_category = entry.event_category
     if payload.entry_type is not None:
@@ -420,21 +420,21 @@ def update_property_financing_entry(
 
 def delete_property_financing_entry(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     entry_id: int,
 ) -> None:
-    entry, _ = _get_entry_with_financing(session, portfolio_id, entry_id)
+    entry, _ = _get_entry_with_financing(session, profile_id, entry_id)
     session.delete(entry)
     session.commit()
 
 
 def create_property_financing_entry_template(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     financing_id: int,
     payload: PropertyFinancingEntryTemplateCreate,
 ) -> PropertyFinancingEntryTemplate:
-    _get_financing(session, portfolio_id, financing_id)
+    _get_financing(session, profile_id, financing_id)
     entry_type = _validate_entry_type(payload.entry_type)
     event_category = _validate_event_category(payload.event_category)
     _validate_entry_type_category(entry_type, event_category)
@@ -465,11 +465,11 @@ def create_property_financing_entry_template(
 
 def update_property_financing_entry_template(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     template_id: int,
     payload: PropertyFinancingEntryTemplateUpdate,
 ) -> PropertyFinancingEntryTemplate:
-    template, financing = _get_template_with_financing(session, portfolio_id, template_id)
+    template, financing = _get_template_with_financing(session, profile_id, template_id)
     entry_type = template.entry_type
     event_category = template.event_category
     if payload.entry_type is not None:
@@ -505,9 +505,9 @@ def update_property_financing_entry_template(
 
 def delete_property_financing_entry_template(
     session: Session,
-    portfolio_id: int,
+    profile_id: int,
     template_id: int,
 ) -> None:
-    template, _ = _get_template_with_financing(session, portfolio_id, template_id)
+    template, _ = _get_template_with_financing(session, profile_id, template_id)
     session.delete(template)
     session.commit()

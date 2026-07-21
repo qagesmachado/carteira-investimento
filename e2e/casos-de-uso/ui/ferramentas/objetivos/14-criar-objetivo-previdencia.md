@@ -1,13 +1,13 @@
-# Criar objetivo previdência
+﻿# Criar objetivo previdência
 
 ## Metadados
 
 - **ID:** `UI-OBJ-014`
 - **Status:** aprovado
-- **Página:** `/ferramentas/objetivos`
+- **Página:** `/objetivos`
 - **Funcionalidade:** criar objetivo com modalidade controle de aporte previdenciário
 - **Depende de:** `UI-OBJ-001`
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/14-criar-objetivo-previdencia.spec.ts`
+- **Arquivo de teste:** `e2e/specs/objetivos/14-criar-objetivo-previdencia.spec.ts`
 - **Referência:** [controle-aporte-previdencia.md](../../../../../docs/produto/desenvolvido/controle-aporte-previdencia.md)
 
 ## Cenário — criar objetivo previdência
@@ -18,7 +18,7 @@
 
 ### Passo a passo
 
-1. Abro `/ferramentas/objetivos` com carteira seed.
+1. Abro `/objetivos` com carteira seed.
 2. Clico em «Novo objetivo».
 3. Seleciono modalidade «Controle de aporte da previdência».
 4. Informo nome «Previdência IR», ano corrente e renda bruta anual R$ 120.000.

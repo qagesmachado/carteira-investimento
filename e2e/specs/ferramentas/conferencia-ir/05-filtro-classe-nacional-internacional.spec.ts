@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import {
   clickIrTab,
@@ -12,7 +12,7 @@ import { seedConferenciaIrWithInternational } from '../../helpers/seedConferenci
 
 /**
  * UI-IR-005 — Filtro e coluna Classe (nacional/internacional)
- * @see ../../../../casos-de-uso/ui/ferramentas/conferencia-ir/05-filtro-classe-nacional-internacional.md
+ * @see ../../../../casos-de-uso/ui/conferencia-ir/05-filtro-classe-nacional-internacional.md
  */
 test.describe('UI-IR-005', () => {
   test.beforeEach(async ({ request }) => {

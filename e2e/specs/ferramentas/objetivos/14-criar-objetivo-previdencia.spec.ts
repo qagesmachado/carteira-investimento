@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -7,7 +7,7 @@ import {
 } from '../../helpers/objetivosPage';
 import { seedObjetivosEmpty } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/14-criar-objetivo-previdencia.md */
+/** @see ../../../casos-de-uso/ui/objetivos/14-criar-objetivo-previdencia.md */
 test.describe('UI-OBJ-014', () => {
   test.beforeEach(async ({ request }) => {
     await seedObjetivosEmpty(request);

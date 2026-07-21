@@ -1,13 +1,13 @@
-# Export Excel com três abas
+﻿# Export Excel com três abas
 
 ## Metadados
 
 - **ID:** `UI-IR-004`
 - **Status:** aprovado
-- **Página:** `/ferramentas/conferencia-ir`
+- **Página:** `/conferencia-ir`
 - **Funcionalidade:** exportar relatório em Excel com Detalhado, Resumo e Posições
 - **Depende de:** `UI-IR-003` (snapshot + proventos)
-- **Arquivo de teste:** `e2e/specs/ferramentas/conferencia-ir/04-export-excel-tres-abas.spec.ts`
+- **Arquivo de teste:** `e2e/specs/conferencia-ir/04-export-excel-tres-abas.spec.ts`
 - **Referência:** [conferencia-ir-anual.md](../../../../../docs/produto/desenvolvido/conferencia-ir-anual.md)
 
 ## Cenário — download Excel

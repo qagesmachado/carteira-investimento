@@ -27,7 +27,7 @@
       <h3 class="text-xs font-semibold uppercase tracking-wide text-base-content/70">
         Finalidades
       </h3>
-      <a class="link link-primary text-xs" href="/ferramentas/objetivos">Configurar em Objetivos</a>
+      <a class="link link-primary text-xs" href="/objetivos">Configurar em Objetivos</a>
     </div>
 
     {#if investmentBrl != null}

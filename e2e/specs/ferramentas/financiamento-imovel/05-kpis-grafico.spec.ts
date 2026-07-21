@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -13,7 +13,7 @@ import {
   todayIsoDate
 } from '../../helpers/seedPropertyFinancing';
 
-/** @see ../../../../casos-de-uso/ui/ferramentas/financiamento-imovel/README.md UI-FERR-005 */
+/** @see ../../../../casos-de-uso/ui/financeiro/financiamento-imovel/README.md UI-FERR-005 */
 test.describe('UI-FERR-005', () => {
   test('KPIs e gráfico refletem receitas vs despesas', async ({ page, request }) => {
     const portfolioId = await seedPropertyFinancingEmpty(request);

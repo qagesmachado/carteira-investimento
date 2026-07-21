@@ -1,11 +1,11 @@
-# UI-OBJ-018 — Finalidade de objetivo no rebalanceamento e reserva
+﻿# UI-OBJ-018 — Finalidade de objetivo no rebalanceamento e reserva
 
 | Campo | Valor |
 | ----- | ----- |
 | **ID** | UI-OBJ-018 |
 | **Status** | aprovado |
-| **Rota UI** | `/rebalanceamento`, `/ferramentas/controle-patrimonio` |
-| **Arquivo de teste** | `e2e/specs/ferramentas/objetivos/18-finalidade-rebalanceamento-reserva.spec.ts` |
+| **Rota UI** | `/rebalanceamento`, `/controle-patrimonio` |
+| **Arquivo de teste** | `e2e/specs/objetivos/18-finalidade-rebalanceamento-reserva.spec.ts` |
 
 ## Cenário
 

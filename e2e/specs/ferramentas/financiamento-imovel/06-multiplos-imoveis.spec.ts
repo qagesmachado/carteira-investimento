@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import { gotoFinanciamentoImovelPage } from '../../helpers/financiamentoImovelPage';
@@ -9,7 +9,7 @@ import {
   todayIsoDate
 } from '../../helpers/seedPropertyFinancing';
 
-/** @see ../../../../casos-de-uso/ui/ferramentas/financiamento-imovel/README.md UI-FERR-006 */
+/** @see ../../../../casos-de-uso/ui/financeiro/financiamento-imovel/README.md UI-FERR-006 */
 test.describe('UI-FERR-006', () => {
   test('resumo consolidado com múltiplos imóveis', async ({ page, request }) => {
     const portfolioId = await seedPropertyFinancingEmpty(request);

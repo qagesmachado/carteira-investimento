@@ -25,10 +25,10 @@ class PropertyFinancingEventCategory(StrEnum):
 
 
 class PropertyFinancing(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint("portfolio_id", "name"),)
+    __table_args__ = (UniqueConstraint("profile_id", "name"),)
 
     id: int | None = Field(default=None, primary_key=True)
-    portfolio_id: int = Field(foreign_key="portfolio.id", index=True)
+    profile_id: int = Field(foreign_key="budgetprofile.id", index=True)
     name: str = Field(index=True)
     property_type: PropertyType
     description: str | None = None

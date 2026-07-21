@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+﻿import { expect, type Page } from '@playwright/test';
 
 async function fillBrDecimalTestInput(page: Page, testId: string, value: string): Promise<void> {
   const input = page.getByTestId(testId);
@@ -9,8 +9,9 @@ async function fillBrDecimalTestInput(page: Page, testId: string, value: string)
 }
 
 export async function gotoFinanciamentoImovelPage(page: Page): Promise<void> {
-  await page.goto('/ferramentas/financiamento-imovel');
-  await expect(page.getByRole('heading', { name: 'Financiamento imóvel' })).toBeVisible();
+  await page.goto('/financeiro/financiamento-imovel');
+  await expect(page.getByRole('heading', { name: 'Financeiro', level: 1 })).toBeVisible();
+  await expect(page.getByRole('tab', { name: /Financiamento/ })).toBeVisible();
 }
 
 export async function selectFinancingTab(page: Page, name: string): Promise<void> {
@@ -83,7 +84,11 @@ export async function addFinancingEntryUi(
 }
 
 export async function selectPortfolioByName(page: Page, name: string): Promise<void> {
-  await page.getByTestId('portfolio-select-header').selectOption({ label: name });
+  await selectProfileByName(page, name);
+}
+
+export async function selectProfileByName(page: Page, name: string): Promise<void> {
+  await page.getByTestId('budget-profile-select').selectOption({ label: name });
 }
 
 export async function fillFinancingEventFormFields(

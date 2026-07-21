@@ -1,6 +1,15 @@
 <script lang="ts">
   import { page } from '$app/stores';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
   import NavbarDropdown from '$lib/components/NavbarDropdown.svelte';
+  import {
+    CARTEIRA_CONFERENCIA_IR_LUCIDE_ICON,
+    CARTEIRA_OBJETIVOS_LUCIDE_ICON,
+    CARTEIRA_PATRIMONIO_LUCIDE_ICON,
+    CARTEIRA_TAXAS_CRIPTO_LUCIDE_ICON,
+    FERRAMENTAS_PRECO_MEDIO_LUCIDE_ICON,
+    FINANCEIRO_FINANCIAMENTO_LUCIDE_ICON
+  } from '$lib/icons/lucideIconCatalog';
   import { hideMoneyValues, toggleHideMoneyValues } from '$lib/stores/hideMoneyValues';
   import { PAGE_SHELL_PADDING_X_CLASS, PAGE_SHELL_WIDTH_CLASS } from '$lib/layout/pageShell';
   import { theme, toggleTheme } from '$lib/stores/theme';
@@ -10,26 +19,30 @@
   $: consolidadaOpen = pathname === '/consolidada' || pathname.startsWith('/consolidada/');
   $: analiseOpen = pathname.startsWith('/analise');
   $: rebalanceOpen = pathname.startsWith('/rebalanceamento');
-  $: criptomoedasOpen = pathname.startsWith('/ferramentas/criptomoedas');
-  $: objetivosOpen = pathname.startsWith('/ferramentas/objetivos');
+  $: taxasCriptoOpen = pathname.startsWith('/taxas-cripto');
+  $: objetivosOpen = pathname.startsWith('/objetivos');
+  $: conferenciaIrOpen = pathname.startsWith('/conferencia-ir');
+  $: controlePatrimonioOpen = pathname.startsWith('/controle-patrimonio');
+  $: calculoPrecoMedioOpen = pathname.startsWith('/calculo-preco-medio');
+  $: financiamentoOpen = pathname.startsWith('/financeiro/financiamento-imovel');
   $: carteiraOpen =
     pathname === '/portfolios' ||
     pathname.startsWith('/portfolios/') ||
     pathname.startsWith('/rebalanceamento') ||
     pathname.startsWith('/analise') ||
     pathname === '/proventos' ||
-    pathname.startsWith('/proventos/');
+    pathname.startsWith('/proventos/') ||
+    objetivosOpen ||
+    taxasCriptoOpen ||
+    conferenciaIrOpen ||
+    controlePatrimonioOpen;
   $: bancoDadosOpen =
     pathname === '/assets' ||
     pathname.startsWith('/assets/') ||
     pathname === '/dados' ||
     pathname.startsWith('/dados/');
-  $: ferramentasOpen = pathname.startsWith('/ferramentas');
+  $: ferramentasOpen = calculoPrecoMedioOpen || pathname.startsWith('/ferramentas');
   $: financeiroOpen = pathname.startsWith('/financeiro');
-  $: financiamentoOpen = pathname.startsWith('/ferramentas/financiamento-imovel');
-  $: calculoPrecoMedioOpen = pathname.startsWith('/ferramentas/calculo-preco-medio');
-  $: conferenciaIrOpen = pathname.startsWith('/ferramentas/conferencia-ir');
-  $: controlePatrimonioOpen = pathname.startsWith('/ferramentas/controle-patrimonio');
 </script>
 
 <header
@@ -51,7 +64,7 @@
       Visão consolidada
     </a>
 
-    <NavbarDropdown label="Carteira" active={carteiraOpen} panelClass="w-56">
+    <NavbarDropdown label="Carteira" active={carteiraOpen} panelClass="w-64">
       <li>
         <a
           href="/portfolios"
@@ -72,6 +85,30 @@
           class:active={pathname === '/proventos' || pathname.startsWith('/proventos/')}
         >
           Proventos
+        </a>
+      </li>
+      <li>
+        <a href="/objetivos" class:active={objetivosOpen} class="gap-2">
+          <LucideIcon name={CARTEIRA_OBJETIVOS_LUCIDE_ICON} size="sm" />
+          Gerenciamento de objetivos
+        </a>
+      </li>
+      <li>
+        <a href="/taxas-cripto" class:active={taxasCriptoOpen} class="gap-2">
+          <LucideIcon name={CARTEIRA_TAXAS_CRIPTO_LUCIDE_ICON} size="sm" />
+          Taxas cripto
+        </a>
+      </li>
+      <li>
+        <a href="/conferencia-ir" class:active={conferenciaIrOpen} class="gap-2">
+          <LucideIcon name={CARTEIRA_CONFERENCIA_IR_LUCIDE_ICON} size="sm" />
+          Conferência anual de IR
+        </a>
+      </li>
+      <li>
+        <a href="/controle-patrimonio" class:active={controlePatrimonioOpen} class="gap-2">
+          <LucideIcon name={CARTEIRA_PATRIMONIO_LUCIDE_ICON} size="sm" />
+          Controle de patrimônio
         </a>
       </li>
     </NavbarDropdown>
@@ -95,40 +132,16 @@
       </li>
     </NavbarDropdown>
 
-    <NavbarDropdown label="Ferramentas" active={ferramentasOpen} panelClass="w-56">
+    <NavbarDropdown label="Ferramentas" active={ferramentasOpen} panelClass="w-64">
       <li>
-        <a href="/ferramentas/objetivos" class:active={objetivosOpen}>
-          Gerenciamento de objetivos
-        </a>
-      </li>
-      <li>
-        <a href="/ferramentas/criptomoedas" class:active={criptomoedasOpen}>
-          Taxas cripto
-        </a>
-      </li>
-      <li>
-        <a href="/ferramentas/financiamento-imovel" class:active={financiamentoOpen}>
-          Financiamento imóvel
-        </a>
-      </li>
-      <li>
-        <a href="/ferramentas/calculo-preco-medio" class:active={calculoPrecoMedioOpen}>
+        <a href="/calculo-preco-medio" class:active={calculoPrecoMedioOpen} class="gap-2">
+          <LucideIcon name={FERRAMENTAS_PRECO_MEDIO_LUCIDE_ICON} size="sm" />
           Cálculo de preço médio
-        </a>
-      </li>
-      <li>
-        <a href="/ferramentas/conferencia-ir" class:active={conferenciaIrOpen}>
-          Conferência anual de IR
-        </a>
-      </li>
-      <li>
-        <a href="/ferramentas/controle-patrimonio" class:active={controlePatrimonioOpen}>
-          Controle de patrimônio
         </a>
       </li>
     </NavbarDropdown>
 
-    <NavbarDropdown label="Financeiro" active={financeiroOpen}>
+    <NavbarDropdown label="Financeiro" active={financeiroOpen} panelClass="w-56">
       <li>
         <a href="/financeiro" class:active={pathname === '/financeiro' || pathname === '/financeiro/'}>
           Painel
@@ -152,6 +165,12 @@
       <li>
         <a href="/financeiro/renda" class:active={pathname.startsWith('/financeiro/renda')}>
           Renda
+        </a>
+      </li>
+      <li>
+        <a href="/financeiro/financiamento-imovel" class:active={financiamentoOpen} class="gap-2">
+          <LucideIcon name={FINANCEIRO_FINANCIAMENTO_LUCIDE_ICON} size="sm" />
+          Financiamento imóvel
         </a>
       </li>
       <li>

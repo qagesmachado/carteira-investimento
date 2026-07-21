@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -9,7 +9,7 @@ import {
 } from '../../helpers/objetivosPage';
 import { seedObjetivosEmpty } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/15-atualizar-aporte-meta-faltante.md */
+/** @see ../../../casos-de-uso/ui/objetivos/15-atualizar-aporte-meta-faltante.md */
 test.describe('UI-OBJ-015', () => {
   test.beforeEach(async ({ request }) => {
     await seedObjetivosEmpty(request);

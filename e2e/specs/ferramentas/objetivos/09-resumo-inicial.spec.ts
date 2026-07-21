@@ -1,10 +1,10 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import { createObjectiveUi, gotoObjetivosPage, selectObjectiveCard } from '../../helpers/objetivosPage';
 import { seedObjetivosWithStock } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/09-resumo-inicial.md */
+/** @see ../../../casos-de-uso/ui/objetivos/09-resumo-inicial.md */
 test.describe('UI-OBJ-009', () => {
   test.beforeEach(async ({ request }) => {
     await seedObjetivosWithStock(request);

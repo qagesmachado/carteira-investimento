@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -10,7 +10,7 @@ import {
 } from '../../helpers/objetivosPage';
 import { seedObjetivosEmpty } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/17-excluir-ano-previdencia.md */
+/** @see ../../../casos-de-uso/ui/objetivos/17-excluir-ano-previdencia.md */
 test.describe('UI-OBJ-017', () => {
   test.beforeEach(async ({ request }) => {
     await seedObjetivosEmpty(request);

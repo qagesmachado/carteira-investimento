@@ -1,13 +1,13 @@
-# Adicionar dinheiro em espécie na reserva
+﻿# Adicionar dinheiro em espécie na reserva
 
 ## Metadados
 
 - **ID:** `UI-PAT-003`
 - **Status:** aprovado
-- **Página:** `/ferramentas/controle-patrimonio`
+- **Página:** `/controle-patrimonio`
 - **Funcionalidade:** cadastrar dinheiro em espécie como reserva de emergência
 - **Depende de:** `UI-PAT-001`
-- **Arquivo de teste:** `e2e/specs/ferramentas/controle-patrimonio/03-adicionar-dinheiro-especie.spec.ts`
+- **Arquivo de teste:** `e2e/specs/controle-patrimonio/03-adicionar-dinheiro-especie.spec.ts`
 - **Referência:** [controle-patrimonio.md](../../../../../docs/produto/desenvolvido/controle-patrimonio.md)
 
 ## Cenário — espécie via localização na reserva

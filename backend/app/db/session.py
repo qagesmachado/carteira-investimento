@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 # Versão do schema esperada pelo código. Incrementar ao adicionar uma migração
 # nova; é comparada com o `PRAGMA user_version` gravado dentro do arquivo do banco.
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 engine = create_engine(
     settings.database_url,
@@ -421,6 +421,143 @@ def _migrate_property_financing_schema(engine_param: Engine) -> None:
     SQLModel.metadata.create_all(engine_param, tables=[PropertyFinancingEntry.__table__])
 
 
+def _migrate_property_financing_portfolio_to_profile(engine_param: Engine) -> None:
+    """Move PropertyFinancing de portfolio_id para profile_id (hierarquia Financeiro)."""
+    with engine_param.begin() as connection:
+        tables = {
+            row[0]
+            for row in connection.exec_driver_sql(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        if "propertyfinancing" not in tables:
+            return
+
+        columns = {
+            row[1]
+            for row in connection.exec_driver_sql(
+                "PRAGMA table_info(propertyfinancing)"
+            ).fetchall()
+        }
+        if "profile_id" in columns and "portfolio_id" not in columns:
+            return
+        if "portfolio_id" not in columns:
+            return
+
+        # Garante ≥1 perfil orçamentário.
+        if "budgetprofile" not in tables:
+            connection.exec_driver_sql(
+                """
+                CREATE TABLE IF NOT EXISTS budgetprofile (
+                    id INTEGER PRIMARY KEY,
+                    name VARCHAR NOT NULL UNIQUE,
+                    description VARCHAR,
+                    created_at DATETIME
+                )
+                """
+            )
+        profile_rows = connection.exec_driver_sql(
+            "SELECT id FROM budgetprofile ORDER BY id"
+        ).fetchall()
+        if not profile_rows:
+            connection.exec_driver_sql(
+                """
+                INSERT INTO budgetprofile (name, description, created_at)
+                VALUES ('Pessoal', NULL, datetime('now'))
+                """
+            )
+            profile_rows = connection.exec_driver_sql(
+                "SELECT id FROM budgetprofile ORDER BY id"
+            ).fetchall()
+
+        default_profile_id = int(profile_rows[0][0])
+        if "apppreference" in tables:
+            active_row = connection.exec_driver_sql(
+                """
+                SELECT value FROM apppreference
+                WHERE key = 'active_budget_profile_id'
+                """
+            ).fetchone()
+            if active_row and active_row[0] and str(active_row[0]).strip():
+                try:
+                    candidate = int(str(active_row[0]).strip())
+                    if any(int(r[0]) == candidate for r in profile_rows):
+                        default_profile_id = candidate
+                except ValueError:
+                    pass
+
+        connection.exec_driver_sql(
+            """
+            CREATE TABLE propertyfinancing_new (
+                id INTEGER PRIMARY KEY,
+                profile_id INTEGER NOT NULL,
+                name VARCHAR NOT NULL,
+                property_type VARCHAR NOT NULL,
+                description VARCHAR,
+                created_at DATETIME,
+                updated_at DATETIME,
+                UNIQUE (profile_id, name),
+                FOREIGN KEY(profile_id) REFERENCES budgetprofile (id)
+            )
+            """
+        )
+
+        old_rows = connection.exec_driver_sql(
+            """
+            SELECT id, portfolio_id, name, property_type, description, created_at, updated_at
+            FROM propertyfinancing
+            ORDER BY id
+            """
+        ).fetchall()
+
+        used_names: set[str] = set()
+        for row in old_rows:
+            financing_id = int(row[0])
+            portfolio_id = int(row[1])
+            name = str(row[2])
+            property_type = str(row[3])
+            description = row[4]
+            created_at = row[5]
+            updated_at = row[6]
+            final_name = name
+            if final_name in used_names:
+                final_name = f"{name} (carteira {portfolio_id})"
+                suffix = 2
+                while final_name in used_names:
+                    final_name = f"{name} (carteira {portfolio_id} #{suffix})"
+                    suffix += 1
+            used_names.add(final_name)
+            connection.exec_driver_sql(
+                """
+                INSERT INTO propertyfinancing_new (
+                    id, profile_id, name, property_type, description, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    financing_id,
+                    default_profile_id,
+                    final_name,
+                    property_type,
+                    description,
+                    created_at,
+                    updated_at,
+                ),
+            )
+
+        connection.exec_driver_sql("DROP TABLE propertyfinancing")
+        connection.exec_driver_sql(
+            "ALTER TABLE propertyfinancing_new RENAME TO propertyfinancing"
+        )
+        connection.exec_driver_sql(
+            "CREATE INDEX IF NOT EXISTS ix_propertyfinancing_profile_id "
+            "ON propertyfinancing (profile_id)"
+        )
+        connection.exec_driver_sql(
+            "CREATE INDEX IF NOT EXISTS ix_propertyfinancing_name "
+            "ON propertyfinancing (name)"
+        )
+
+
 def _database_file_path(engine_param: Engine) -> Path | None:
     """Caminho do arquivo SQLite, ou None para bancos em memória/outros."""
     database = engine_param.url.database
@@ -532,6 +669,7 @@ def init_db() -> None:
     _ensure_dividend_payment_portfolio_column(engine)
     _ensure_dividend_payment_amount_columns(engine)
     _migrate_property_financing_schema(engine)
+    _migrate_property_financing_portfolio_to_profile(engine)
     _migrate_pension_contribution_years(engine)
     _migrate_manual_patrimony_cash_to_emergency_reserve(engine)
     _ensure_budget_columns(engine)

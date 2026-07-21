@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import {
   clickExportIrExcel,
@@ -11,7 +11,7 @@ import { seedConferenciaIrBase } from '../../helpers/seedConferenciaIr';
 
 /**
  * UI-IR-004 — Export Excel com três abas
- * @see ../../../../casos-de-uso/ui/ferramentas/conferencia-ir/04-export-excel-tres-abas.md
+ * @see ../../../../casos-de-uso/ui/conferencia-ir/04-export-excel-tres-abas.md
  */
 test.describe('UI-IR-004', () => {
   test.beforeEach(async ({ request }) => {

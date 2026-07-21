@@ -1,13 +1,13 @@
-# Alocar ativo de renda fixa por valor
+﻿# Alocar ativo de renda fixa por valor
 
 ## Metadados
 
 - **ID:** `UI-OBJ-004`
 - **Status:** aprovado
-- **Página:** `/ferramentas/objetivos`
+- **Página:** `/objetivos`
 - **Funcionalidade:** divisão por valor (RF)
 - **Depende de:** seed com CDB e dois objetivos
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/04-alocar-ativo-valor-rf.spec.ts`
+- **Arquivo de teste:** `e2e/specs/objetivos/04-alocar-ativo-valor-rf.spec.ts`
 - **Referência:** [objetivos-financeiros.md](../../../../../docs/produto/desenvolvido/objetivos-financeiros.md)
 
 ## Cenário — alocar CDB por valor

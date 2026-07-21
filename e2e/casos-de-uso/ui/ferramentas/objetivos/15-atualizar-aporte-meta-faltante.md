@@ -1,13 +1,13 @@
-# Atualizar aporte e ver meta/faltante
+﻿# Atualizar aporte e ver meta/faltante
 
 ## Metadados
 
 - **ID:** `UI-OBJ-015`
 - **Status:** aprovado
-- **Página:** `/ferramentas/objetivos`
+- **Página:** `/objetivos`
 - **Funcionalidade:** atualizar total aportado e visualizar métricas previdenciárias
 - **Depende de:** `UI-OBJ-014`
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/15-atualizar-aporte-meta-faltante.spec.ts`
+- **Arquivo de teste:** `e2e/specs/objetivos/15-atualizar-aporte-meta-faltante.spec.ts`
 - **Referência:** [controle-aporte-previdencia.md](../../../../../docs/produto/desenvolvido/controle-aporte-previdencia.md)
 
 ## Cenário — atualizar aportes e métricas
@@ -22,7 +22,7 @@
 
 ### Passo a passo
 
-1. Abro `/ferramentas/objetivos` e seleciono o objetivo «Previdência IR».
+1. Abro `/objetivos` e seleciono o objetivo «Previdência IR».
 2. Vejo meta anual R$ 14.400, faltante R$ 14.400 e aporte mensal necessário calculado.
 3. Informo total aportado no ano: R$ 6.000.
 4. Salvo.

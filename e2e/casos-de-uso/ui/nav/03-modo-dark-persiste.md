@@ -1,10 +1,10 @@
-# Modo dark persiste entre páginas
+﻿# Modo dark persiste entre páginas
 
 ## Metadados
 
 - **ID:** `UI-NAV-003`
 - **Status:** aprovado
-- **Página:** navbar global (`/dashboard`, `/ferramentas/objetivos`, …)
+- **Página:** navbar global (`/dashboard`, `/objetivos`, …)
 - **Funcionalidade:** toggle de tema claro/escuro (light / dark)
 - **Depende de:** nenhum seed obrigatório (comportamento visual global)
 - **Arquivo de teste:** `e2e/specs/nav/03-modo-dark-persiste.spec.ts`
@@ -27,7 +27,7 @@
 1. Abro `/dashboard` — tema padrão é `light` (`data-theme="light"` no `<html>`).
 2. Clico no botão de lua no canto superior direito da navbar (à esquerda do olho).
 3. O documento passa a `data-theme="dark"`.
-4. Navego para `/ferramentas/objetivos` — tema permanece `dark`.
+4. Navego para `/objetivos` — tema permanece `dark`.
 5. Recarrego a página — preferência permanece (localStorage).
 6. Clico no botão de sol — tema volta a `light`.
 

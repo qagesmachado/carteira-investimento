@@ -24,12 +24,14 @@
     setActivePortfolioId,
     type Portfolio
   } from '$lib/api/portfolios';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
-  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
-  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
+  import PortfolioWorkspaceBarPanel from '$lib/features/portfolios/PortfolioWorkspaceBarPanel.svelte';
   import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
+  import { PAGE_BACKGROUND_CLASS } from '$lib/layout/pageVisual';
   import AssetAllocationModal from '$lib/features/objetivos/AssetAllocationModal.svelte';
   import AssetPartitionDetail from '$lib/features/objetivos/AssetPartitionDetail.svelte';
   import DivergenceBanner from '$lib/features/objetivos/DivergenceBanner.svelte';
@@ -68,6 +70,7 @@
   $: objectives = snapshot?.objectives ?? [];
   $: divergences = snapshot?.divergences ?? [];
   $: assetPartitions = snapshot?.asset_partitions ?? [];
+  $: activePortfolioName = portfolios.find((portfolio) => portfolio.id === activeId)?.name ?? '';
   $: showSummary = selectedObjectiveId === OBJECTIVES_SUMMARY_TAB_ID;
   $: selectedPartition =
     selectedPartitionAssetId != null
@@ -404,21 +407,24 @@
   <title>Objetivos — Carteira</title>
 </svelte:head>
 
-<div class="flex w-full flex-col gap-3">
-  <PageHeader
+<main class={PAGE_BACKGROUND_CLASS}>
+  <AppPageShell paddingY="py-4" class="flex flex-col gap-3">
+  <PageHero
     title="Objetivos financeiros"
     subtitle="Divida posições da carteira ativa entre finalidades diferentes."
-  >
-    <div slot="actions">
-      <PortfolioSelect
-        testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
-        {portfolios}
-        activeId={activeId}
-        disabled={loading || saving}
-        on:select={(e) => void handlePortfolioSelect(e.detail)}
-      />
-    </div>
-  </PageHeader>
+    variant="dashboard"
+  />
+
+  <PortfolioWorkspaceBarPanel
+    {portfolios}
+    activeId={activeId}
+    {activePortfolioName}
+    showQuoteStatus={false}
+    portfolioSelectTestId={PORTFOLIO_SELECT_HEADER_TEST_ID}
+    testId="objetivos-portfolio-bar"
+    disabled={loading || saving}
+    on:select={(e) => void handlePortfolioSelect(e.detail)}
+  />
 
   <DismissibleAlert message={error} />
 
@@ -523,4 +529,5 @@
     on:close={closeAllocationModal}
     on:save={(e) => void handleAllocationSave(e)}
   />
-</div>
+  </AppPageShell>
+</main>

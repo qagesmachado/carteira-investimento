@@ -1,10 +1,10 @@
-# Várias fatias monoativo do mesmo ativo
+﻿# Várias fatias monoativo do mesmo ativo
 
 ## Metadados
 
 - **ID:** `UI-OBJ-013`
 - **Status:** aprovado
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/13-multiplas-fatias-monoativo.spec.ts`
+- **Arquivo de teste:** `e2e/specs/objetivos/13-multiplas-fatias-monoativo.spec.ts`
 
 ## Cenário
 

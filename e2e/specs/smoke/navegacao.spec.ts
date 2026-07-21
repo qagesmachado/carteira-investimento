@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures/test';
+﻿import { expect, test } from '../fixtures/test';
 
 /**
  * Smoke de navegação (somente leitura).
@@ -34,12 +34,12 @@ const ROUTES: SmokeRoute[] = [
   { route: '/analise/fiis/segmentos', heading: 'Análise de ativos' },
   { route: '/analise/internacional', heading: 'Análise de ativos' },
   { route: '/analise/criptomoedas', heading: 'Análise de ativos' },
-  { route: '/ferramentas/objetivos', heading: 'Objetivos financeiros' },
-  { route: '/ferramentas/criptomoedas', heading: 'Criptomoedas' },
-  { route: '/ferramentas/financiamento-imovel', heading: 'Financiamento imóvel' },
-  { route: '/ferramentas/calculo-preco-medio', heading: 'Cálculo de preço médio' },
-  { route: '/ferramentas/conferencia-ir', heading: 'Conferência anual de IR' },
-  { route: '/ferramentas/controle-patrimonio', heading: 'Controle de patrimônio' },
+  { route: '/objetivos', heading: 'Objetivos financeiros' },
+  { route: '/taxas-cripto', heading: 'Criptomoedas' },
+  { route: '/financeiro/financiamento-imovel', heading: 'Financeiro' },
+  { route: '/calculo-preco-medio', heading: 'Cálculo de preço médio' },
+  { route: '/conferencia-ir', heading: 'Conferência anual de IR' },
+  { route: '/controle-patrimonio', heading: 'Controle de patrimônio' },
   { route: '/financeiro', heading: 'Financeiro' },
   { route: '/financeiro/controle', heading: 'Financeiro' },
   { route: '/financeiro/metas', heading: 'Financeiro' },
@@ -64,8 +64,26 @@ test.describe('SMOKE-NAV', () => {
     await expect(page.getByRole('heading', { name: 'Visão consolidada', exact: true })).toBeVisible();
   });
 
-  test('deep-link sobrevive a reload (fallback SPA)', { tag: '@smoke' }, async ({ page }) => {
+  test('URL legada /ferramentas/objetivos redireciona para /objetivos', { tag: '@smoke' }, async ({
+    page
+  }) => {
     await page.goto('/ferramentas/objetivos');
+    await expect(page).toHaveURL(/\/objetivos$/);
+    await expect(
+      page.getByRole('heading', { name: 'Objetivos financeiros', exact: true })
+    ).toBeVisible();
+  });
+
+  test('URL legada /ferramentas/financiamento-imovel redireciona para Financeiro', {
+    tag: '@smoke'
+  }, async ({ page }) => {
+    await page.goto('/ferramentas/financiamento-imovel');
+    await expect(page).toHaveURL(/\/financeiro\/financiamento-imovel$/);
+    await expect(page.getByRole('heading', { name: 'Financeiro', exact: true })).toBeVisible();
+  });
+
+  test('deep-link sobrevive a reload (fallback SPA)', { tag: '@smoke' }, async ({ page }) => {
+    await page.goto('/objetivos');
     await expect(
       page.getByRole('heading', { name: 'Objetivos financeiros', exact: true })
     ).toBeVisible();

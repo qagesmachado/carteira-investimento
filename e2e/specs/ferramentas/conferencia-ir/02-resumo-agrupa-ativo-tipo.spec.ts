@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import {
   clickIrTab,
@@ -9,7 +9,7 @@ import { seedConferenciaIrBase } from '../../helpers/seedConferenciaIr';
 
 /**
  * UI-IR-002 — Resumo agrupa por ativo e tipo
- * @see ../../../../casos-de-uso/ui/ferramentas/conferencia-ir/02-resumo-agrupa-ativo-tipo.md
+ * @see ../../../../casos-de-uso/ui/conferencia-ir/02-resumo-agrupa-ativo-tipo.md
  */
 test.describe('UI-IR-002', () => {
   test.beforeEach(async ({ request }) => {

@@ -1,13 +1,13 @@
-# Adicionar reserva de emergência
+﻿# Adicionar reserva de emergência
 
 ## Metadados
 
 - **ID:** `UI-PAT-002`
 - **Status:** aprovado
-- **Página:** `/ferramentas/controle-patrimonio`
+- **Página:** `/controle-patrimonio`
 - **Funcionalidade:** cadastrar reserva com localização
 - **Depende de:** `UI-PAT-001`
-- **Arquivo de teste:** `e2e/specs/ferramentas/controle-patrimonio/02-adicionar-reserva-emergencia.spec.ts`
+- **Arquivo de teste:** `e2e/specs/controle-patrimonio/02-adicionar-reserva-emergencia.spec.ts`
 - **Referência:** [controle-patrimonio.md](../../../../../docs/produto/desenvolvido/controle-patrimonio.md)
 
 ## Cenário — reserva com onde está

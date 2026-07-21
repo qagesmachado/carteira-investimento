@@ -2,20 +2,30 @@
 
 ## Objetivo
 
-Permitir controlar, **por carteira**, receitas e despesas de financiamentos imobiliários — parcelas, aluguel, taxas e entradas — com visão de lucro e capital investido.
+Permitir controlar, **por perfil orçamentário** (`BudgetProfile`), receitas e despesas de financiamentos imobiliários — parcelas, aluguel, taxas e entradas — com visão de lucro e capital investido.
 
-A carteira funciona como proxy do titular (campo `holder`); não há camada de login/perfil nesta entrega.
+Faz parte do hub **Financeiro** (mesmo contexto de perfil que orçamento/despesas), não da hierarquia de carteiras de investimento.
 
 ## Escopo MVP
 
-- Seção **Ferramentas** na navbar → **Financiamento imóvel** em `/ferramentas/financiamento-imovel`.
-- Financiamentos vinculados a `portfolio_id` (como Objetivos).
+- Menu **Financeiro** → aba **Financiamento** em `/financeiro/financiamento-imovel` (redirect legado: `/ferramentas/financiamento-imovel`).
+- Financiamentos vinculados a `profile_id` (`budgetprofile`).
 - **Aba Resumo**: total recebido, capital investido, lucro consolidado, tabela por imóvel, gráfico receitas vs despesas.
 - **Detalhe por imóvel**: KPIs, gráfico, formulário de lançamento (estilo taxas BTC) e lista de eventos.
 - Tipos de imóvel: casa, lote, apartamento, galpão, sala comercial.
 - Lançamentos por **data** com tipo do evento (Receita/Despesa), categoria (Aluguel, Financiamento, Outras taxas, Entrada do financiamento), descrição e valor.
 - **Padrões de lançamento** por imóvel: pré-preenchimento de tipo, evento, valor e descrição (sem data); CRUD independente dos lançamentos.
-- API: `/portfolios/{portfolio_id}/property-financings`.
+- API: `/budget/profiles/{profile_id}/property-financings`.
+
+### Migração de dados (SCHEMA_VERSION 7)
+
+Em bancos antigos com `propertyfinancing.portfolio_id`, o `init_db()`:
+
+1. Cria backup `carteira.db.bak-v…` se a versão for inferior a 7.
+2. Garante ≥1 `budgetprofile` (cria «Pessoal» se vazio).
+3. Remapeia todos os imóveis para o perfil ativo (ou o de menor `id`).
+4. Em colisão de nome entre carteiras, renomeia com sufixo `(carteira {id})`.
+5. Preserva IDs dos imóveis e lançamentos/templates associados.
 
 ## Padrões de lançamento
 
@@ -59,13 +69,13 @@ API:
 
 | Entidade | Campos principais |
 | -------- | ----------------- |
-| `PropertyFinancing` | `portfolio_id`, `name`, `property_type`, `description` |
+| `PropertyFinancing` | `profile_id`, `name`, `property_type`, `description` |
 | `PropertyFinancingEntry` | `financing_id`, `event_date`, `entry_type` (`income` \| `expense`), `event_category`, `description`, `amount_brl` |
 | `PropertyFinancingEntryTemplate` | `financing_id`, `name`, `entry_type`, `event_category`, `description`, `amount_brl`, `sort_order` |
 
 Regras:
 
-- `UNIQUE(portfolio_id, name)` — nomes únicos por carteira.
+- `UNIQUE(profile_id, name)` — nomes únicos por perfil orçamentário.
 - `event_category` deve ser compatível com `entry_type` (ex.: `aluguel` só com receita).
 
 ## Métricas
@@ -83,7 +93,7 @@ Consolidado da carteira: soma de todos os lançamentos de todos os imóveis.
 
 | Rota | Descrição |
 | ---- | --------- |
-| `/ferramentas/financiamento-imovel` | Resumo + detalhe por imóvel |
+| `/financeiro/financiamento-imovel` | Resumo + detalhe por imóvel |
 
 Componentes: `FinancingPanel`, `FinancingSummary`, `FinancingDetail`, `FinancingEventForm`, modais de edição.
 

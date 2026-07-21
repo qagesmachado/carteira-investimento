@@ -11,13 +11,15 @@
     type Portfolio,
     type Position
   } from '$lib/api/portfolios';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
-  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
-  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
-  import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
-  import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
   import AveragePriceCalculator from '$lib/features/ferramentas/calculo-preco-medio/AveragePriceCalculator.svelte';
+  import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
+  import PortfolioWorkspaceBarPanel from '$lib/features/portfolios/PortfolioWorkspaceBarPanel.svelte';
+  import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
+  import { PAGE_BACKGROUND_CLASS } from '$lib/layout/pageVisual';
 
   let assets: Asset[] = [];
   let portfolios: Portfolio[] = [];
@@ -25,6 +27,8 @@
   let activeId: number | null = null;
   let loading = true;
   let error = '';
+
+  $: activePortfolioName = portfolios.find((portfolio) => portfolio.id === activeId)?.name ?? '';
 
   async function loadPositions(portfolioId: number) {
     positions = await listPositions(portfolioId);
@@ -78,37 +82,41 @@
   <title>Cálculo de preço médio · Ferramentas</title>
 </svelte:head>
 
-<div class="flex flex-col gap-3">
-  <PageHeader
-    title="Cálculo de preço médio"
-    subtitle="Combine dois lotes do mesmo ativo e obtenha quantidade total, preço médio ponderado e valor investido."
-  >
-    <div slot="actions">
-      <PortfolioSelect
-        testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
-        {portfolios}
-        activeId={activeId}
-        disabled={loading}
-        on:select={(e) => void handlePortfolioChange(e.detail)}
-      />
-    </div>
-  </PageHeader>
+<main class={PAGE_BACKGROUND_CLASS}>
+  <AppPageShell paddingY="py-4" class="flex flex-col gap-3">
+    <PageHero
+      title="Cálculo de preço médio"
+      subtitle="Combine dois lotes do mesmo ativo e obtenha quantidade total, preço médio ponderado e valor investido."
+      variant="dashboard"
+    />
 
-  {#if error}
-    <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
-  {/if}
+    <PortfolioWorkspaceBarPanel
+      {portfolios}
+      activeId={activeId}
+      {activePortfolioName}
+      showQuoteStatus={false}
+      portfolioSelectTestId={PORTFOLIO_SELECT_HEADER_TEST_ID}
+      testId="preco-medio-portfolio-bar"
+      disabled={loading}
+      on:select={(e) => void handlePortfolioChange(e.detail)}
+    />
 
-  {#if loading}
-    <p class="text-sm opacity-70">Carregando…</p>
-  {:else}
-    <PageSection>
-      <AveragePriceCalculator
-        {assets}
-        {portfolios}
-        activePortfolioId={activeId}
-        {positions}
-        onPortfolioChange={handlePortfolioChange}
-      />
-    </PageSection>
-  {/if}
-</div>
+    {#if error}
+      <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
+    {/if}
+
+    {#if loading}
+      <p class="text-sm opacity-70">Carregando…</p>
+    {:else}
+      <PageSection>
+        <AveragePriceCalculator
+          {assets}
+          {portfolios}
+          activePortfolioId={activeId}
+          {positions}
+          onPortfolioChange={handlePortfolioChange}
+        />
+      </PageSection>
+    {/if}
+  </AppPageShell>
+</main>

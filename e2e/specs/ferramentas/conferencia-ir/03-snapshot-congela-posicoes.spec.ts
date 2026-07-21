@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import {
   clickIrTab,
@@ -13,7 +13,7 @@ import { TICKER_BBSE3 } from '../../helpers/e2eFixtures';
 
 /**
  * UI-IR-003 — Snapshot congela posições em 31/12
- * @see ../../../../casos-de-uso/ui/ferramentas/conferencia-ir/03-snapshot-congela-posicoes.md
+ * @see ../../../../casos-de-uso/ui/conferencia-ir/03-snapshot-congela-posicoes.md
  */
 test.describe('UI-IR-003', () => {
   test.beforeEach(async ({ request }) => {

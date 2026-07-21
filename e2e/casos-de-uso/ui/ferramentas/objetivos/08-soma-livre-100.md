@@ -1,13 +1,13 @@
-# Soma Livre sempre 100%
+﻿# Soma Livre sempre 100%
 
 ## Metadados
 
 - **ID:** `UI-OBJ-008`
 - **Status:** aprovado
-- **Página:** `/ferramentas/objetivos`
+- **Página:** `/objetivos`
 - **Funcionalidade:** invariante alocado + Livre = total
 - **Depende de:** `UI-OBJ-003`
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/08-soma-livre-100.spec.ts`
+- **Arquivo de teste:** `e2e/specs/objetivos/08-soma-livre-100.spec.ts`
 - **Referência:** [objetivos-financeiros.md](../../../../../docs/produto/desenvolvido/objetivos-financeiros.md)
 
 ## Cenário — soma 100%

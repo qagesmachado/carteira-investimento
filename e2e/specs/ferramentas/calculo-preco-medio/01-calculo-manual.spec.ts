@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import {
   expectAveragePriceResult,
@@ -9,7 +9,7 @@ import {
 
 /**
  * UI-FERR-008 — Cálculo manual de preço médio
- * @see ../../../casos-de-uso/ui/ferramentas/calculo-preco-medio/01-calculo-manual.md
+ * @see ../../../casos-de-uso/ui/calculo-preco-medio/01-calculo-manual.md
  */
 test.describe('UI-FERR-008', () => {
   test('calcula preço médio ponderado no modo manual', async ({ page }) => {

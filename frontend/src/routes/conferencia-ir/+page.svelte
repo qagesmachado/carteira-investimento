@@ -14,13 +14,19 @@
   import { getActivePortfolioId, listPortfolios, setActivePortfolioId, type Portfolio } from '$lib/api/portfolios';
   import { formatAssetTypeForDisplay } from '$lib/assetLabels';
   import { formatMoneyAmount } from '$lib/assetLabels';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
-  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
   import { NO_PORTFOLIO_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
   import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
+  import PortfolioWorkspaceBarPanel from '$lib/features/portfolios/PortfolioWorkspaceBarPanel.svelte';
   import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
+  import {
+    PAGE_BACKGROUND_CLASS,
+    PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS
+  } from '$lib/layout/pageVisual';
   import { buildAnnualIrYearOptions } from '$lib/features/ir/annualIrYears';
   import {
     annualIrPositionInvestedAmount,
@@ -45,7 +51,6 @@
     paginateList,
     type PageSizeOption
   } from '$lib/features/proventos/paginateList';
-  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
   import { formatQuantityForDisplay } from '$lib/features/portfolios/positionMetrics';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
   import {
@@ -98,6 +103,7 @@
 
   $: selectedPortfolio =
     portfolios.find((portfolio) => portfolio.id === activePortfolioId) ?? null;
+  $: activePortfolioName = selectedPortfolio?.name ?? '';
   $: hasSnapshotForYear = snapshots.some((snapshot) => snapshot.year === selectedYear);
 
   $: filteredPayments =
@@ -312,20 +318,56 @@
   <title>Conferência anual de IR</title>
 </svelte:head>
 
-<div class="flex flex-col gap-3">
-  <PageHeader
+<main class={PAGE_BACKGROUND_CLASS}>
+  <AppPageShell paddingY="py-4" class="flex flex-col gap-3">
+  <PageHero
     title="Conferência anual de IR"
     subtitle="Proventos discriminados por ativo e tipo, resumo anual e posições congeladas em 31/12."
+    variant="dashboard"
   >
-    <div slot="actions">
-      <PortfolioSelect
-        testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
-        {portfolios}
-        activeId={activePortfolioId}
-        on:select={handlePortfolioSelect}
-      />
+    <div slot="actions" class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        class={PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS}
+        data-testid="ir-freeze-snapshot-btn"
+        disabled={activePortfolioId == null || snapshotLoading}
+        on:click={() => handleFreezeSnapshot(false)}
+      >
+        {#if snapshotLoading}
+          <span class="loading loading-spinner loading-xs"></span>
+        {/if}
+        Congelar posições em 31/12/{selectedYear}
+      </button>
+      <button
+        type="button"
+        class={PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS}
+        data-testid="ir-export-csv-btn"
+        disabled={!report}
+        on:click={handleExportCsv}
+      >
+        Exportar CSV
+      </button>
+      <button
+        type="button"
+        class={PAGE_HERO_DASHBOARD_ACTION_BTN_CLASS}
+        data-testid="ir-export-excel-btn"
+        disabled={!report}
+        on:click={handleExportExcel}
+      >
+        Exportar Excel
+      </button>
     </div>
-  </PageHeader>
+  </PageHero>
+
+  <PortfolioWorkspaceBarPanel
+    {portfolios}
+    activeId={activePortfolioId}
+    {activePortfolioName}
+    showQuoteStatus={false}
+    portfolioSelectTestId={PORTFOLIO_SELECT_HEADER_TEST_ID}
+    testId="conferencia-ir-portfolio-bar"
+    on:select={handlePortfolioSelect}
+  />
 
   {#if error}
     <DismissibleAlert variant="error" on:dismiss={() => (error = '')}>{error}</DismissibleAlert>
@@ -349,43 +391,10 @@
             {/each}
           </select>
         </label>
-
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          data-testid="ir-freeze-snapshot-btn"
-          disabled={activePortfolioId == null || snapshotLoading}
-          on:click={() => handleFreezeSnapshot(false)}
-        >
-          {#if snapshotLoading}
-            <span class="loading loading-spinner loading-xs"></span>
-          {/if}
-          Congelar posições em 31/12/{selectedYear}
-        </button>
-
-        <button
-          type="button"
-          class="btn btn-outline btn-sm"
-          data-testid="ir-export-csv-btn"
-          disabled={!report}
-          on:click={handleExportCsv}
-        >
-          Exportar CSV
-        </button>
-
-        <button
-          type="button"
-          class="btn btn-outline btn-sm"
-          data-testid="ir-export-excel-btn"
-          disabled={!report}
-          on:click={handleExportExcel}
-        >
-          Exportar Excel
-        </button>
       </div>
 
       {#if report && !report.has_position_snapshot}
-        <div class="alert alert-warning text-sm" data-testid="ir-no-snapshot-warning">
+        <div class="alert alert-warning mt-3 text-sm" data-testid="ir-no-snapshot-warning">
           <span>
             Não há snapshot de posições para {selectedYear}. Congele em 31/12 antes de alterar a
             carteira para conferir quantidade e preço médio no IR.
@@ -746,4 +755,5 @@
     {/if}
   {/if}
   </PageSection>
-</div>
+  </AppPageShell>
+</main>

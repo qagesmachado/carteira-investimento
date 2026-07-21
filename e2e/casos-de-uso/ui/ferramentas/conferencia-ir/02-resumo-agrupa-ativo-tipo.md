@@ -1,13 +1,13 @@
-# Resumo agrupa por ativo e tipo
+﻿# Resumo agrupa por ativo e tipo
 
 ## Metadados
 
 - **ID:** `UI-IR-002`
 - **Status:** aprovado
-- **Página:** `/ferramentas/conferencia-ir`
+- **Página:** `/conferencia-ir`
 - **Funcionalidade:** aba Resumo com totais por tipo de provento por ativo
 - **Depende de:** `UI-IR-001` (mesmo seed)
-- **Arquivo de teste:** `e2e/specs/ferramentas/conferencia-ir/02-resumo-agrupa-ativo-tipo.spec.ts`
+- **Arquivo de teste:** `e2e/specs/conferencia-ir/02-resumo-agrupa-ativo-tipo.spec.ts`
 - **Referência:** [conferencia-ir-anual.md](../../../../../docs/produto/desenvolvido/conferencia-ir-anual.md)
 
 ## Cenário — pivot ativo × tipo

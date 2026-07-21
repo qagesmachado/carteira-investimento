@@ -1,4 +1,4 @@
-import { expect, type Download, type Page } from '@playwright/test';
+﻿import { expect, type Download, type Page } from '@playwright/test';
 import path from 'node:path';
 
 import { isApiPortfoliosListResponse } from './apiResponses';
@@ -7,7 +7,7 @@ export async function gotoConferenciaIrPage(page: Page): Promise<void> {
   const portfoliosResponse = page.waitForResponse(
     (r) => isApiPortfoliosListResponse(r, 'GET') && r.ok()
   );
-  await page.goto('/ferramentas/conferencia-ir');
+  await page.goto('/conferencia-ir');
   await portfoliosResponse;
   await expect(
     page.getByRole('heading', { name: 'Conferência anual de IR', level: 1 })

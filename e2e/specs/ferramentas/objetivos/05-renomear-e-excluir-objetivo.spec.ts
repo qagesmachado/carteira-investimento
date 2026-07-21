@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -9,7 +9,7 @@ import {
 } from '../../helpers/seedObjetivos';
 import { gotoObjetivosPage, selectObjectiveCard } from '../../helpers/objetivosPage';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/05-renomear-e-excluir-objetivo.md */
+/** @see ../../../casos-de-uso/ui/objetivos/05-renomear-e-excluir-objetivo.md */
 test.describe('UI-OBJ-005', () => {
   test('excluir objetivo devolve cotas ao Livre', async ({ page, request }) => {
     const { portfolioId, assetId } = await seedObjetivosWithStock(request);

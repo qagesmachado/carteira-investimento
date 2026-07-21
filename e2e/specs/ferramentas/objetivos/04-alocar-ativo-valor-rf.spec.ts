@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -9,7 +9,7 @@ import {
 } from '../../helpers/seedObjetivos';
 import { gotoObjetivosPage } from '../../helpers/objetivosPage';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/04-alocar-ativo-valor-rf.md */
+/** @see ../../../casos-de-uso/ui/objetivos/04-alocar-ativo-valor-rf.md */
 test.describe('UI-OBJ-004', () => {
   test('divide CDB R$ 100k entre dois objetivos', async ({ page, request }) => {
     const { portfolioId, assetId } = await seedObjetivosWithRf(request);

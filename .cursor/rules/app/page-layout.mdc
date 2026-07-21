@@ -101,8 +101,8 @@ Constantes em `$lib/layout/pageVisual.ts`: `PAGE_BACKGROUND_CLASS`, `PAGE_SECTIO
 
 | Padrão | Quando | Topo | Componentes |
 | --- | --- | --- | --- |
-| **Hub** | Destinos principais do menu (dashboard, assets, dados, portfolios, consolidada, proventos) | `PageHero` (`text-4xl`, gradiente) | `PageHero` + `PageSection` |
-| **Ferramenta área** | Análise, Financeiro, Ferramentas | `h1 text-2xl` + tabs no `+layout.svelte` | `PageSection` nas filhas |
+| **Hub** | Destinos principais (dashboard, assets, dados, portfolios, consolidada, proventos, objetivos, taxas-cripto, IR, patrimônio, preço médio) | `PageHero` (`text-4xl`, `variant="dashboard"`) | `PageHero` + painel carteira/perfil + `PageSection` |
+| **Hub com SectionTabs** | Análise, Financeiro (inclui Financiamento imóvel) | `PageHero` + pills no `+layout.svelte` | `PageSection` nas filhas |
 | **Ferramenta standalone** | Rebalanceamento, info, configuracao rebalance | `PageHeader` (`text-2xl`) | `PageSection` |
 | **Exceção** | Landing `/` | Hero DaisyUI full-viewport | Sem shell/padrão |
 

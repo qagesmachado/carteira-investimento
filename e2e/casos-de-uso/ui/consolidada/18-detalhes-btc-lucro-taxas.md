@@ -1,4 +1,4 @@
-# UI-CNS-018 — Detalhes BTC com lucro após taxas
+﻿# UI-CNS-018 — Detalhes BTC com lucro após taxas
 
 - **ID:** `UI-CNS-018`
 - **Status:** aprovado
@@ -9,7 +9,7 @@
 
 ## História
 
-**Como** investidor com posição em BTC e taxas registradas em `/ferramentas/bitcoin`  
+**Como** investidor com posição em BTC e taxas registradas em `/taxas-cripto`  
 **Quero** ver no detalhe da consolidada o lucro já descontando as taxas pagas  
 **Para** comparar com o lucro bruto da posição na mesma tela.
 

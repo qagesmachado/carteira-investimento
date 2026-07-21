@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import { getWorkerApiBaseUrl } from '../../helpers/workerContext';
 import { clearAllTestAssets, createAssetViaApi } from '../../helpers/seedAssets';
@@ -18,7 +18,7 @@ import {
 import { E2E_PORTFOLIO_PRINCIPAL } from '../../helpers/e2eFixtures';
 import { gotoObjetivosPage, selectObjectiveCard } from '../../helpers/objetivosPage';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/18-finalidade-rebalanceamento-reserva.md */
+/** @see ../../../casos-de-uso/ui/objetivos/18-finalidade-rebalanceamento-reserva.md */
 test.describe('UI-OBJ-018', () => {
   test('fatia de reserva sai do rebalanceamento e aparece no controle de patrimônio', async ({
     page,
@@ -77,7 +77,7 @@ test.describe('UI-OBJ-018', () => {
     await expect(page.getByRole('heading', { name: 'Rebalanceamento', exact: true })).toBeVisible();
     await expect(page.getByText('R$ 6.000,00').first()).toBeVisible();
 
-    await page.goto('/ferramentas/controle-patrimonio');
+    await page.goto('/controle-patrimonio');
     await expect(
       page.getByRole('heading', { name: 'Controle de patrimônio', exact: true })
     ).toBeVisible();

@@ -1,4 +1,4 @@
-# Ordem e hierarquia dos menus
+﻿# Ordem e hierarquia dos menus
 
 ## Metadados
 
@@ -41,8 +41,8 @@
 
 1. Abro o menu **Ferramentas**.
 2. Contém **Gerenciamento de objetivos**, **Taxas bitcoin**, **Financiamento imóvel** e **Cálculo de preço médio**.
-3. «Gerenciamento de objetivos» abre `/ferramentas/objetivos`.
-4. «Taxas bitcoin» abre `/ferramentas/bitcoin`.
+3. «Gerenciamento de objetivos» abre `/objetivos`.
+4. «Taxas bitcoin» abre `/taxas-cripto`.
 
 ## Notas para automação
 

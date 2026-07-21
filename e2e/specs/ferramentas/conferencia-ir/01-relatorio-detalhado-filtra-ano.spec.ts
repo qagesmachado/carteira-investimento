@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import {
   clickIrTab,
@@ -9,7 +9,7 @@ import { seedConferenciaIrBase } from '../../helpers/seedConferenciaIr';
 
 /**
  * UI-IR-001 — Relatório detalhado filtra por ano
- * @see ../../../../casos-de-uso/ui/ferramentas/conferencia-ir/01-relatorio-detalhado-filtra-ano.md
+ * @see ../../../../casos-de-uso/ui/conferencia-ir/01-relatorio-detalhado-filtra-ano.md
  */
 test.describe('UI-IR-001', () => {
   test.beforeEach(async ({ request }) => {

@@ -121,7 +121,10 @@ def update_budget_profile(
 
 
 def delete_budget_profile(session: Session, profile_id: int) -> None:
+    from app.services.property_financing_service import delete_property_financings_for_profile
+
     profile = get_budget_profile(session, profile_id)
+    delete_property_financings_for_profile(session, profile_id)
     session.exec(delete(BudgetTransaction).where(BudgetTransaction.profile_id == profile_id))
     session.exec(delete(BudgetRecurringExpense).where(BudgetRecurringExpense.profile_id == profile_id))
     months = session.exec(select(BudgetMonth).where(BudgetMonth.profile_id == profile_id)).all()

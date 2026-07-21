@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 import {
   fillManualPatrimonyForm,
@@ -11,7 +11,7 @@ import {
   seedPatrimonyControlFullMix
 } from '../../helpers/seedPatrimonyControl';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/controle-patrimonio/04-total-geral-editar-excluir.md */
+/** @see ../../../casos-de-uso/ui/controle-patrimonio/04-total-geral-editar-excluir.md */
 test.describe('UI-PAT-004', () => {
   test.describe.configure({ mode: 'serial' });
 

@@ -1,13 +1,13 @@
-# Métricas de custo e lucro por alocação
+﻿# Métricas de custo e lucro por alocação
 
 ## Metadados
 
 - **ID:** `UI-OBJ-010`
 - **Status:** aprovado
-- **Página:** `/ferramentas/objetivos`
+- **Página:** `/objetivos`
 - **Funcionalidade:** colunas custo, valor atual e lucro na tabela do objetivo
 - **Depende de:** `seedObjetivosWithStock` + alocação via API
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/10-metricas-custo-lucro.spec.ts`
+- **Arquivo de teste:** `e2e/specs/objetivos/10-metricas-custo-lucro.spec.ts`
 
 ## Cenário
 

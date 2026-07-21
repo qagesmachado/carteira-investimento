@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -12,7 +12,7 @@ import { seedBitcoinPortfolio } from '../../helpers/seedBitcoin';
 
 /**
  * UI-BTC-001 — Registrar taxa de compra BTC
- * @see ../../../casos-de-uso/ui/ferramentas/bitcoin/01-registrar-taxa-compra.md
+ * @see ../../../casos-de-uso/ui/taxas-cripto/01-registrar-taxa-compra.md
  */
 test.describe('UI-BTC-001', () => {
   test.beforeEach(async ({ request }) => {

@@ -1,4 +1,4 @@
-import { test } from '../../fixtures/test';
+﻿import { test } from '../../fixtures/test';
 
 import {
   expectAveragePriceResult,
@@ -11,7 +11,7 @@ import { seedPortfoliosPrincipalWithBbse3 } from '../../helpers/seedPortfolios';
 
 /**
  * UI-FERR-009 — Pré-preenchimento com posição da carteira
- * @see ../../../casos-de-uso/ui/ferramentas/calculo-preco-medio/02-preenchimento-carteira.md
+ * @see ../../../casos-de-uso/ui/calculo-preco-medio/02-preenchimento-carteira.md
  */
 test.describe('UI-FERR-009', () => {
   test.beforeEach(async ({ request }) => {

@@ -1,13 +1,13 @@
-# Objetivo de um ativo com visão de partição
+﻿# Objetivo de um ativo com visão de partição
 
 ## Metadados
 
 - **ID:** `UI-OBJ-011`
 - **Status:** aprovado
-- **Página:** `/ferramentas/objetivos`
+- **Página:** `/objetivos`
 - **Funcionalidade:** modalidade single_asset e partição unificada no Resumo
 - **Depende de:** `seedObjetivosWithStock`
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/11-objetivo-single-asset-particao.spec.ts`
+- **Arquivo de teste:** `e2e/specs/objetivos/11-objetivo-single-asset-particao.spec.ts`
 
 ## Cenário
 

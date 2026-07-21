@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures/test';
+﻿import { expect, test } from '../fixtures/test';
 
 import { dashboardShortcutBar, gotoDashboardPage } from '../helpers/dashboardPage';
 import { seedDashboardActivePortfolioOnly } from '../helpers/seedDashboard';
@@ -33,7 +33,7 @@ test.describe('UI-DASH-011', () => {
     );
     await expect(bar.getByTestId('dashboard-shortcut-objetivos')).toHaveAttribute(
       'href',
-      '/ferramentas/objetivos'
+      '/objetivos'
     );
   });
 });

@@ -1,13 +1,13 @@
-# Alocar ativo por cotas
+﻿# Alocar ativo por cotas
 
 ## Metadados
 
 - **ID:** `UI-OBJ-003`
 - **Status:** aprovado
-- **Página:** `/ferramentas/objetivos`
+- **Página:** `/objetivos`
 - **Funcionalidade:** divisão por cotas (ações)
 - **Depende de:** `UI-OBJ-002`
-- **Arquivo de teste:** `e2e/specs/ferramentas/objetivos/03-alocar-ativo-cotas.spec.ts`
+- **Arquivo de teste:** `e2e/specs/objetivos/03-alocar-ativo-cotas.spec.ts`
 - **Referência:** [objetivos-financeiros.md](../../../../../docs/produto/desenvolvido/objetivos-financeiros.md)
 
 ## Cenário — alocar PETR4 por cotas
@@ -19,7 +19,7 @@
 ### Passo a passo
 
 1. Carteira com 100 cotas PETR4 e objetivo «Reserva Emergência».
-2. Abro `/ferramentas/objetivos`, seleciono «Reserva Emergência».
+2. Abro `/objetivos`, seleciono «Reserva Emergência».
 3. Clico «Adicionar ativo», escolho PETR4.
 4. Informo 60 cotas e salvo.
 5. Reserva mostra 60 cotas; Livre mostra 40 cotas de PETR4.

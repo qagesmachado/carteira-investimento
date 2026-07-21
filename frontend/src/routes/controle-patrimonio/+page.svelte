@@ -17,8 +17,9 @@
     setActivePortfolioId,
     type Portfolio
   } from '$lib/api/portfolios';
+  import AppPageShell from '$lib/components/AppPageShell.svelte';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
-  import PageHeader from '$lib/components/PageHeader.svelte';
+  import PageHero from '$lib/components/PageHero.svelte';
   import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
   import InvestedPortfolioBlock from '$lib/features/ferramentas/controle-patrimonio/InvestedPortfolioBlock.svelte';
   import ManualPatrimonyFormModal from '$lib/features/ferramentas/controle-patrimonio/ManualPatrimonyFormModal.svelte';
@@ -28,8 +29,9 @@
     parseAmountBrl,
     type ManualPatrimonyFormValues
   } from '$lib/features/ferramentas/controle-patrimonio/patrimonyControlForm';
-  import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
+  import PortfolioWorkspaceBarPanel from '$lib/features/portfolios/PortfolioWorkspaceBarPanel.svelte';
   import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
+  import { PAGE_BACKGROUND_CLASS } from '$lib/layout/pageVisual';
 
   let portfolios: Portfolio[] = [];
   let activeId: number | null = null;
@@ -45,6 +47,7 @@
 
   $: emergencyItems =
     snapshot?.manual_items.filter((item) => item.category === 'emergency_reserve') ?? [];
+  $: activePortfolioName = portfolios.find((portfolio) => portfolio.id === activeId)?.name ?? '';
 
   async function loadSnapshot(portfolioId: number) {
     loading = true;
@@ -159,47 +162,51 @@
 </script>
 
 <svelte:head>
-  <title>Controle de patrimônio · Ferramentas</title>
+  <title>Controle de patrimônio · Carteira</title>
 </svelte:head>
 
-<div class="flex flex-col gap-3">
-  <PageHeader
-    title="Controle de patrimônio"
-    subtitle="Patrimônio investido (automático) e reserva de emergência manual (banco, corretora ou dinheiro em espécie). Distinto dos objetivos financeiros, que particionam posições já investidas."
-  >
-    <div slot="actions">
-      <PortfolioSelect
-        testId={PORTFOLIO_SELECT_HEADER_TEST_ID}
-        portfolios={portfolios}
-        activeId={activeId}
-        disabled={loading || saving}
-        on:select={(event) => handlePortfolioChange(event.detail)}
-      />
-    </div>
-  </PageHeader>
-
-  {#if error}
-    <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
-  {/if}
-
-  {#if loading}
-    <p class="text-sm opacity-70">Carregando…</p>
-  {:else if activeId == null}
-    <p class="text-sm opacity-70">Crie uma carteira em Cadastro para começar.</p>
-  {:else if snapshot}
-    <PatrimonyControlSummary {snapshot} />
-    <InvestedPortfolioBlock investedPortfolioBrl={snapshot.invested_portfolio_brl} />
-    <ManualPatrimonySection
-      category="emergency_reserve"
-      items={emergencyItems}
-      linkedItems={snapshot.linked_emergency_reserve_items ?? []}
-      emergencyTotalBrl={snapshot.total_emergency_reserve_brl}
-      on:add={(event) => openCreateForm(event.detail.category)}
-      on:edit={(event) => openEditForm(event.detail)}
-      on:delete={(event) => handleDeleteItem(event.detail)}
+<main class={PAGE_BACKGROUND_CLASS}>
+  <AppPageShell paddingY="py-4" class="flex flex-col gap-3">
+    <PageHero
+      title="Controle de patrimônio"
+      subtitle="Patrimônio investido (automático) e reserva de emergência manual (banco, corretora ou dinheiro em espécie). Distinto dos objetivos financeiros, que particionam posições já investidas."
+      variant="dashboard"
     />
-  {/if}
-</div>
+
+    <PortfolioWorkspaceBarPanel
+      {portfolios}
+      activeId={activeId}
+      {activePortfolioName}
+      showQuoteStatus={false}
+      portfolioSelectTestId={PORTFOLIO_SELECT_HEADER_TEST_ID}
+      testId="patrimonio-portfolio-bar"
+      disabled={loading || saving}
+      on:select={(event) => void handlePortfolioChange(event.detail)}
+    />
+
+    {#if error}
+      <DismissibleAlert variant="error" text={error} on:dismiss={() => (error = '')} />
+    {/if}
+
+    {#if loading}
+      <p class="text-sm opacity-70">Carregando…</p>
+    {:else if activeId == null}
+      <p class="text-sm opacity-70">Crie uma carteira em Cadastro para começar.</p>
+    {:else if snapshot}
+      <PatrimonyControlSummary {snapshot} />
+      <InvestedPortfolioBlock investedPortfolioBrl={snapshot.invested_portfolio_brl} />
+      <ManualPatrimonySection
+        category="emergency_reserve"
+        items={emergencyItems}
+        linkedItems={snapshot.linked_emergency_reserve_items ?? []}
+        emergencyTotalBrl={snapshot.total_emergency_reserve_brl}
+        on:add={(event) => openCreateForm(event.detail.category)}
+        on:edit={(event) => openEditForm(event.detail)}
+        on:delete={(event) => handleDeleteItem(event.detail)}
+      />
+    {/if}
+  </AppPageShell>
+</main>
 
 <ManualPatrimonyFormModal
   open={formOpen}

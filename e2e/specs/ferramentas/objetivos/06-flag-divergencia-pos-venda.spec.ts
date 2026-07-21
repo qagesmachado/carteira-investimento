@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import { getWorkerApiBaseUrl } from '../../helpers/workerContext';
@@ -9,7 +9,7 @@ import {
 } from '../../helpers/seedObjetivos';
 import { gotoObjetivosPage } from '../../helpers/objetivosPage';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/06-flag-divergencia-pos-venda.md */
+/** @see ../../../casos-de-uso/ui/objetivos/06-flag-divergencia-pos-venda.md */
 test.describe('UI-OBJ-006', () => {
   test('exibe banner após reduzir posição', async ({ page, request }) => {
     const { portfolioId, assetId } = await seedObjetivosWithStock(request, 'PETR4', 100);

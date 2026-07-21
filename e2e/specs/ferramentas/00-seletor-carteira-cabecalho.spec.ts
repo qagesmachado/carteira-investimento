@@ -1,4 +1,4 @@
-import { expect, test } from '../fixtures/test';
+﻿import { expect, test } from '../fixtures/test';
 
 import { E2E_PORTFOLIO_PRINCIPAL, E2E_PORTFOLIO_SECONDARY } from '../helpers/e2eFixtures';
 import {
@@ -10,7 +10,13 @@ import {
   selectHeaderPortfolioByName
 } from '../helpers/ferramentasPage';
 import { seedObjetivosEmpty } from '../helpers/seedObjetivos';
-import { seedPropertyFinancingTwoPortfolios } from '../helpers/seedPropertyFinancing';
+import { clearAllTestAssets } from '../helpers/seedAssets';
+import {
+  clearAllPortfolios,
+  createPortfolio,
+  setActivePortfolio
+} from '../helpers/testPortfolios';
+import { getWorkerApiBaseUrl } from '../helpers/workerContext';
 
 /** @see ../../casos-de-uso/ui/ferramentas/00-seletor-carteira-cabecalho.md */
 test.describe('UI-FERR-000', () => {
@@ -22,14 +28,14 @@ test.describe('UI-FERR-000', () => {
 
   test('seletor do cabeçalho lista carteira ativa após seed', async ({ page, request }) => {
     await seedObjetivosEmpty(request);
-    await gotoFerramentaPage(page, '/ferramentas/objetivos', 'Objetivos financeiros');
+    await gotoFerramentaPage(page, '/objetivos', 'Objetivos financeiros');
     await expect(headerPortfolioSelect(page)).toContainText(E2E_PORTFOLIO_PRINCIPAL);
   });
 
   test('cálculo de preço médio mantém um único seletor no cabeçalho fora da aba Carteira', async ({
     page
   }) => {
-    await gotoFerramentaPage(page, '/ferramentas/calculo-preco-medio', 'Cálculo de preço médio');
+    await gotoFerramentaPage(page, '/calculo-preco-medio', 'Cálculo de preço médio');
     await expectHeaderPortfolioSelectVisible(page);
     await page.getByTestId('tab-portfolio').click();
     await expect(page.getByTestId('portfolio-lot-form')).toBeVisible();
@@ -37,8 +43,13 @@ test.describe('UI-FERR-000', () => {
   });
 
   test('carteira ativa persiste ao navegar entre ferramentas', async ({ page, request }) => {
-    await seedPropertyFinancingTwoPortfolios(request);
-    await gotoFerramentaPage(page, '/ferramentas/financiamento-imovel', 'Financiamento imóvel');
+    await clearAllTestAssets(request, getWorkerApiBaseUrl());
+    await clearAllPortfolios(request);
+    const primary = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
+    await createPortfolio(request, E2E_PORTFOLIO_SECONDARY);
+    await setActivePortfolio(request, primary.id);
+
+    await gotoFerramentaPage(page, '/objetivos', 'Objetivos financeiros');
     await expect(headerPortfolioSelect(page)).toContainText(E2E_PORTFOLIO_PRINCIPAL);
 
     const activeResponse = page.waitForResponse(
@@ -50,10 +61,10 @@ test.describe('UI-FERR-000', () => {
     await selectHeaderPortfolioByName(page, E2E_PORTFOLIO_SECONDARY);
     await activeResponse;
 
-    await gotoFerramentaPage(page, '/ferramentas/calculo-preco-medio', 'Cálculo de preço médio');
+    await gotoFerramentaPage(page, '/calculo-preco-medio', 'Cálculo de preço médio');
     await expect(headerPortfolioSelect(page)).toContainText(E2E_PORTFOLIO_SECONDARY);
 
-    await gotoFerramentaPage(page, '/ferramentas/objetivos', 'Objetivos financeiros');
+    await gotoFerramentaPage(page, '/objetivos', 'Objetivos financeiros');
     await expect(headerPortfolioSelect(page)).toContainText(E2E_PORTFOLIO_SECONDARY);
   });
 });

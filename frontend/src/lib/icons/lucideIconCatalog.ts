@@ -324,6 +324,24 @@ export const FINANCEIRO_INCOME_LUCIDE_ICON: LucideIconName = 'Banknote';
 /** Aba «Perfis» do Financeiro — [Users](https://lucide.dev/icons/users) */
 export const FINANCEIRO_PROFILES_LUCIDE_ICON: LucideIconName = 'Users';
 
+/** Aba «Financiamento imóvel» do Financeiro — [Building2](https://lucide.dev/icons/building-2) */
+export const FINANCEIRO_FINANCIAMENTO_LUCIDE_ICON: LucideIconName = 'Building2';
+
+/** Menu Carteira — Objetivos financeiros — [Target](https://lucide.dev/icons/target) */
+export const CARTEIRA_OBJETIVOS_LUCIDE_ICON: LucideIconName = 'Target';
+
+/** Menu Carteira — Taxas cripto — [Bitcoin](https://lucide.dev/icons/bitcoin) */
+export const CARTEIRA_TAXAS_CRIPTO_LUCIDE_ICON: LucideIconName = 'Bitcoin';
+
+/** Menu Carteira — Conferência anual de IR — [ScrollText](https://lucide.dev/icons/scroll-text) */
+export const CARTEIRA_CONFERENCIA_IR_LUCIDE_ICON: LucideIconName = 'ScrollText';
+
+/** Menu Carteira — Controle de patrimônio — [WalletMinimal](https://lucide.dev/icons/wallet-minimal) */
+export const CARTEIRA_PATRIMONIO_LUCIDE_ICON: LucideIconName = 'WalletMinimal';
+
+/** Menu Ferramentas — Cálculo de preço médio — [Calculator](https://lucide.dev/icons/calculator) */
+export const FERRAMENTAS_PRECO_MEDIO_LUCIDE_ICON: LucideIconName = 'Calculator';
+
 /** Sub-aba «Tags» de Metas — [Tags](https://lucide.dev/icons/tags) */
 export const FINANCEIRO_TAGS_LUCIDE_ICON: LucideIconName = 'Tags';
 

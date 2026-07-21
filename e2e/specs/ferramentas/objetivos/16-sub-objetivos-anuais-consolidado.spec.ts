@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import {
@@ -10,7 +10,7 @@ import {
 } from '../../helpers/objetivosPage';
 import { seedObjetivosEmpty } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/16-sub-objetivos-anuais-consolidado.md */
+/** @see ../../../casos-de-uso/ui/objetivos/16-sub-objetivos-anuais-consolidado.md */
 test.describe('UI-OBJ-016', () => {
   test.beforeEach(async ({ request }) => {
     await seedObjetivosEmpty(request);

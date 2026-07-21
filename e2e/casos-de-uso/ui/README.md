@@ -1,4 +1,4 @@
-# Casos de uso — interface (E2E)
+﻿# Casos de uso — interface (E2E)
 
 Documentação organizada pela hierarquia de menus do app:
 
@@ -12,10 +12,10 @@ Documentação organizada pela hierarquia de menus do app:
 | Carteira → Proventos | [`proventos/`](proventos/README.md) | `/proventos` |
 | Banco de dados → Ativos | [`assets/`](assets/README.md) | `/assets` |
 | Banco de dados → Dados | [`dados/`](dados/README.md) | `/dados` |
-| Ferramentas → Gerenciamento de objetivos | [`ferramentas/objetivos/`](ferramentas/objetivos/README.md) | `/ferramentas/objetivos` |
-| Ferramentas → Taxas bitcoin | [`ferramentas/bitcoin/`](ferramentas/bitcoin/README.md) | `/ferramentas/bitcoin` |
-| Ferramentas → Financiamento imóvel | [`ferramentas/financiamento-imovel/`](ferramentas/financiamento-imovel/README.md) | `/ferramentas/financiamento-imovel` |
-| Ferramentas → Cálculo de preço médio | [`ferramentas/calculo-preco-medio/`](ferramentas/calculo-preco-medio/README.md) | `/ferramentas/calculo-preco-medio` |
+| Ferramentas → Gerenciamento de objetivos | [`ferramentas/objetivos/`](ferramentas/objetivos/README.md) | `/objetivos` |
+| Ferramentas → Taxas bitcoin | [`ferramentas/bitcoin/`](ferramentas/bitcoin/README.md) | `/taxas-cripto` |
+| Ferramentas → Financiamento imóvel | [`ferramentas/financiamento-imovel/`](ferramentas/financiamento-imovel/README.md) | `/financeiro/financiamento-imovel` |
+| Ferramentas → Cálculo de preço médio | [`ferramentas/calculo-preco-medio/`](ferramentas/calculo-preco-medio/README.md) | `/calculo-preco-medio` |
 | Navbar (transversal) | [`nav/`](nav/README.md) | navbar global |
 
 Ver também [`../dependencias.md`](../dependencias.md) (bases `data/test/*.db`).

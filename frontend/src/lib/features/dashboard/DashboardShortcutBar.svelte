@@ -48,7 +48,7 @@
     {
       title: 'Objetivos',
       description: 'Metas e acompanhamento',
-      href: '/ferramentas/objetivos',
+      href: '/objetivos',
       icon: 'target',
       bgClass: 'bg-warning/15',
       fgClass: 'text-warning',

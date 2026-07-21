@@ -32,8 +32,8 @@
 
   $: activeTab = resolveFinanceiroSectionTab($page.url.pathname);
   $: subtitle = financeiroSectionSubtitle(activeTab);
-  // Painel, Orçamento, Despesas, Metas e Renda dependem do mês; Perfis não.
-  $: showMonthNav = activeTab !== 'perfis';
+  // Painel, Orçamento, Despesas, Metas e Renda dependem do mês; Perfis e Financiamento não.
+  $: showMonthNav = activeTab !== 'perfis' && activeTab !== 'financiamento';
 
   async function reloadProfiles() {
     const profiles = await listBudgetProfiles();

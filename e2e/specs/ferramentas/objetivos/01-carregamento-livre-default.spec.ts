@@ -1,10 +1,10 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import { gotoObjetivosPage } from '../../helpers/objetivosPage';
 import { expectDefaultObjectiveFreeQuantity, seedObjetivosWithStock } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/01-carregamento-livre-default.md */
+/** @see ../../../casos-de-uso/ui/objetivos/01-carregamento-livre-default.md */
 test.describe('UI-OBJ-001', () => {
   test('abre em Resumo sem exibir objetivo Livre na UI', async ({ page, request }) => {
     const { portfolioId } = await seedObjetivosWithStock(request);

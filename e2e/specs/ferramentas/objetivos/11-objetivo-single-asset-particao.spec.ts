@@ -1,4 +1,4 @@
-import { expect, test } from '../../fixtures/test';
+﻿import { expect, test } from '../../fixtures/test';
 
 
 import { gotoObjetivosPage } from '../../helpers/objetivosPage';
@@ -8,7 +8,7 @@ import {
   seedObjetivosWithStock
 } from '../../helpers/seedObjetivos';
 
-/** @see ../../../casos-de-uso/ui/ferramentas/objetivos/11-objetivo-single-asset-particao.md */
+/** @see ../../../casos-de-uso/ui/objetivos/11-objetivo-single-asset-particao.md */
 test.describe('UI-OBJ-011', () => {
   test('resumo mostra partição unificada do ativo', async ({ page, request }) => {
     const { portfolioId, assetId } = await seedObjetivosWithStock(request);
