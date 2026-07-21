@@ -15,19 +15,22 @@ export async function gotoDashboardPage(page: Page): Promise<void> {
   const assetsResponse = page.waitForResponse(
     (r) => isApiAssetsListResponse(r, 'GET') && r.ok()
   );
+  // Registrar opcionais ANTES do goto para não perder a corrida com o carregamento.
   const dividendsResponse = page
-    .waitForResponse((r) => isApiDividendPaymentsListResponse(r, 'GET') && r.ok())
+    .waitForResponse((r) => isApiDividendPaymentsListResponse(r, 'GET') && r.ok(), {
+      timeout: 15_000
+    })
     .catch(() => null);
-  const fxResponse = page.waitForResponse((r) => isApiFxGetResponse(r) && r.ok()).catch(() => null);
+  const fxResponse = page
+    .waitForResponse((r) => isApiFxGetResponse(r) && r.ok(), { timeout: 15_000 })
+    .catch(() => null);
+  const positionsResponse = page
+    .waitForResponse((r) => isApiPositionsResponse(r, 'GET') && r.ok(), { timeout: 15_000 })
+    .catch(() => null);
 
   await page.goto('/dashboard');
-  await portfoliosResponse;
-  await assetsResponse;
-  await dividendsResponse;
-  await fxResponse;
-  await page
-    .waitForResponse((r) => isApiPositionsResponse(r, 'GET') && r.ok())
-    .catch(() => null);
+  await Promise.all([portfoliosResponse, assetsResponse]);
+  await Promise.all([dividendsResponse, fxResponse, positionsResponse]);
 }
 
 export function dashboardPortfolioSelect(page: Page) {
@@ -47,8 +50,9 @@ export function dashboardQuotesBadge(page: Page): Locator {
 }
 
 export async function expectEmptyDashboardMessage(page: Page): Promise<void> {
-  await expect(page.getByText(/Crie ou selecione uma carteira/i)).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Carteiras' })).toBeVisible();
+  const cta = page.getByTestId('dashboard-sem-carteira-cta');
+  await expect(cta).toBeVisible();
+  await expect(cta).toHaveAttribute('href', '/portfolios');
 }
 
 export async function expectDashboardCardsVisible(page: Page): Promise<void> {

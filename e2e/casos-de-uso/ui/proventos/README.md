@@ -24,7 +24,12 @@
 | `UI-PRV-015` | [15-separacao-por-carteira.md](15-separacao-por-carteira.md) | aprovado | [15-separacao-por-carteira.spec.ts](../../../specs/proventos/15-separacao-por-carteira.spec.ts) |
 | `UI-PRV-016` | [16-filtro-carteira-listagem.md](16-filtro-carteira-listagem.md) | aprovado | [16-filtro-carteira-listagem.spec.ts](../../../specs/proventos/16-filtro-carteira-listagem.spec.ts) |
 | `UI-PRV-017` | [17-import-lote-seletor-carteira.md](17-import-lote-seletor-carteira.md) | aprovado | [17-import-lote-seletor-carteira.spec.ts](../../../specs/proventos/17-import-lote-seletor-carteira.spec.ts) |
+| `UI-PRV-018` | [18-navegacao-abas.md](18-navegacao-abas.md) | implementado | [18-navegacao-abas.spec.ts](../../../specs/proventos/18-navegacao-abas.spec.ts) |
+| `UI-PRV-019` | [19-resumo-destaque-em-carteira.md](19-resumo-destaque-em-carteira.md) | implementado | [19-resumo-destaque-em-carteira.spec.ts](../../../specs/proventos/19-resumo-destaque-em-carteira.spec.ts) |
+| `UI-PRV-020` | [20-sem-carteira-onboarding.md](20-sem-carteira-onboarding.md) | implementado | [20-sem-carteira-onboarding.spec.ts](../../../specs/proventos/20-sem-carteira-onboarding.spec.ts) |
 
-**Total:** 17 casos · **17 specs**
+**Total:** 20 casos · **20 specs**
+
+> Navegação por abas (revamp): `/proventos` abre em **Resumo**; **Adicionar** contém o formulário e a importação em lote (antes em `/dados`); **Lançamentos** contém a tabela.
 
 **Anterior:** [`../portfolios/README.md`](../portfolios/README.md) · **Doc produto:** [`../../../../docs/produto/desenvolvido/cadastro-proventos.md`](../../../../docs/produto/desenvolvido/cadastro-proventos.md)

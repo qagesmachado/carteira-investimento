@@ -2,10 +2,17 @@ import type { APIRequestContext } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 import { getWorkerApiBaseUrl } from './workerContext';
-import { TICKER_BBSE3, TICKER_VOO, TICKER_AUVP11 } from './e2eFixtures';
+import { E2E_PORTFOLIO_PRINCIPAL, TICKER_BBSE3, TICKER_VOO, TICKER_AUVP11 } from './e2eFixtures';
 import { seedConsolidadaPrincipal } from './seedConsolidada';
+import { clearAllTestAssets, createAssetViaApi } from './seedAssets';
 import { createDividendPaymentViaApi } from './testDividendPayments';
-import { getAssetIdBySymbol } from './testPortfolios';
+import {
+  clearAllPortfolios,
+  createPortfolio,
+  createPosition,
+  getAssetIdBySymbol,
+  setActivePortfolio
+} from './testPortfolios';
 
 async function setAssetCurrentQuote(
   request: APIRequestContext,
@@ -21,6 +28,32 @@ async function setAssetCurrentQuote(
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
+}
+
+/**
+ * Carteira ativa mínima sem lookup yfinance — suficiente para atalhos do dashboard.
+ */
+export async function seedDashboardActivePortfolioOnly(
+  request: APIRequestContext
+): Promise<number> {
+  await clearAllPortfolios(request);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
+
+  await createAssetViaApi(request, {
+    symbol: TICKER_BBSE3,
+    name: 'BB Seguridade',
+    asset_type: 'stock',
+    market: 'national',
+    country: 'BR',
+    currency: 'BRL',
+    current_quote: 40
+  });
+
+  const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
+  const bbse3Id = await getAssetIdBySymbol(request, TICKER_BBSE3);
+  await createPosition(request, portfolio.id, bbse3Id, { quantity: 10, average_price: 32 });
+  await setActivePortfolio(request, portfolio.id);
+  return portfolio.id;
 }
 
 /** Carteira com proventos em varios anos e meses (painel do dashboard). */

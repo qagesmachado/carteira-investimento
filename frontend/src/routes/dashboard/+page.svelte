@@ -18,8 +18,10 @@
   import { parseApiError } from '$lib/api/parseApiError';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
   import PageHero from '$lib/components/PageHero.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
+  import { NO_PORTFOLIO_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
   import AllocationChart from '$lib/features/dashboard/AllocationChart.svelte';
   import DashboardHeroToolbar from '$lib/features/dashboard/DashboardHeroToolbar.svelte';
   import DashboardHighlightsRow from '$lib/features/dashboard/DashboardHighlightsRow.svelte';
@@ -346,9 +348,7 @@
     </PageSection>
 
     {#if !activeId}
-      <p class="text-center text-sm text-base-content/60">
-        Crie ou selecione uma carteira em <a class="link link-primary" href="/portfolios">Carteiras</a>.
-      </p>
+      <EmptyStateCallout {...NO_PORTFOLIO_EMPTY_STATE} testId="dashboard-sem-carteira" />
     {:else if loading}
       <p class="text-center text-sm text-base-content/60">Carregando…</p>
     {:else}

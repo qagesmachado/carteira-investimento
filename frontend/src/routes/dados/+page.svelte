@@ -25,7 +25,6 @@
   import AssetBulkImport from '$lib/features/assets/AssetBulkImport.svelte';
   import PortfolioImportWizard from '$lib/features/portfolios/PortfolioImportWizard.svelte';
   import PortfolioSelect from '$lib/features/portfolios/PortfolioSelect.svelte';
-  import DividendBulkImport from '$lib/features/proventos/DividendBulkImport.svelte';
 
   let portfolios: Portfolio[] = [];
   let activeId: number | null = null;
@@ -264,9 +263,10 @@
     <PageSection testId="dados-proventos">
         <div>
           <p class="text-sm font-semibold uppercase tracking-wide text-primary">Proventos</p>
-          <h2 class="card-title">Exportar e importar proventos</h2>
+          <h2 class="card-title">Exportar proventos</h2>
           <p class="text-sm text-base-content/70">
-            Exporte proventos filtrados por carteira em CSV ou importe em lote.
+            Exporte proventos filtrados por carteira em CSV. A importação em lote agora fica em
+            <a class="link link-primary" href="/proventos/adicionar">Proventos → Adicionar</a>.
           </p>
         </div>
         <div class="flex flex-wrap items-end gap-3">
@@ -297,7 +297,6 @@
             {exportingDividends ? 'Exportando…' : 'Exportar proventos CSV'}
           </button>
         </div>
-        <DividendBulkImport {portfolios} activePortfolioId={activeId} />
     </PageSection>
   </AppPageShell>
 </main>

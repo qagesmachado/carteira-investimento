@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 # Versão do schema esperada pelo código. Incrementar ao adicionar uma migração
 # nova; é comparada com o `PRAGMA user_version` gravado dentro do arquivo do banco.
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 engine = create_engine(
     settings.database_url,
@@ -482,6 +482,30 @@ def _ensure_budget_columns(engine_param: Engine) -> None:
         if "recurring_expense_id" not in existing:
             connection.exec_driver_sql(
                 "ALTER TABLE budgettransaction ADD COLUMN recurring_expense_id INTEGER"
+            )
+        if "settled" not in existing:
+            connection.exec_driver_sql(
+                "ALTER TABLE budgettransaction ADD COLUMN settled BOOLEAN DEFAULT 0"
+            )
+        income_columns = {
+            row[1]
+            for row in connection.exec_driver_sql("PRAGMA table_info(budgetmonthincome)").fetchall()
+        }
+        if "received" not in income_columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE budgetmonthincome ADD COLUMN received BOOLEAN DEFAULT 0"
+            )
+        target_columns = {
+            row[1]
+            for row in connection.exec_driver_sql("PRAGMA table_info(budgetmonthtarget)").fetchall()
+        }
+        if "name_override" not in target_columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE budgetmonthtarget ADD COLUMN name_override VARCHAR"
+            )
+        if "color_override" not in target_columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE budgetmonthtarget ADD COLUMN color_override VARCHAR"
             )
 
 

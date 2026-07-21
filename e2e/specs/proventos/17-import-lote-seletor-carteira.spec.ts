@@ -1,16 +1,17 @@
 import { expect, test } from '../fixtures/test';
 
 
+import { dividendBulkSection } from '../helpers/dividendBulkImport';
 import {
+  goToProventosListTab,
   gotoProventosPage,
-  paymentsListSection,
-  paymentsTable
+  paymentsTable,
+  selectProventosPortfolio
 } from '../helpers/proventosPage';
-import { gotoDadosPage } from '../helpers/dataPage';
 import { seedProventosSeparacaoPorCarteira } from '../helpers/seedProventos';
 
 /**
- * UI-PRV-017 - Importacao em lote aplica a carteira selecionada (/dados)
+ * UI-PRV-017 - Importacao em lote usa a carteira ativa do painel do topo (Proventos > Adicionar)
  * @see ../../../casos-de-uso/ui/proventos/17-import-lote-seletor-carteira.md
  */
 test.describe('UI-PRV-017', () => {
@@ -18,18 +19,13 @@ test.describe('UI-PRV-017', () => {
     await seedProventosSeparacaoPorCarteira(request);
   });
 
-  test('seletor de carteira na importacao aplica a todas as linhas do lote', async ({ page }) => {
-    await gotoDadosPage(page);
+  test('importacao em lote aplica a carteira do topo a todas as linhas', async ({ page }) => {
+    await gotoProventosPage(page);
 
-    const importSection = page
-      .getByTestId('dados-proventos')
-      .locator('section')
-      .filter({ has: page.getByRole('heading', { name: 'Proventos em lote' }) });
+    // A carteira de destino vem do painel do topo da seção.
+    await selectProventosPortfolio(page, 'Carteira B');
 
-    await importSection
-      .getByLabel('Carteira de destino da importacao em lote')
-      .selectOption({ label: 'Carteira B' });
-
+    const importSection = dividendBulkSection(page);
     await importSection.getByRole('textbox', { name: 'Conteúdo CSV' }).fill(
       'ticker,data,valor,tipo\nBBSE3,01/07/2024,10,dividend\nBBSE3,02/07/2024,10,dividend'
     );
@@ -39,12 +35,12 @@ test.describe('UI-PRV-017', () => {
     await importSection.getByRole('button', { name: /Importar selecionados/ }).click();
     await expect(page.getByRole('alert').filter({ hasText: /Importação concluída/ })).toBeVisible();
 
-    const section = paymentsListSection(page);
-    await gotoProventosPage(page);
-    await section.getByLabel('Filtrar por carteira').selectOption({ label: 'Carteira B' });
+    // Ainda na Carteira B (escopo do topo): 1 provento seed + 2 importados.
+    await goToProventosListTab(page);
     await expect(paymentsTable(page).locator('tr')).toHaveCount(3);
 
-    await section.getByLabel('Filtrar por carteira').selectOption({ label: 'Carteira A' });
+    // Carteira A não recebe o lote importado.
+    await selectProventosPortfolio(page, 'Carteira A');
     await expect(paymentsTable(page).locator('tr')).toHaveCount(1);
   });
 });

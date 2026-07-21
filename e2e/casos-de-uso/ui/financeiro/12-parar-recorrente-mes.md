@@ -23,8 +23,11 @@
 3. Clico **Excluir** na linha da recorrente.
 4. Confirmo **Parar a partir de [mês atual]**.
 5. Meses anteriores mantêm o lançamento; o mês atual fica sem a despesa.
+6. No mês atual, a regra **não** aparece mais na aba **Despesas recorrentes** (deixou de ser recorrência vigente).
+7. No mês anterior (último cobrado), a despesa continua na aba **Todas as despesas do mês** e a regra aparece em **Despesas recorrentes**.
 
 ## Resultado esperado
 
 - Modal oferece **Parar a partir de…** (padrão) e **Excluir regra inteira**.
 - Histórico anterior preservado.
+- Recorrência parada some da aba **Despesas recorrentes** nos meses em que não gera mais cobrança; permanece visível apenas até seu último mês cobrado e nas transações já lançadas.

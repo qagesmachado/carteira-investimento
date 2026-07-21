@@ -27,7 +27,9 @@
     type Position
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
+  import { NO_PORTFOLIO_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
   import AssetAnalysisPanel from '$lib/features/analise/AssetAnalysisPanel.svelte';
   import {
     computeCombinedTableScore,
@@ -347,9 +349,7 @@
     {/if}
 
     {#if !activeId}
-        <p class="text-sm text-base-content/70">
-          Crie ou selecione uma carteira em <a class="link link-primary" href="/portfolios">Carteiras</a>.
-        </p>
+        <EmptyStateCallout {...NO_PORTFOLIO_EMPTY_STATE} testId="analise-fiis-sem-carteira" />
       {:else if loading}
         <p class="text-sm text-base-content/70">Carregando…</p>
       {:else if filteredRows.length === 0}

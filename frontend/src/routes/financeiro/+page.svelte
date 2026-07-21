@@ -2,7 +2,12 @@
   import { getBudgetDashboard, type BudgetDashboard } from '$lib/api/budget';
   import { parseApiError } from '$lib/api/parseApiError';
   import BrYearMonthInput from '$lib/components/BrYearMonthInput.svelte';
+  import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
+  import { NO_BUDGET_PROFILE_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
+  import { FINANCEIRO_PANEL_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
   import BudgetCashflowChart from '$lib/features/financeiro/BudgetCashflowChart.svelte';
   import BudgetDistributionChart from '$lib/features/financeiro/BudgetDistributionChart.svelte';
   import { getBudgetLayoutContext } from '$lib/features/financeiro/budgetLayoutContext';
@@ -112,12 +117,34 @@
 </svelte:head>
 
 <div class="flex flex-col gap-3">
+{#if error}
+  <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
+{/if}
+{#if rangeError}
+  <DismissibleAlert text={rangeError} variant="error" on:dismiss={() => (rangeError = '')} />
+{/if}
 {#if profileId == null}
-  <p class="text-base-content/70">Crie um perfil de orçamento em Perfis para começar.</p>
-{:else if error}
-  <div class="alert alert-error">{error}</div>
+  <PageSection testId="financeiro-painel-heading">
+    <div class="flex items-center gap-2">
+      <span class="text-primary" aria-hidden="true">
+        <LucideIcon name={FINANCEIRO_PANEL_LUCIDE_ICON} size="lg" />
+      </span>
+      <h2 class="card-title text-lg">Painel financeiro</h2>
+    </div>
+    <EmptyStateCallout
+      {...NO_BUDGET_PROFILE_EMPTY_STATE}
+      card={false}
+      testId="financeiro-painel-sem-perfil"
+    />
+  </PageSection>
 {:else}
-  <PageSection title="Painel financeiro" testId="financeiro-painel-heading">
+  <PageSection testId="financeiro-painel-heading">
+  <div class="flex items-center gap-2">
+    <span class="text-primary" aria-hidden="true">
+      <LucideIcon name={FINANCEIRO_PANEL_LUCIDE_ICON} size="lg" />
+    </span>
+    <h2 class="card-title text-lg">Painel financeiro</h2>
+  </div>
   <div class="flex flex-wrap items-end gap-3">
     <div class="flex flex-wrap gap-2">
       {#each [3, 6] as option}
@@ -156,9 +183,6 @@
       </div>
     {/if}
   </div>
-  {#if rangeError}
-    <p class="text-sm text-error" data-testid="budget-dashboard-range-error">{rangeError}</p>
-  {/if}
   </PageSection>
 
   {#if loading && !dashboard}

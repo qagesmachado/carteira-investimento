@@ -4,7 +4,7 @@ import { expect, test } from '../fixtures/test';
 import { TICKER_BBSE3, TICKER_VOO } from '../helpers/e2eFixtures';
 import {
   filterByMarket,
-  gotoProventosPage,
+  gotoProventosListPage,
   paymentsTable
 } from '../helpers/proventosPage';
 import { seedProventosMultiForFilters } from '../helpers/seedProventos';
@@ -19,7 +19,7 @@ test.describe('UI-PRV-009', () => {
   });
 
   test('mostra apenas proventos do mercado internacional', async ({ page }) => {
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
 
     await filterByMarket(page, 'Internacional');
     await expect(paymentsTable(page).locator('tr')).toHaveCount(1);

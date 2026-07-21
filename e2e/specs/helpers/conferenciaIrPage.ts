@@ -61,3 +61,30 @@ export async function readDownloadXlsxSheetNames(download: Download): Promise<st
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   return workbook.SheetNames;
 }
+
+export async function filterIrMarket(
+  page: Page,
+  market: '' | 'national' | 'international'
+): Promise<void> {
+  await page.getByTestId('ir-filter-market').selectOption(market);
+}
+
+export async function expectTableHasTicker(
+  page: Page,
+  tableTestId: string,
+  ticker: string
+): Promise<void> {
+  await expect(
+    page.getByTestId(tableTestId).getByRole('cell', { name: ticker, exact: true }).first()
+  ).toBeVisible();
+}
+
+export async function expectTableMissingTicker(
+  page: Page,
+  tableTestId: string,
+  ticker: string
+): Promise<void> {
+  await expect(
+    page.getByTestId(tableTestId).getByRole('cell', { name: ticker, exact: true })
+  ).toHaveCount(0);
+}

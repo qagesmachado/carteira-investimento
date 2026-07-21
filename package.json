@@ -2,6 +2,7 @@
   "name": "carteira-investimento",
   "private": true,
   "scripts": {
+    "dev:vazio": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev-empty-db.ps1",
     "db:seed": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/db-seed.ps1",
     "db:seed:fresh": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/db-seed.ps1 -Fresh",
     "db:export": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/db-export.ps1",

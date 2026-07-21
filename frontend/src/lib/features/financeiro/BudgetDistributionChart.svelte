@@ -1,13 +1,14 @@
 <script lang="ts">
   import type { DashboardSlice } from '$lib/api/budget';
   import { formatMoneyAmount } from '$lib/assetLabels';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
   import { hideMoneyValues } from '$lib/stores/hideMoneyValues';
 
   import {
     BUDGET_PIE_CHART_EXPANDED_SIZE_CLASS,
     BUDGET_PIE_CHART_SIZE_CLASS,
+    donutSlicePath,
     formatBudgetPieSliceTooltip,
-    pieSlicePath,
     slicesToPieSegments,
     type BudgetPieSegment
   } from './budgetPieChart';
@@ -84,15 +85,21 @@
 <section class="card bg-base-100 shadow" data-testid={testId} aria-label={title}>
   <div class="card-body gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h3 class="card-title text-base">{title}</h3>
+      <div class="flex items-center gap-2">
+        <span class="text-primary" aria-hidden="true">
+          <LucideIcon name="ChartPie" size="md" />
+        </span>
+        <h3 class="card-title text-base">{title}</h3>
+      </div>
       {#if hasData && expandable}
         <button
           type="button"
-          class="btn btn-ghost btn-xs"
+          class="btn btn-ghost btn-xs gap-1"
           data-testid={testId ? `${testId}-expand` : undefined}
           aria-label="Ampliar gráfico"
           on:click={openExpanded}
         >
+          <LucideIcon name="Maximize2" size="sm" aria-hidden="true" />
           Ampliar
         </button>
       {/if}
@@ -113,7 +120,7 @@
                 class="cursor-pointer transition-opacity hover:opacity-90 {hoveredSegment?.id === segment.id
                   ? 'opacity-90'
                   : ''}"
-                d={pieSlicePath(segment.startAngle, segment.endAngle)}
+                d={donutSlicePath(segment.startAngle, segment.endAngle)}
                 fill={segment.color}
                 stroke="var(--fallback-b1,oklch(var(--b1)))"
                 stroke-width="0.5"
@@ -168,7 +175,7 @@
                 class="cursor-pointer transition-opacity hover:opacity-90 {hoveredSegment?.id === segment.id
                   ? 'opacity-90'
                   : ''}"
-                d={pieSlicePath(segment.startAngle, segment.endAngle)}
+                d={donutSlicePath(segment.startAngle, segment.endAngle)}
                 fill={segment.color}
                 stroke="var(--fallback-b1,oklch(var(--b1)))"
                 stroke-width="0.5"

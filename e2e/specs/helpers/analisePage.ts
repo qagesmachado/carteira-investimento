@@ -181,6 +181,7 @@ export function analysisRow(page: Page, ticker: string): Locator {
 
 export async function clickClassificarOnRow(page: Page, ticker: string): Promise<void> {
   await analysisRow(page, ticker).getByRole('button', { name: 'Classificar' }).click();
+  await expect(analysisPanel(page)).toBeVisible();
 }
 
 export function analysisPanel(page: Page): Locator {
@@ -203,9 +204,10 @@ export async function expectUnsavedChangesWarning(
   page: Page,
   visible = true
 ): Promise<void> {
-  const alert = analysisPanel(page).getByRole('alert').filter({ hasText: /alterações não salvas/i });
+  const alert = analysisPanel(page).getByTestId('analysis-unsaved-changes-alert');
   if (visible) {
     await expect(alert).toBeVisible();
+    await expect(alert).toContainText(/alterações não salvas/i);
   } else {
     await expect(alert).toHaveCount(0);
   }
@@ -217,11 +219,13 @@ export function analysisPendingToggle(page: Page): Locator {
 
 export async function toggleAnalysisPendingDraft(page: Page, checked: boolean): Promise<void> {
   const checkbox = analysisPendingToggle(page);
+  await expect(checkbox).toBeVisible();
   if (checked) {
     await checkbox.check();
   } else {
     await checkbox.uncheck();
   }
+  await expect(checkbox).toBeChecked({ checked });
 }
 
 export async function expectAnalysisRowPendingBadge(
@@ -369,7 +373,18 @@ export async function setSumColumnDiagramMultiplier(page: Page, value: string): 
   if (!(await analysisSumConfigModal(page).isVisible())) {
     await openSumColumnConfigModal(page);
   }
-  await analysisSumConfigModal(page).getByTestId('analysis-methodology-diagram-multiplier').fill(value);
+  const input = analysisSumConfigModal(page).getByTestId('analysis-methodology-diagram-multiplier');
+  await expect(input).toBeVisible();
+  await input.fill(value);
+}
+
+export async function expectSumColumnDiagramMultiplier(page: Page, value: string): Promise<void> {
+  if (!(await analysisSumConfigModal(page).isVisible())) {
+    await openSumColumnConfigModal(page);
+  }
+  await expect(
+    analysisSumConfigModal(page).getByTestId('analysis-methodology-diagram-multiplier')
+  ).toHaveValue(value);
 }
 
 export async function setAnalysisMethodologyComponents(
@@ -422,15 +437,34 @@ export async function selectAnalysisMethodology(
 }
 
 export async function clickClassificarInPortfolios(page: Page, ticker: string): Promise<void> {
+  const enabledTestId = `portfolio-classify-${ticker}`;
+  const disabledTestId = `portfolio-classify-disabled-${ticker}`;
+
+  // Race ocasional: methodologies ainda não refletidas no primeiro paint.
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const enabled = page.getByTestId(enabledTestId);
+    if (await enabled.isVisible().catch(() => false)) {
+      break;
+    }
+    const disabled = page.getByTestId(disabledTestId);
+    if (attempt < 2 && (await disabled.isVisible().catch(() => false))) {
+      await page.reload();
+      await expect(page.getByTestId('page-hero')).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByTestId('portfolio-positions-table')).toBeVisible({ timeout: 15_000 });
+      continue;
+    }
+    break;
+  }
+
   const configResponse = page.waitForResponse(
-    (r) => isApiAnalysisConfigGetResponse(r) && r.ok()
+    (r) => isApiAnalysisConfigGetResponse(r) && r.ok(),
+    { timeout: 20_000 }
   );
-  await page
-    .locator('table tbody tr')
-    .filter({ hasText: ticker })
-    .getByRole('button', { name: 'Classificar' })
-    .click();
+  const classifyButton = page.getByTestId(enabledTestId);
+  await expect(classifyButton).toBeVisible({ timeout: 20_000 });
+  await classifyButton.click();
   await configResponse;
+  await expect(analysisPanel(page)).toBeVisible();
 }
 
 export async function expectNoClassificarInRow(page: Page, ticker: string): Promise<void> {

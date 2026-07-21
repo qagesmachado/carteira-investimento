@@ -3,8 +3,17 @@
 
   import type { BudgetCategoryKpi, BudgetTransaction } from '$lib/api/budget';
   import { formatIsoDateToBr } from '$lib/brDate';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
+  import { PROVENTOS_REMOVE_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
   import { formatBrl } from '$lib/features/rebalance/allocationTargets';
   import { hideMoneyValues } from '$lib/stores/hideMoneyValues';
+
+  import {
+    sortBudgetTransactions,
+    toggleSortDirection,
+    type BudgetTransactionSortKey,
+    type SortDirection
+  } from './sortBudgetTransactions';
 
   export let category: BudgetCategoryKpi;
   export let transactions: BudgetTransaction[] = [];
@@ -12,9 +21,23 @@
 
   const dispatch = createEventDispatcher<{ toggle: number; delete: number }>();
 
+  let sortKey: BudgetTransactionSortKey = 'event_date';
+  let sortDirection: SortDirection = 'desc';
+
+  function handleSort(key: BudgetTransactionSortKey) {
+    if (sortKey === key) {
+      sortDirection = toggleSortDirection(sortDirection);
+    } else {
+      sortKey = key;
+      sortDirection = key === 'event_date' || key === 'amount_brl' ? 'desc' : 'asc';
+    }
+  }
+
   $: categoryTransactions = transactions.filter(
     (tx) => tx.transaction_type === 'expense' && tx.category_id === category.category_id
   );
+
+  $: sortedTransactions = sortBudgetTransactions(categoryTransactions, sortKey, sortDirection);
 
   function formatValue(value: number): string {
     if ($hideMoneyValues) {
@@ -87,31 +110,103 @@
     </div>
 
     {#if expanded}
-      <ul class="divide-y rounded border border-base-300 text-sm">
-        {#if categoryTransactions.length === 0}
-          <li class="p-3 text-base-content/60">Nenhum lançamento nesta meta.</li>
-        {:else}
-          {#each categoryTransactions as tx (tx.id)}
-            <li class="flex flex-wrap items-center gap-2 p-3">
-              <span class="text-base-content/70">{formatIsoDateToBr(tx.event_date)}</span>
-              <span class="flex-1">{tx.description}</span>
-              {#if tx.tag_name}
-                <span class="badge badge-sm" style:background-color={tx.tag_color ?? undefined}>
-                  {tx.tag_name}
-                </span>
-              {/if}
-              <span class="font-medium tabular-nums text-error">{formatValue(tx.amount_brl)}</span>
-              <button
-                type="button"
-                class="btn btn-ghost btn-xs text-error"
-                on:click={() => dispatch('delete', tx.id)}
-              >
-                Excluir
-              </button>
-            </li>
-          {/each}
-        {/if}
-      </ul>
+      {#if categoryTransactions.length === 0}
+        <p class="rounded border border-base-300 p-3 text-sm text-base-content/60">
+          Nenhum lançamento nesta meta.
+        </p>
+      {:else}
+        <div class="overflow-x-auto rounded border border-base-300">
+          <table class="table table-sm">
+            <thead>
+              <tr class="text-base-content/60">
+                <th class="font-medium">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 px-1 font-medium normal-case"
+                    aria-sort={sortKey === 'event_date' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
+                    on:click={() => handleSort('event_date')}
+                  >
+                    Data
+                    {#if sortKey === 'event_date'}
+                      <LucideIcon name={sortDirection === 'asc' ? 'ArrowUp' : 'ArrowDown'} size="sm" />
+                    {/if}
+                  </button>
+                </th>
+                <th class="font-medium">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 px-1 font-medium normal-case"
+                    aria-sort={sortKey === 'description' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
+                    on:click={() => handleSort('description')}
+                  >
+                    Descrição
+                    {#if sortKey === 'description'}
+                      <LucideIcon name={sortDirection === 'asc' ? 'ArrowUp' : 'ArrowDown'} size="sm" />
+                    {/if}
+                  </button>
+                </th>
+                <th class="font-medium">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 px-1 font-medium normal-case"
+                    aria-sort={sortKey === 'tag_name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
+                    on:click={() => handleSort('tag_name')}
+                  >
+                    Tag
+                    {#if sortKey === 'tag_name'}
+                      <LucideIcon name={sortDirection === 'asc' ? 'ArrowUp' : 'ArrowDown'} size="sm" />
+                    {/if}
+                  </button>
+                </th>
+                <th class="text-right font-medium">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-xs ml-auto h-auto min-h-0 gap-1 px-1 font-medium normal-case"
+                    aria-sort={sortKey === 'amount_brl' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
+                    on:click={() => handleSort('amount_brl')}
+                  >
+                    Valor
+                    {#if sortKey === 'amount_brl'}
+                      <LucideIcon name={sortDirection === 'asc' ? 'ArrowUp' : 'ArrowDown'} size="sm" />
+                    {/if}
+                  </button>
+                </th>
+                <th class="w-px"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each sortedTransactions as tx (tx.id)}
+                <tr>
+                  <td class="whitespace-nowrap tabular-nums text-base-content/70">
+                    {formatIsoDateToBr(tx.event_date)}
+                  </td>
+                  <td>{tx.description}</td>
+                  <td>
+                    {#if tx.tag_name}
+                      <span class="badge badge-sm" style:background-color={tx.tag_color ?? undefined}>
+                        {tx.tag_name}
+                      </span>
+                    {/if}
+                  </td>
+                  <td class="whitespace-nowrap text-right font-medium tabular-nums text-error">
+                    {formatValue(tx.amount_brl)}
+                  </td>
+                  <td class="w-px whitespace-nowrap text-right">
+                    <button
+                      type="button"
+                      class="btn btn-outline btn-xs flex-nowrap gap-1 whitespace-nowrap text-error"
+                      on:click={() => dispatch('delete', tx.id)}
+                    >
+                      <LucideIcon name={PROVENTOS_REMOVE_LUCIDE_ICON} size="sm" aria-hidden="true" />
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/if}
     {/if}
   </div>
 </article>

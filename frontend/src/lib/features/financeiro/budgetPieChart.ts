@@ -1,5 +1,5 @@
 import type { DashboardSlice } from '$lib/api/budget';
-import { pieSlicePath } from '$lib/features/dashboard/topAssetsDashboard';
+import { donutSlicePath } from '$lib/features/dashboard/topAssetsDashboard';
 
 export type BudgetPieSegment = {
   id: number;
@@ -37,10 +37,10 @@ export function formatBudgetPieSliceTooltip(
   return `${segment.name}: ${pct}% · ${formatAmount(segment.amount_brl)}`;
 }
 
-/** Tamanho padrão da pizza (+15% sobre h-44 / 11rem). */
-export const BUDGET_PIE_CHART_SIZE_CLASS = 'h-[12.65rem] w-[12.65rem]';
+/** Tamanho padrão do donut (+25% sobre 12,65rem). */
+export const BUDGET_PIE_CHART_SIZE_CLASS = 'h-[15.81rem] w-[15.81rem]';
 
-/** Tamanho da pizza no modal ampliado. */
+/** Tamanho do donut no modal ampliado. */
 export const BUDGET_PIE_CHART_EXPANDED_SIZE_CLASS = 'h-72 w-72';
 
-export { pieSlicePath };
+export { donutSlicePath };

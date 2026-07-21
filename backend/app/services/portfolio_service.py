@@ -187,8 +187,14 @@ def delete_portfolio(
     delete_property_financings_for_portfolio(session, portfolio_id)
     delete_manual_patrimony_items_for_portfolio(session, portfolio_id)
     from app.services.analysis_methodology_service import delete_portfolio_analysis_methodologies
+    from app.services.analysis_pending_service import (
+        delete_portfolio_analysis_status_and_allocations,
+    )
+    from app.services.year_snapshot_service import delete_year_snapshots_for_portfolio
 
     delete_portfolio_analysis_methodologies(session, portfolio_id)
+    delete_portfolio_analysis_status_and_allocations(session, portfolio_id)
+    delete_year_snapshots_for_portfolio(session, portfolio_id)
     session.delete(portfolio)
     pref = session.get(AppPreference, ACTIVE_PORTFOLIO_KEY)
     if pref and pref.value == str(portfolio_id):

@@ -86,3 +86,16 @@ export async function getAssetIdBySymbol(
   }
   return asset.id;
 }
+
+export async function createYearSnapshotViaApi(
+  request: APIRequestContext,
+  portfolioId: number,
+  year: number,
+  replace = false
+): Promise<void> {
+  const response = await request.post(
+    `${getWorkerApiBaseUrl()}/portfolios/${portfolioId}/year-snapshots`,
+    { data: { year, replace } }
+  );
+  expect(response.ok()).toBeTruthy();
+}

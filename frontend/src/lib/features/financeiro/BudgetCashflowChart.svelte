@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
   import { formatBrl } from '$lib/features/rebalance/allocationTargets';
   import { hideMoneyValues } from '$lib/stores/hideMoneyValues';
 
@@ -72,7 +73,12 @@
 
 <section class="card bg-base-100 shadow" data-testid={testId} aria-label={title}>
   <div class="card-body gap-4">
-    <h3 class="card-title text-base">{title}</h3>
+    <div class="flex items-center gap-2">
+      <span class="text-primary" aria-hidden="true">
+        <LucideIcon name="ChartNoAxesColumn" size="md" />
+      </span>
+      <h3 class="card-title text-base">{title}</h3>
+    </div>
     {#if timeline.length === 0}
       <p class="text-sm text-base-content/60">Sem histórico no período.</p>
     {:else}

@@ -9,7 +9,7 @@ import {
 } from '../helpers/portfoliosPage';
 import { TICKER_KLBN } from '../helpers/e2eFixtures';
 import { assertYfinanceLookupBackend } from '../helpers/lookupEnv';
-import { expectPaymentRow, gotoProventosPage } from '../helpers/proventosPage';
+import { expectPaymentRow, gotoProventosListPage } from '../helpers/proventosPage';
 import { seedDadosKlbnPositionWithDividend } from '../helpers/seedDados';
 
 /**
@@ -26,14 +26,14 @@ test.describe('UI-DAD-008', () => {
     acceptDialogs(page);
     const portfolioId = await seedDadosKlbnPositionWithDividend(request);
 
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
     await expectPaymentRow(page, TICKER_KLBN, { amountPattern: /25[,.]00|25\.00/ });
 
     await gotoPortfolioPositions(page, portfolioId);
     await clickRemovePosition(page, TICKER_KLBN);
     await expect(positionsTable(page).locator('tr').filter({ hasText: TICKER_KLBN })).toHaveCount(0);
 
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
     await expectPaymentRow(page, TICKER_KLBN, { amountPattern: /25[,.]0|25\.0/ });
   });
 });

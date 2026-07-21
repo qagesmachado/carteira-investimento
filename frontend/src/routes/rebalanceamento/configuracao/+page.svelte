@@ -10,6 +10,8 @@
     type Portfolio
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
+  import { NO_PORTFOLIO_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
   import AppPageShell from '$lib/components/AppPageShell.svelte';
   import PageHero from '$lib/components/PageHero.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
@@ -159,9 +161,7 @@
     {#if loading}
       <p class="text-sm opacity-70">Carregando…</p>
     {:else if portfolios.length === 0}
-      <PageSection>
-        <p class="text-sm opacity-70">Cadastre uma carteira antes de definir metas.</p>
-      </PageSection>
+      <EmptyStateCallout {...NO_PORTFOLIO_EMPTY_STATE} testId="rebalance-config-sem-carteira" />
     {:else}
       <PageSection title="Carteira" testId="rebalance-config-portfolio-section">
         <label class="form-control w-full max-w-md">

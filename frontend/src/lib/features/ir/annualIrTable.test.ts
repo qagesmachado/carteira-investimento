@@ -6,9 +6,12 @@ import {
   annualIrPositionInvestedAmount,
   excludeFixedIncomePositions,
   filterAnnualIrPayments,
+  filterAnnualIrPositions,
+  filterAnnualIrSummary,
   flattenAnnualIrSummary,
   sortAnnualIrPayments,
-  sortAnnualIrPositions
+  sortAnnualIrPositions,
+  sortAnnualIrSummaryRows
 } from './annualIrTable';
 
 const payment = (
@@ -22,6 +25,20 @@ const payment = (
   payment_type: 'dividend',
   payment_date: '2024-03-10',
   amount: 100,
+  currency: 'BRL',
+  ...overrides
+});
+
+const position = (
+  overrides: Partial<AnnualIrPositionRow> = {}
+): AnnualIrPositionRow => ({
+  symbol: 'BBSE3',
+  asset_name: 'BB',
+  asset_type: 'stock',
+  display_class: 'stocks',
+  market: 'national',
+  quantity: 10,
+  average_price: 20,
   currency: 'BRL',
   ...overrides
 });
@@ -56,35 +73,59 @@ describe('annualIrTable', () => {
     ).toEqual(['jcp']);
   });
 
-  it('excludeFixedIncomePositions remove renda fixa e previdência', () => {
-    const positions: AnnualIrPositionRow[] = [
+  it('filterAnnualIrSummary filtra por classe (mercado)', () => {
+    const rows = [
       {
+        asset_id: 1,
         symbol: 'BBSE3',
         asset_name: 'BB',
-        asset_type: 'stock',
-        display_class: 'stocks',
-        quantity: 10,
-        average_price: 20,
-        currency: 'BRL'
+        asset_type: 'stock' as const,
+        display_class: 'stocks' as const,
+        market: 'national' as const,
+        totals_by_type: { dividend: 100 },
+        total_by_currency: { BRL: 100 }
       },
       {
+        asset_id: 2,
+        symbol: 'VOO',
+        asset_name: 'VOO',
+        asset_type: 'etf' as const,
+        display_class: 'international' as const,
+        market: 'international' as const,
+        totals_by_type: { dividend: 10 },
+        total_by_currency: { USD: 10 }
+      }
+    ];
+    expect(
+      filterAnnualIrSummary(rows, { market: 'international' }).map((row) => row.symbol)
+    ).toEqual(['VOO']);
+  });
+
+  it('filterAnnualIrPositions filtra por classe (mercado)', () => {
+    const rows = [
+      position(),
+      position({ symbol: 'VOO', market: 'international', asset_type: 'etf' })
+    ];
+    expect(
+      filterAnnualIrPositions(rows, { market: 'international' }).map((row) => row.symbol)
+    ).toEqual(['VOO']);
+  });
+
+  it('excludeFixedIncomePositions remove renda fixa e previdência', () => {
+    const positions: AnnualIrPositionRow[] = [
+      position(),
+      position({
         symbol: 'CDB',
         asset_name: 'CDB',
         asset_type: 'fixed_income',
-        display_class: 'fixed_income',
-        quantity: 0,
-        average_price: 0,
-        currency: 'BRL'
-      },
-      {
+        display_class: 'fixed_income'
+      }),
+      position({
         symbol: 'PREVIDENCIA',
         asset_name: 'Previdência BTG',
         asset_type: 'pension',
-        display_class: 'pension',
-        quantity: 0,
-        average_price: 0,
-        currency: 'BRL'
-      }
+        display_class: 'pension'
+      })
     ];
     expect(excludeFixedIncomePositions(positions)).toHaveLength(1);
     expect(excludeFixedIncomePositions(positions)[0].symbol).toBe('BBSE3');
@@ -99,6 +140,15 @@ describe('annualIrTable', () => {
     expect(sorted.map((row) => row.payment_date)).toEqual(['2024-03-10', '2024-09-01']);
   });
 
+  it('sortAnnualIrPayments ordena por classe (mercado)', () => {
+    const rows = [
+      payment({ symbol: 'VOO', market: 'international' }),
+      payment({ market: 'national' })
+    ];
+    const sorted = sortAnnualIrPayments(rows, 'market', 'asc');
+    expect(sorted.map((row) => row.market)).toEqual(['international', 'national']);
+  });
+
   it('flattenAnnualIrSummary expande moedas', () => {
     const rows = flattenAnnualIrSummary([
       {
@@ -107,6 +157,7 @@ describe('annualIrTable', () => {
         asset_name: 'VOO',
         asset_type: 'etf',
         display_class: 'international',
+        market: 'international',
         totals_by_type: { dividend: 10 },
         total_by_currency: { USD: 10 }
       }
@@ -116,42 +167,54 @@ describe('annualIrTable', () => {
     expect(rows[0].total).toBe(10);
   });
 
-  it('annualIrPositionInvestedAmount multiplica quantidade por preço médio', () => {
-    expect(
-      annualIrPositionInvestedAmount({
+  it('sortAnnualIrSummaryRows ordena por classe', () => {
+    const flattened = flattenAnnualIrSummary([
+      {
+        asset_id: 1,
         symbol: 'BBSE3',
         asset_name: 'BB',
         asset_type: 'stock',
         display_class: 'stocks',
-        quantity: 100,
-        average_price: 32.5,
-        currency: 'BRL'
-      })
-    ).toBe(3250);
+        market: 'national',
+        totals_by_type: { dividend: 100 },
+        total_by_currency: { BRL: 100 }
+      },
+      {
+        asset_id: 2,
+        symbol: 'VOO',
+        asset_name: 'VOO',
+        asset_type: 'etf',
+        display_class: 'international',
+        market: 'international',
+        totals_by_type: { dividend: 10 },
+        total_by_currency: { USD: 10 }
+      }
+    ]);
+    const sorted = sortAnnualIrSummaryRows(flattened, 'market', 'asc');
+    expect(sorted.map((row) => row.symbol)).toEqual(['VOO', 'BBSE3']);
+  });
+
+  it('annualIrPositionInvestedAmount multiplica quantidade por preço médio', () => {
+    expect(annualIrPositionInvestedAmount(position({ quantity: 100, average_price: 32.5 }))).toBe(
+      3250
+    );
   });
 
   it('sortAnnualIrPositions ordena por quantidade', () => {
     const positions: AnnualIrPositionRow[] = [
-      {
-        symbol: 'A',
-        asset_name: 'A',
-        asset_type: 'stock',
-        display_class: 'stocks',
-        quantity: 50,
-        average_price: 1,
-        currency: 'BRL'
-      },
-      {
-        symbol: 'B',
-        asset_name: 'B',
-        asset_type: 'stock',
-        display_class: 'stocks',
-        quantity: 10,
-        average_price: 1,
-        currency: 'BRL'
-      }
+      position({ symbol: 'A', quantity: 50 }),
+      position({ symbol: 'B', quantity: 10 })
     ];
     const sorted = sortAnnualIrPositions(positions, 'quantity', 'desc');
     expect(sorted[0].symbol).toBe('A');
+  });
+
+  it('sortAnnualIrPositions ordena por classe', () => {
+    const positions: AnnualIrPositionRow[] = [
+      position({ symbol: 'BBSE3', market: 'national' }),
+      position({ symbol: 'VOO', market: 'international' })
+    ];
+    const sorted = sortAnnualIrPositions(positions, 'market', 'asc');
+    expect(sorted.map((row) => row.symbol)).toEqual(['VOO', 'BBSE3']);
   });
 });

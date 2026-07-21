@@ -83,10 +83,3 @@ export function targetAmountFromPercent(plannedIncome: number | null, percent: n
   }
   return Math.round(plannedIncome * (percent / 100) * 100) / 100;
 }
-
-export function percentFromTargetAmount(plannedIncome: number | null, amount: number): number {
-  if (plannedIncome == null || plannedIncome <= 0) {
-    return 0;
-  }
-  return Math.round((amount / plannedIncome) * 100);
-}

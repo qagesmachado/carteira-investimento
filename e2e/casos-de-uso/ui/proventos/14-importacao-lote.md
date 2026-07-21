@@ -4,7 +4,7 @@
 
 - **ID:** `UI-PRV-014`
 - **Status:** aprovado
-- **Página:** `/proventos`
+- **Página:** `/proventos/adicionar`
 - **Funcionalidade:** importar proventos via CSV ou Excel (template ou layout legado)
 - **Depende de:** `UI-PRV-001`, ativos cadastrados na base
 - **Referência:** `DividendBulkImport.svelte`, `POST /dividend-payments/bulk/preview`
@@ -22,12 +22,12 @@
 
 ### Passo a passo
 
-1. Acesso `/proventos` e rolo até **Proventos em lote**.
+1. Acesso `/proventos/adicionar` e rolo até **Proventos em lote**.
 2. Cole CSV com cabeçalho `ticker,data,valor,tipo` e ao menos uma linha válida.
 3. Clico **Analisar conteúdo** — mensagem indica linhas válidas e formato `template`.
 4. Clico **Pré-visualizar no servidor** — tabela com status **Pronto** para linhas válidas.
 5. Mantenho linhas selecionadas e clico **Importar selecionados**.
-6. Mensagem de sucesso; a tabela de lançamentos exibe os novos proventos.
+6. Mensagem de sucesso; ao abrir a aba **Lançamentos** a tabela exibe os novos proventos.
 
 ## Cenário — Layout legado e linhas repetidas
 

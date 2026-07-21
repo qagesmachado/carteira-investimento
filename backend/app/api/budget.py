@@ -7,6 +7,11 @@ from app.db.session import get_session
 from app.schemas.budget import (
     ActiveBudgetProfileRead,
     ActiveBudgetProfileUpdate,
+    BudgetCategoryCreate,
+    BudgetCategoryRead,
+    BudgetCategoryUpdate,
+    BudgetCategoryUsageDetail,
+    BudgetCategoryUsageSummary,
     BudgetDashboardRead,
     BudgetExpenseEntryCreate,
     BudgetExpenseEntryUpdate,
@@ -22,6 +27,7 @@ from app.schemas.budget import (
     BudgetProfileCreate,
     BudgetProfileRead,
     BudgetProfileUpdate,
+    BudgetRemoveTargetCategories,
     BudgetTagCreate,
     BudgetTagRead,
     BudgetTagUpdate,
@@ -36,18 +42,26 @@ from app.services.budget.budget_service import (
     build_month_snapshot,
     copy_incomes_from_previous_month,
     create_budget_profile,
+    create_category,
     create_income_source,
     create_tag,
     create_transaction,
     delete_budget_profile,
+    delete_category,
+    delete_category_expenses,
     delete_income_source,
     delete_month_income_entry,
     delete_tag,
     delete_transaction,
+    get_category_usage,
+    list_categories,
+    list_categories_usage,
     list_income_sources,
     list_profiles_read,
     list_tags,
     patch_budget_month,
+    remove_target_categories,
+    update_category,
     update_budget_profile,
     update_income_source,
     update_month_income_entry,
@@ -153,6 +167,84 @@ def remove_tag(
     delete_tag(session, profile_id, tag_id)
 
 
+@router.get("/profiles/{profile_id}/categories", response_model=list[BudgetCategoryRead])
+def get_categories(
+    profile_id: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[BudgetCategoryRead]:
+    return list_categories(session, profile_id)
+
+
+@router.get(
+    "/profiles/{profile_id}/categories/usage",
+    response_model=list[BudgetCategoryUsageSummary],
+)
+def get_categories_usage(
+    profile_id: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> list[BudgetCategoryUsageSummary]:
+    return list_categories_usage(session, profile_id)
+
+
+@router.post(
+    "/profiles/{profile_id}/categories",
+    response_model=BudgetCategoryRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def post_category(
+    profile_id: int,
+    payload: BudgetCategoryCreate,
+    session: Annotated[Session, Depends(get_session)],
+) -> BudgetCategoryRead:
+    return create_category(session, profile_id, payload)
+
+
+@router.get(
+    "/profiles/{profile_id}/categories/{category_id}/usage",
+    response_model=BudgetCategoryUsageDetail,
+)
+def get_category_usage_detail(
+    profile_id: int,
+    category_id: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> BudgetCategoryUsageDetail:
+    return get_category_usage(session, profile_id, category_id)
+
+
+@router.delete(
+    "/profiles/{profile_id}/categories/{category_id}/expenses",
+    response_model=BudgetCategoryUsageDetail,
+)
+def remove_category_expenses(
+    profile_id: int,
+    category_id: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> BudgetCategoryUsageDetail:
+    return delete_category_expenses(session, profile_id, category_id)
+
+
+@router.patch("/profiles/{profile_id}/categories/{category_id}", response_model=BudgetCategoryRead)
+def patch_category(
+    profile_id: int,
+    category_id: int,
+    payload: BudgetCategoryUpdate,
+    session: Annotated[Session, Depends(get_session)],
+) -> BudgetCategoryRead:
+    return update_category(session, profile_id, category_id, payload)
+
+
+@router.delete(
+    "/profiles/{profile_id}/categories/{category_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def remove_category(
+    profile_id: int,
+    category_id: int,
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    delete_category(session, profile_id, category_id)
+
+
 @router.get("/profiles/{profile_id}/income-sources", response_model=list[BudgetIncomeSourceRead])
 def get_income_sources(
     profile_id: int,
@@ -238,6 +330,19 @@ def put_month_targets(
     session: Annotated[Session, Depends(get_session)],
 ) -> BudgetMonthSnapshotRead:
     return update_month_targets(session, profile_id, year_month, payload)
+
+
+@router.post(
+    "/profiles/{profile_id}/months/{year_month}/targets/remove-categories",
+    response_model=BudgetMonthSnapshotRead,
+)
+def post_remove_target_categories(
+    profile_id: int,
+    year_month: str,
+    payload: BudgetRemoveTargetCategories,
+    session: Annotated[Session, Depends(get_session)],
+) -> BudgetMonthSnapshotRead:
+    return remove_target_categories(session, profile_id, year_month, payload)
 
 
 @router.put("/profiles/{profile_id}/months/{year_month}/incomes", response_model=BudgetMonthSnapshotRead)

@@ -4,7 +4,7 @@ import { expect, test } from '../fixtures/test';
 import { TICKER_BBSE3, TICKER_VOO } from '../helpers/e2eFixtures';
 import {
   filterByType,
-  gotoProventosPage,
+  gotoProventosListPage,
   paymentsTable
 } from '../helpers/proventosPage';
 import { seedProventosMultiForFilters } from '../helpers/seedProventos';
@@ -19,7 +19,7 @@ test.describe('UI-PRV-008', () => {
   });
 
   test('mostra apenas lançamentos do tipo selecionado', async ({ page }) => {
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
 
     await filterByType(page, 'JCP');
     await expect(paymentsTable(page).locator('tr')).toHaveCount(1);

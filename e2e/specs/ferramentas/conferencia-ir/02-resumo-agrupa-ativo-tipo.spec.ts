@@ -25,7 +25,8 @@ test.describe('UI-IR-002', () => {
     const row = table.locator('tbody tr').filter({ hasText: 'BBSE3' });
     await expect(row).toBeVisible();
     await expect(row).toContainText('R$');
-    await expect(row.getByRole('cell').nth(2)).toContainText('100');
-    await expect(row.getByRole('cell').nth(3)).toContainText('30');
+    await expect(row.getByRole('cell').nth(3)).toContainText('100');
+    await expect(row.getByRole('cell').nth(4)).toContainText('30');
+    await expect(row.getByRole('cell').nth(2)).toContainText('Nacional');
   });
 });

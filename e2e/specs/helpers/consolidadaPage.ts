@@ -110,9 +110,9 @@ export async function expectTickerPillVisible(page: Page, ticker: string): Promi
 }
 
 export async function expectEmptyPortfolioMessage(page: Page): Promise<void> {
-  await expect(
-    page.getByText('Crie ou selecione uma carteira em').filter({ has: page.getByRole('link', { name: 'Carteiras' }) })
-  ).toBeVisible();
+  const cta = page.getByTestId('consolidada-sem-carteira-cta');
+  await expect(cta).toBeVisible();
+  await expect(cta).toHaveAttribute('href', '/portfolios');
 }
 
 export async function selectPortfolioByName(page: Page, name: string): Promise<void> {

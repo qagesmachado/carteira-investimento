@@ -3,7 +3,6 @@ import { expect, test } from '../fixtures/test';
 import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
 import { analysisPanel, clickClassificarInPortfolios } from '../helpers/analisePage';
 import { gotoPortfolioPositions } from '../helpers/portfoliosPage';
-import { setPortfolioMethodologyAuvp } from '../helpers/seedAnalysis';
 import { seedPortfoliosPrincipalWithBbse3 } from '../helpers/seedPortfolios';
 
 /**
@@ -15,7 +14,6 @@ test.describe('UI-ANL-005', () => {
 
   test.beforeEach(async ({ request }) => {
     portfolioId = await seedPortfoliosPrincipalWithBbse3(request);
-    await setPortfolioMethodologyAuvp(request, portfolioId, 'stock-br');
   });
 
   test('abre painel de análise a partir da carteira', async ({ page }) => {

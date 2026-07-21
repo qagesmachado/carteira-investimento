@@ -9,6 +9,7 @@ import {
   isApiDividendPaymentsListResponse
 } from './apiResponses';
 
+/** Abre a aba «Adicionar» (formulário + importação em lote). */
 export async function gotoProventosPage(page: Page): Promise<void> {
   const assetsResponse = page.waitForResponse(
     (r) => isApiAssetsListResponse(r, 'GET') && r.ok()
@@ -16,9 +17,56 @@ export async function gotoProventosPage(page: Page): Promise<void> {
   const dividendsResponse = page.waitForResponse(
     (r) => isApiDividendPaymentsListResponse(r, 'GET') && r.ok()
   );
-  await page.goto('/proventos');
+  await page.goto('/proventos/adicionar');
   await assetsResponse;
   await dividendsResponse;
+  await expect(proventoFormSection(page)).toBeVisible();
+}
+
+/** Abre a aba «Resumo» (KPIs, gráfico e top ativos). */
+export async function gotoProventosSummaryPage(page: Page): Promise<void> {
+  const assetsResponse = page.waitForResponse(
+    (r) => isApiAssetsListResponse(r, 'GET') && r.ok()
+  );
+  const dividendsResponse = page.waitForResponse(
+    (r) => isApiDividendPaymentsListResponse(r, 'GET') && r.ok()
+  );
+  await page.goto('/proventos/resumo');
+  await assetsResponse;
+  await dividendsResponse;
+  await expect(page.getByTestId('proventos-kpi-cards')).toBeVisible();
+}
+
+/** Abre a aba «Lançamentos» (lista de proventos). */
+export async function gotoProventosListPage(page: Page): Promise<void> {
+  const assetsResponse = page.waitForResponse(
+    (r) => isApiAssetsListResponse(r, 'GET') && r.ok()
+  );
+  const dividendsResponse = page.waitForResponse(
+    (r) => isApiDividendPaymentsListResponse(r, 'GET') && r.ok()
+  );
+  await page.goto('/proventos/lancamentos');
+  await assetsResponse;
+  await dividendsResponse;
+  await expect(paymentsListSection(page)).toBeVisible();
+}
+
+/** Troca para a aba «Lançamentos» via pill (navegação client-side). */
+export async function goToProventosListTab(page: Page): Promise<void> {
+  await page.getByTestId('proventos-section-tab-lancamentos').click();
+  await expect(paymentsListSection(page)).toBeVisible();
+}
+
+/**
+ * Troca a carteira ativa da seção pelo painel no topo (após as abas).
+ * Aguarda o recarregamento dos proventos do novo escopo.
+ */
+export async function selectProventosPortfolio(page: Page, name: string): Promise<void> {
+  const listResponse = page.waitForResponse(
+    (r) => isApiDividendPaymentsListResponse(r, 'GET') && r.ok()
+  );
+  await page.getByTestId('proventos-portfolio-select').selectOption({ label: name });
+  await listResponse;
 }
 
 export function proventoFormSection(page: Page): Locator {
@@ -47,13 +95,9 @@ export async function fillProventoForm(
     amount?: string;
     taxWithheld?: string;
     currency?: string;
-    portfolio?: string;
   } = {}
 ): Promise<void> {
   const form = proventoFormSection(page);
-  if (options.portfolio) {
-    await form.getByLabel('Carteira').selectOption({ label: options.portfolio });
-  }
   if (options.type) {
     await form
       .locator('label')

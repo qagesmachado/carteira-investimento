@@ -1,7 +1,12 @@
 import { expect, test } from '../fixtures/test';
 
 
-import { gotoProventosPage, paymentsListSection, proventoFormSection } from '../helpers/proventosPage';
+import {
+  goToProventosListTab,
+  gotoProventosPage,
+  paymentsListSection,
+  proventoFormSection
+} from '../helpers/proventosPage';
 import { seedProventosEmpty } from '../helpers/seedProventos';
 
 /**
@@ -17,8 +22,10 @@ test.describe('UI-PRV-001', () => {
     await gotoProventosPage(page);
 
     await expect(page.getByRole('heading', { name: 'Proventos', level: 1 })).toBeVisible();
-    await expect(proventoFormSection(page).getByText('Novo provento')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Novo provento' })).toBeVisible();
     await expect(proventoFormSection(page).getByRole('button', { name: 'Cadastrar provento' })).toBeVisible();
+
+    await goToProventosListTab(page);
     await expect(paymentsListSection(page).getByText('Nenhum provento cadastrado ainda.')).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
   });

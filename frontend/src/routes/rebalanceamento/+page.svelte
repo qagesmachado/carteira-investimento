@@ -14,7 +14,9 @@
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import AppPageShell from '$lib/components/AppPageShell.svelte';
   import PageHero from '$lib/components/PageHero.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
+  import { NO_PORTFOLIO_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
   import DashboardHeroToolbar from '$lib/features/dashboard/DashboardHeroToolbar.svelte';
   import DashboardPortfolioBar from '$lib/features/dashboard/DashboardPortfolioBar.svelte';
   import AssetRebalanceTable from '$lib/features/rebalance/AssetRebalanceTable.svelte';
@@ -311,6 +313,8 @@
 
     {#if loading}
       <p class="text-sm opacity-70">Carregando…</p>
+    {:else if activeId == null}
+      <EmptyStateCallout {...NO_PORTFOLIO_EMPTY_STATE} testId="rebalance-sem-carteira" />
     {:else if !snapshot}
       <p class="text-sm opacity-70">Nenhuma carteira selecionada.</p>
     {:else}

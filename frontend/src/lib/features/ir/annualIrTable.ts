@@ -17,11 +17,12 @@ export type AnnualIrPaymentSortKey =
   | 'payment_date'
   | 'amount';
 
-export type AnnualIrSummarySortKey = 'symbol' | 'asset_type' | 'total';
+export type AnnualIrSummarySortKey = 'symbol' | 'asset_type' | 'market' | 'total';
 
 export type AnnualIrPositionSortKey =
   | 'symbol'
   | 'asset_type'
+  | 'market'
   | 'quantity'
   | 'average_price'
   | 'invested_amount';
@@ -58,12 +59,38 @@ export function filterAnnualIrPayments(
 
 export function filterAnnualIrSummary(
   rows: AnnualIrSummaryByAsset[],
-  assetType?: AssetType | ''
-): AnnualIrSummaryByAsset[] {
-  if (!assetType) {
-    return rows;
+  filters: {
+    assetType?: AssetType | '';
+    market?: AssetMarket | '';
   }
-  return rows.filter((row) => row.asset_type === assetType);
+): AnnualIrSummaryByAsset[] {
+  return rows.filter((row) => {
+    if (filters.assetType && row.asset_type !== filters.assetType) {
+      return false;
+    }
+    if (filters.market && row.market !== filters.market) {
+      return false;
+    }
+    return true;
+  });
+}
+
+export function filterAnnualIrPositions(
+  positions: AnnualIrPositionRow[],
+  filters: {
+    assetType?: AssetType | '';
+    market?: AssetMarket | '';
+  }
+): AnnualIrPositionRow[] {
+  return positions.filter((position) => {
+    if (filters.assetType && position.asset_type !== filters.assetType) {
+      return false;
+    }
+    if (filters.market && position.market !== filters.market) {
+      return false;
+    }
+    return true;
+  });
 }
 
 const EXCLUDED_POSITION_ASSET_TYPES = new Set<AssetType>(['fixed_income', 'pension']);
@@ -149,6 +176,9 @@ export function sortAnnualIrSummaryRows(
       case 'asset_type':
         cmp = a.asset_type.localeCompare(b.asset_type);
         break;
+      case 'market':
+        cmp = a.market.localeCompare(b.market);
+        break;
       case 'total':
         cmp = a.total - b.total;
         break;
@@ -182,6 +212,9 @@ export function sortAnnualIrPositions(
         break;
       case 'asset_type':
         cmp = a.asset_type.localeCompare(b.asset_type);
+        break;
+      case 'market':
+        cmp = a.market.localeCompare(b.market);
         break;
       case 'quantity':
         cmp = a.quantity - b.quantity;

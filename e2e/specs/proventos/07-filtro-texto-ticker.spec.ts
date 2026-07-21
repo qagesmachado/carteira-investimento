@@ -5,7 +5,7 @@ import { TICKER_BBSE3, TICKER_VOO } from '../helpers/e2eFixtures';
 import {
   expectPaymentsCounter,
   filterByTickerText,
-  gotoProventosPage,
+  gotoProventosListPage,
   paymentsTable
 } from '../helpers/proventosPage';
 import { seedProventosMultiForFilters } from '../helpers/seedProventos';
@@ -20,7 +20,7 @@ test.describe('UI-PRV-007', () => {
   });
 
   test('filtra linhas pelo ticker digitado', async ({ page }) => {
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
 
     await filterByTickerText(page, TICKER_BBSE3);
     await expectPaymentsCounter(page, /2 de 3 lançamentos/);

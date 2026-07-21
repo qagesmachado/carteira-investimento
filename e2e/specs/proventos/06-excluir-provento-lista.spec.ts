@@ -5,7 +5,7 @@ import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
 import {
   acceptDialogs,
   clickDeleteOnRow,
-  gotoProventosPage,
+  gotoProventosListPage,
   paymentsListSection,
   paymentsTable
 } from '../helpers/proventosPage';
@@ -22,7 +22,7 @@ test.describe('UI-PRV-006', () => {
 
   test('remove lançamento após confirmar', async ({ page }) => {
     acceptDialogs(page);
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
 
     await expect(paymentsTable(page).locator('tr').filter({ hasText: TICKER_BBSE3 })).toHaveCount(1);
     await clickDeleteOnRow(page, TICKER_BBSE3);

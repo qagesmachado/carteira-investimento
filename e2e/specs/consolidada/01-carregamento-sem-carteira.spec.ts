@@ -23,6 +23,5 @@ test.describe('UI-CNS-001', () => {
     await expect(page.getByRole('heading', { name: 'Visão consolidada' })).toBeVisible();
     await expectEmptyPortfolioMessage(page);
     await expectSummaryCardsHidden(page);
-    await expect(page.getByRole('link', { name: 'Carteiras' })).toBeVisible();
   });
 });

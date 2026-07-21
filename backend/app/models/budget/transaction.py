@@ -24,3 +24,5 @@ class BudgetTransaction(SQLModel, table=True):
         default=None, foreign_key="budgetrecurringexpense.id", index=True
     )
     notes: str | None = None
+    # Conferência visual (aba Controle); não altera totais do orçamento.
+    settled: bool = Field(default=False)

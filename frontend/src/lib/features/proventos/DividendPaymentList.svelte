@@ -7,7 +7,18 @@
     parseBrDateToIso,
     sanitizeBrDateTyping
   } from '$lib/brDate';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
+  import {
+    displayClassIconFgClass,
+    lucideIconForDisplayClass
+  } from '$lib/features/dashboard/displayClassLucideIcons';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
+  import {
+    PROVENTOS_EDIT_LUCIDE_ICON,
+    PROVENTOS_LIST_TAB_LUCIDE_ICON,
+    PROVENTOS_REMOVE_LUCIDE_ICON,
+    type LucideIconName
+  } from '$lib/icons/lucideIconCatalog';
   import {
     formatMarketForDisplay,
     formatPaymentTypeForDisplay,
@@ -16,6 +27,7 @@
     type DividendPaymentType
   } from '$lib/proventoLabels';
   import { hiddenMoneyForCurrency, isMoneyHidden } from '$lib/moneyDisplay';
+  import { PAGE_SECTION_CLASS } from '$lib/layout/pageVisual';
 
   import DividendPaymentsSummary from './DividendPaymentsSummary.svelte';
   import DividendTablePagination from './DividendTablePagination.svelte';
@@ -95,12 +107,6 @@
     resetPagination();
   }
 
-  function handlePortfolioFilterChange(event: Event) {
-    const value = (event.target as HTMLSelectElement).value;
-    portfolioFilter = value === '' ? '' : Number(value);
-    emitServerFilters();
-  }
-
   function portfolioNameFor(id: number | null): string {
     if (id == null) return 'Sem carteira';
     return portfolios.find((p) => p.id === id)?.name ?? `#${id}`;
@@ -169,11 +175,8 @@
     resetPagination();
   }
 
-  function sortIndicator(key: DividendPaymentSortKey): string {
-    if (sortKey !== key) {
-      return '';
-    }
-    return sortDirection === 'asc' ? ' ↑' : ' ↓';
+  function marketIcon(market: AssetMarket | string): LucideIconName {
+    return market === 'international' ? 'Globe' : 'Landmark';
   }
 
   function formatAmount(amount: number, currency: string): string {
@@ -208,17 +211,20 @@
   $: availableYears = collectPaymentYears(payments);
   $: hasTextFilter = debouncedQuery.trim().length > 0;
   $: hasServerFilter = Boolean(
-    filterType || filterMarket || filterFromDateBr.trim() || filterToDateBr.trim() || portfolioFilter !== ''
+    filterType || filterMarket || filterFromDateBr.trim() || filterToDateBr.trim()
   );
   $: hasYearFilter = Boolean(filterYear);
   $: hasAnyFilter = hasTextFilter || hasServerFilter || hasYearFilter;
 </script>
 
-<section class="card bg-base-100 shadow-xl">
+<section class={PAGE_SECTION_CLASS} data-testid="proventos-lista-section">
   <div class="card-body">
     <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
       <div>
-        <p class="text-sm font-semibold uppercase tracking-wide text-primary">Lançamentos</p>
+        <p class="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-primary">
+          <LucideIcon name={PROVENTOS_LIST_TAB_LUCIDE_ICON} size="sm" aria-hidden="true" />
+          Lançamentos
+        </p>
         <h2 class="card-title">Proventos cadastrados</h2>
       </div>
       <span class="badge badge-neutral">
@@ -230,22 +236,7 @@
       </span>
     </div>
 
-    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      <label class="form-control">
-        <span class="label"><span class="label-text">Carteira</span></span>
-        <select
-          class="select select-bordered"
-          value={portfolioFilter === '' ? '' : String(portfolioFilter)}
-          on:change={handlePortfolioFilterChange}
-          aria-label="Filtrar por carteira"
-        >
-          <option value="">Todas as carteiras</option>
-          {#each portfolios as portfolio (portfolio.id)}
-            <option value={String(portfolio.id)}>{portfolio.name}</option>
-          {/each}
-        </select>
-      </label>
-
+    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       <label class="form-control">
         <span class="label"><span class="label-text">Buscar ativo</span></span>
         <input
@@ -360,62 +351,103 @@
       />
 
       <div class="overflow-x-auto">
-        <table class="table table-zebra">
+        <table class="table table-zebra table-sm">
           <thead>
             <tr>
               <th>
-                <button type="button" class="btn btn-ghost btn-xs" on:click={() => handleSort('payment_date')}>
-                  Data{sortIndicator('payment_date')}
+                <button type="button" class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 px-1 font-normal normal-case" on:click={() => handleSort('payment_date')}>
+                  Data
+                  {#if sortKey === 'payment_date'}
+                    <LucideIcon name={sortDirection === 'asc' ? 'ArrowUp' : 'ArrowDown'} size="sm" />
+                  {/if}
                 </button>
               </th>
               <th>
-                <button type="button" class="btn btn-ghost btn-xs" on:click={() => handleSort('symbol')}>
-                  Ativo{sortIndicator('symbol')}
+                <button type="button" class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 px-1 font-normal normal-case" on:click={() => handleSort('symbol')}>
+                  Ativo
+                  {#if sortKey === 'symbol'}
+                    <LucideIcon name={sortDirection === 'asc' ? 'ArrowUp' : 'ArrowDown'} size="sm" />
+                  {/if}
                 </button>
               </th>
               <th>Nome</th>
               <th>Carteira</th>
               <th>
-                <button type="button" class="btn btn-ghost btn-xs" on:click={() => handleSort('payment_type')}>
-                  Tipo{sortIndicator('payment_type')}
+                <button type="button" class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 px-1 font-normal normal-case" on:click={() => handleSort('payment_type')}>
+                  Tipo
+                  {#if sortKey === 'payment_type'}
+                    <LucideIcon name={sortDirection === 'asc' ? 'ArrowUp' : 'ArrowDown'} size="sm" />
+                  {/if}
                 </button>
               </th>
               <th class="text-end">
-                <button type="button" class="btn btn-ghost btn-xs" on:click={() => handleSort('amount')}>
-                  Valor{sortIndicator('amount')}
+                <button type="button" class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 px-1 font-normal normal-case" on:click={() => handleSort('amount')}>
+                  Valor
+                  {#if sortKey === 'amount'}
+                    <LucideIcon name={sortDirection === 'asc' ? 'ArrowUp' : 'ArrowDown'} size="sm" />
+                  {/if}
                 </button>
               </th>
               <th>Moeda</th>
               <th>
-                <button type="button" class="btn btn-ghost btn-xs" on:click={() => handleSort('market')}>
-                  Mercado{sortIndicator('market')}
+                <button type="button" class="btn btn-ghost btn-xs h-auto min-h-0 gap-1 px-1 font-normal normal-case" on:click={() => handleSort('market')}>
+                  Mercado
+                  {#if sortKey === 'market'}
+                    <LucideIcon name={sortDirection === 'asc' ? 'ArrowUp' : 'ArrowDown'} size="sm" />
+                  {/if}
                 </button>
               </th>
-              <th class="text-end">Ações</th>
+              <th class="text-end"><span class="sr-only">Ações</span></th>
             </tr>
           </thead>
           <tbody>
             {#each displayed as payment (payment.id)}
               <tr>
-                <td>{formatDate(payment.payment_date)}</td>
-                <td class="font-mono">{formatTickerForDisplay(payment.symbol)}</td>
+                <td class="whitespace-nowrap tabular-nums">{formatDate(payment.payment_date)}</td>
+                <td class="whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1.5">
+                    <LucideIcon
+                      name={lucideIconForDisplayClass(payment.display_class)}
+                      size="sm"
+                      class={displayClassIconFgClass(payment.display_class)}
+                    />
+                    <span class="inline-flex rounded-md bg-base-200 px-2 py-0.5 font-mono text-xs font-semibold">
+                      {formatTickerForDisplay(payment.symbol)}
+                    </span>
+                  </span>
+                </td>
                 <td>{payment.asset_name}</td>
                 <td class="text-sm">{portfolioNameFor(payment.portfolio_id)}</td>
                 <td>{formatPaymentTypeForDisplay(payment.payment_type)}</td>
-                <td class="text-end">{formatAmount(payment.amount, payment.currency)}</td>
+                <td class="text-end tabular-nums">{formatAmount(payment.amount, payment.currency)}</td>
                 <td>{payment.currency}</td>
-                <td>{formatMarketForDisplay(payment.market)}</td>
+                <td>
+                  <span class="inline-flex items-center gap-1.5">
+                    <LucideIcon name={marketIcon(payment.market)} size="sm" class="text-base-content/70" />
+                    <span>{formatMarketForDisplay(payment.market)}</span>
+                  </span>
+                </td>
                 <td class="text-end">
-                  <button class="btn btn-ghost btn-sm" type="button" on:click={() => onEdit(payment)}>
-                    Editar
-                  </button>
-                  <button
-                    class="btn btn-ghost btn-sm text-error"
-                    type="button"
-                    on:click={() => onDelete(payment)}
-                  >
-                    Remover
-                  </button>
+                  <div class="inline-flex gap-1">
+                    <button
+                      class="btn btn-outline btn-xs gap-1"
+                      type="button"
+                      aria-label="Editar"
+                      on:click={() => onEdit(payment)}
+                    >
+                      <LucideIcon name={PROVENTOS_EDIT_LUCIDE_ICON} size="sm" />
+                      <span class="hidden sm:inline">Editar</span>
+                    </button>
+                    <button
+                      class="btn btn-outline btn-xs gap-1 text-error"
+                      type="button"
+                      aria-label="Remover"
+                      on:click={() => onDelete(payment)}
+                    >
+                      <LucideIcon name={PROVENTOS_REMOVE_LUCIDE_ICON} size="sm" />
+                      <span class="hidden sm:inline">Remover</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             {/each}

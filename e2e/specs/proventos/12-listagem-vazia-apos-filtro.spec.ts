@@ -3,7 +3,7 @@ import { expect, test } from '../fixtures/test';
 
 import {
   filterByTickerText,
-  gotoProventosPage,
+  gotoProventosListPage,
   paymentsListSection
 } from '../helpers/proventosPage';
 import { seedProventosMultiForFilters } from '../helpers/seedProventos';
@@ -18,7 +18,7 @@ test.describe('UI-PRV-012', () => {
   });
 
   test('exibe mensagem quando nenhum lançamento corresponde', async ({ page }) => {
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
 
     await filterByTickerText(page, 'TICKER_INEXISTENTE_XYZ');
     await expect(

@@ -1,6 +1,6 @@
 import { expect, test } from '../fixtures/test';
 
-import { gotoFinanceiroPainel } from '../helpers/financeiroPage';
+import { gotoFinanceiroPainel, hoverBudgetDonutSlice } from '../helpers/financeiroPage';
 import {
   createBudgetExpenseViaApi,
   currentBudgetYearMonth,
@@ -69,12 +69,12 @@ test.describe('UI-FIN-008', () => {
     await page.getByTestId('budget-dashboard-categories-chart-expand').click();
     await expect(page.getByTestId('budget-dashboard-categories-chart-modal')).toBeVisible();
     await expect(page.getByTestId('budget-dashboard-categories-chart-modal')).toContainText('Despesas por metas');
-    await page.getByTestId('budget-dashboard-categories-chart-modal-pie').locator('path').first().hover();
+    await hoverBudgetDonutSlice(page, 'budget-dashboard-categories-chart-modal-pie');
     await expect(page.getByTestId('budget-dashboard-categories-chart-modal-tooltip')).toBeVisible();
     await page.getByTestId('budget-dashboard-categories-chart-modal-close').click();
     await expect(page.getByTestId('budget-dashboard-categories-chart-modal')).toHaveCount(0);
 
-    await page.getByTestId('budget-dashboard-categories-chart-pie').locator('path').first().hover();
+    await hoverBudgetDonutSlice(page, 'budget-dashboard-categories-chart-pie');
     await expect(page.getByTestId('budget-dashboard-categories-chart-tooltip')).toBeVisible();
   });
 });

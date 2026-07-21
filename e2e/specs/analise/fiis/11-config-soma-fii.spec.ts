@@ -27,8 +27,10 @@ test.describe('UI-ANL-011', () => {
     await expect(analysisSumConfigModal(page)).not.toContainText(/Lucros \+ Dívida/);
     await setSumColumnDiagramMultiplier(page, '3.5');
     await saveAnalysisConfig(page);
-    await expect(analysisSumConfigModal(page).getByLabel('Multiplicador do diagrama')).toHaveValue(
-      '3.5'
-    );
+    await expect(analysisSumConfigModal(page)).toHaveCount(0);
+    await openSumColumnConfigModal(page);
+    await expect(
+      analysisSumConfigModal(page).getByTestId('analysis-methodology-diagram-multiplier')
+    ).toHaveValue('3.5');
   });
 });

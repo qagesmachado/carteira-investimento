@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Centralizar exportação e importação de backup completo, carteiras, catálogo de ativos e proventos — removendo esses fluxos das páginas de cadastro.
+Centralizar exportação e importação de backup completo, carteiras e catálogo de ativos, além da **exportação** de proventos — removendo esses fluxos das páginas de cadastro. A **importação em lote de proventos** fica em **Proventos → Adicionar** (`/proventos/adicionar`).
 
 ## Rota
 
@@ -16,7 +16,7 @@ Centralizar exportação e importação de backup completo, carteiras, catálogo
 | **Backup completo** | JSON (`GET /data/export/full`) | Preview + confirm (`POST /data/import/full/*`) |
 | **Carteira** | JSON v2 com posições e proventos (`GET /portfolios/{id}/export`) | Wizard (`POST /portfolios/import/*`) |
 | **Ativos** | JSON catálogo (`GET /data/export/assets`) | Bulk (`POST /data/import/assets/*`) |
-| **Proventos** | CSV/JSON por carteira (`GET /data/export/dividends`) | Bulk (`POST /data/import/dividends/*`) |
+| **Proventos** | CSV/JSON por carteira (`GET /data/export/dividends`) | Importação em lote movida para **Proventos → Adicionar** (`/proventos/adicionar`) |
 
 ## Formato export carteira v2
 

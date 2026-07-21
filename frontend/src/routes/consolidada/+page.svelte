@@ -44,6 +44,8 @@
   } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
   import AppPageShell from '$lib/components/AppPageShell.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
+  import { NO_PORTFOLIO_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
   import PageHero from '$lib/components/PageHero.svelte';
   import DashboardHeroToolbar from '$lib/features/dashboard/DashboardHeroToolbar.svelte';
   import {
@@ -821,9 +823,7 @@
     </PageSection>
 
     {#if !activeId}
-      <p class="text-center text-sm text-base-content/60">
-        Crie ou selecione uma carteira em <a class="link link-primary" href="/portfolios">Carteiras</a>.
-      </p>
+      <EmptyStateCallout {...NO_PORTFOLIO_EMPTY_STATE} testId="consolidada-sem-carteira" />
     {:else}
       <PageSection title="Explorar posições" testId="consolidada-filters-section">
         <ConsolidadaFiltersPanel

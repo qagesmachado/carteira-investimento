@@ -4,7 +4,7 @@ import { expect, test } from '../fixtures/test';
 import { TICKER_BBSE3, TICKER_VOO } from '../helpers/e2eFixtures';
 import {
   filterByDateRange,
-  gotoProventosPage,
+  gotoProventosListPage,
   paymentsTable
 } from '../helpers/proventosPage';
 import { seedProventosMultiForFilters } from '../helpers/seedProventos';
@@ -19,7 +19,7 @@ test.describe('UI-PRV-010', () => {
   });
 
   test('restringe lançamentos ao intervalo informado', async ({ page }) => {
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
 
     await filterByDateRange(page, '01/03/2024', '31/07/2024');
     await expect(paymentsTable(page).locator('tr')).toHaveCount(2);

@@ -17,16 +17,24 @@
     type BudgetTransaction
   } from '$lib/api/budget';
   import { parseApiError } from '$lib/api/parseApiError';
+  import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
   import BudgetExpenseDeleteConfirmModal from '$lib/features/financeiro/BudgetExpenseDeleteConfirmModal.svelte';
   import BudgetExpenseEditModal from '$lib/features/financeiro/BudgetExpenseEditModal.svelte';
   import BudgetExpenseForm from '$lib/features/financeiro/BudgetExpenseForm.svelte';
   import BudgetExpenseList from '$lib/features/financeiro/BudgetExpenseList.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
+  import { NO_BUDGET_PROFILE_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
+  import { FINANCEIRO_EXPENSES_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
   import type {
     BudgetExpenseDeleteAction,
     BudgetExpenseDeleteTarget
   } from '$lib/features/financeiro/budgetExpenseDelete';
-  import { listMonthExpenses } from '$lib/features/financeiro/budgetExpenseRows';
+  import {
+    filterActiveRecurringExpenses,
+    listMonthExpenses
+  } from '$lib/features/financeiro/budgetExpenseRows';
   import { getBudgetLayoutContext } from '$lib/features/financeiro/budgetLayoutContext';
   import { formatBrl } from '$lib/features/rebalance/allocationTargets';
   import { hideMoneyValues } from '$lib/stores/hideMoneyValues';
@@ -38,8 +46,10 @@
   let recurringRules: BudgetRecurringExpense[] = [];
   let tags: BudgetTag[] = [];
   let loading = true;
+  let initialized = false;
   let saving = false;
   let error = '';
+  let message = '';
   let editingExpense: BudgetTransaction | null = null;
   let editingRecurring: BudgetRecurringExpense | null = null;
   let pendingDelete: BudgetExpenseDeleteTarget | null = null;
@@ -47,7 +57,10 @@
   $: profileId = $activeProfileId;
   $: yearMonth = $page.params.yearMonth ?? $yearMonthStore;
   $: expenses = listMonthExpenses(snapshot?.transactions ?? []);
+  $: activeRecurringRules = filterActiveRecurringExpenses(recurringRules, yearMonth);
   $: expenseTotal = snapshot?.expense_total_brl ?? 0;
+  $: incomeTotal = snapshot?.income_total_brl ?? 0;
+  $: remaining = snapshot?.remaining_brl ?? 0;
   $: editModalOpen = editingExpense != null || editingRecurring != null;
   $: deleteModalOpen = pendingDelete != null;
 
@@ -76,6 +89,7 @@
       error = parseApiError(err, 'Não foi possível carregar as despesas.');
     } finally {
       loading = false;
+      initialized = true;
     }
   }
 
@@ -122,6 +136,7 @@
     saving = true;
     error = '';
     try {
+      const wasEditing = editingRecurring != null || editingExpense != null;
       if (editingRecurring) {
         await updateRecurringExpense(profileId, editingRecurring.id, payload);
       } else if (editingExpense) {
@@ -132,6 +147,7 @@
       editingExpense = null;
       editingRecurring = null;
       await loadPage();
+      message = wasEditing ? 'Despesa atualizada.' : 'Despesa salva.';
     } catch (err) {
       error = parseApiError(err, 'Não foi possível salvar a despesa.');
     } finally {
@@ -196,6 +212,7 @@
       }
       pendingDelete = null;
       await loadPage();
+      message = 'Despesa excluída.';
     } catch (err) {
       error = parseApiError(err, 'Não foi possível excluir a despesa.');
     } finally {
@@ -209,19 +226,65 @@
 </svelte:head>
 
 <div class="flex flex-col gap-3">
+{#if error}
+  <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
+{/if}
+{#if message}
+  <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
+{/if}
 {#if profileId == null}
-  <p class="text-base-content/70">Crie um perfil de orçamento em Perfis para começar.</p>
-{:else if loading}
+  <PageSection testId="financeiro-despesas-heading">
+    <div class="flex items-center gap-2">
+      <span class="text-primary" aria-hidden="true">
+        <LucideIcon name={FINANCEIRO_EXPENSES_LUCIDE_ICON} size="lg" />
+      </span>
+      <h2 class="card-title text-lg">Despesas do mês</h2>
+    </div>
+    <EmptyStateCallout
+      {...NO_BUDGET_PROFILE_EMPTY_STATE}
+      card={false}
+      testId="financeiro-despesas-sem-perfil"
+    />
+  </PageSection>
+{:else if loading && !initialized}
   <span class="loading loading-spinner loading-md"></span>
 {:else}
-  <PageSection title="Despesas do mês" testId="financeiro-despesas-heading">
-  {#if error}
-    <div class="alert alert-error">{error}</div>
-  {/if}
+  <PageSection testId="financeiro-despesas-heading">
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <span class="text-primary" aria-hidden="true">
+        <LucideIcon name={FINANCEIRO_EXPENSES_LUCIDE_ICON} size="lg" />
+      </span>
+      <h2 class="card-title text-lg">Despesas do mês</h2>
+    </div>
 
-  <p class="font-medium" data-testid="budget-expense-total">
-    Total de despesas: {formatValue(expenseTotal)}
-  </p>
+    <div
+      class="flex flex-wrap items-center gap-x-6 gap-y-1 rounded-box bg-base-200 px-4 py-2 text-sm"
+      data-testid="budget-despesas-resumo"
+    >
+      <div class="text-right">
+        <p class="text-xs text-base-content/60">Receitas</p>
+        <p class="font-semibold tabular-nums text-success" data-testid="budget-resumo-receitas">
+          {formatValue(incomeTotal)}
+        </p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-base-content/60">Despesas</p>
+        <p class="font-semibold tabular-nums text-error" data-testid="budget-resumo-despesas">
+          {formatValue(expenseTotal)}
+        </p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-base-content/60">Sobrando</p>
+        <p
+          class="font-semibold tabular-nums {remaining >= 0 ? 'text-success' : 'text-error'}"
+          data-testid="budget-resumo-sobrando"
+        >
+          {formatValue(remaining)}
+        </p>
+      </div>
+    </div>
+  </div>
 
   <BudgetExpenseForm
     categories={snapshot?.categories ?? []}
@@ -232,7 +295,7 @@
 
   <BudgetExpenseList
     {expenses}
-    {recurringRules}
+    recurringRules={activeRecurringRules}
     onEditExpense={startEditExpense}
     onDeleteExpense={requestDeleteExpense}
     onEditRecurring={(rule) => {

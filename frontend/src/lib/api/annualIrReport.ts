@@ -23,6 +23,7 @@ export type AnnualIrSummaryByAsset = {
   asset_name: string;
   asset_type: AssetType;
   display_class: DisplayClass;
+  market: AssetMarket;
   totals_by_type: Record<string, number>;
   total_by_currency: Record<string, number>;
 };
@@ -32,6 +33,7 @@ export type AnnualIrPositionRow = {
   asset_name: string;
   asset_type: AssetType;
   display_class: DisplayClass;
+  market: AssetMarket;
   quantity: number;
   average_price: number;
   currency: string;

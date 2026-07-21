@@ -1,10 +1,10 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 import { isApiDividendBulkCreateResponse, isApiDividendBulkPreviewResponse } from './apiResponses';
-import { dividendBulkSection as dadosDividendBulkSection } from './dataPage';
 
-export function dividendBulkSection(page: Page) {
-  return dadosDividendBulkSection(page);
+/** Seção «Proventos em lote» na aba Adicionar de /proventos. */
+export function dividendBulkSection(page: Page): Locator {
+  return page.getByTestId('proventos-import-lote-section');
 }
 
 export async function pasteDividendCsvAndAnalyze(page: Page, csvText: string): Promise<void> {

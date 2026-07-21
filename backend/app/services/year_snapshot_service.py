@@ -208,3 +208,15 @@ def delete_year_snapshot(session: Session, portfolio_id: int, year: int) -> None
         session.delete(row)
     session.delete(snapshot)
     session.commit()
+
+
+def delete_year_snapshots_for_portfolio(session: Session, portfolio_id: int) -> None:
+    snapshots = session.exec(
+        select(PortfolioYearSnapshot).where(PortfolioYearSnapshot.portfolio_id == portfolio_id),
+    ).all()
+    for snapshot in snapshots:
+        for row in session.exec(
+            select(PositionSnapshot).where(PositionSnapshot.snapshot_id == snapshot.id),
+        ).all():
+            session.delete(row)
+        session.delete(snapshot)

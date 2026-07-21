@@ -5,9 +5,11 @@
     type BulkDividendPreviewItem,
     type DividendPaymentCreate
   } from '$lib/api/data';
-  import type { Portfolio } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
   import { formatIsoDateToBr } from '$lib/brDate';
+  import { PROVENTOS_BULK_IMPORT_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
+  import { PAGE_SECTION_CLASS } from '$lib/layout/pageVisual';
   import { formatPaymentTypeForDisplay } from '$lib/proventoLabels';
   import { formatTickerForDisplay } from '$lib/formatTickerForDisplay';
 
@@ -19,26 +21,10 @@
   } from './parseDividendImport';
 
   export let onSaved: () => void | Promise<void> = () => undefined;
-  export let portfolios: Portfolio[] = [];
   export let activePortfolioId: number | null = null;
 
-  let portfolioId: number | '' = '';
-  let portfolioDefaultApplied = false;
-
-  $: if (
-    !portfolioDefaultApplied &&
-    portfolioId === '' &&
-    activePortfolioId != null &&
-    portfolios.some((p) => p.id === activePortfolioId)
-  ) {
-    portfolioId = activePortfolioId;
-    portfolioDefaultApplied = true;
-  }
-
-  function handlePortfolioChange(event: Event) {
-    const value = (event.currentTarget as HTMLSelectElement).value;
-    portfolioId = value === '' ? '' : Number(value);
-  }
+  // A carteira de destino é sempre a carteira ativa (definida no painel do topo da seção).
+  $: portfolioId = activePortfolioId ?? '';
 
   let pasteText = '';
   let parsedRows: ParsedDividendImportRow[] = [];
@@ -204,7 +190,7 @@
 
   async function saveSelected() {
     if (portfolioId === '') {
-      error = 'Selecione uma carteira de destino antes de importar.';
+      error = 'Selecione uma carteira no painel do topo antes de importar.';
       return;
     }
 
@@ -250,38 +236,20 @@
   }
 </script>
 
-<section class="card bg-base-100 shadow-xl">
+<section class={PAGE_SECTION_CLASS} data-testid="proventos-import-lote-section">
   <div class="card-body gap-4">
     <div>
-      <p class="text-sm font-semibold uppercase tracking-wide text-primary">Importação</p>
+      <p class="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-primary">
+        <LucideIcon name={PROVENTOS_BULK_IMPORT_LUCIDE_ICON} size="sm" aria-hidden="true" />
+        Importação
+      </p>
       <h2 class="card-title">Proventos em lote</h2>
       <p class="text-sm text-base-content/70">
         Cole CSV ou envie arquivo .csv / .txt / .xlsx. Suporta template
         (<code class="text-xs">ticker, data, valor, tipo…</code>) e layout legado (colunas Ativo, Data, Valor…).
-        A carteira escolhida abaixo é aplicada a <strong>todas</strong> as linhas importadas.
+        Os proventos são importados na <strong>carteira selecionada no topo</strong> da seção.
       </p>
     </div>
-
-    <label class="form-control">
-      <span class="label">
-        <span class="label-text">Carteira de destino</span>
-        {#if portfolios.length === 0}
-          <span class="label-text-alt">Nenhuma carteira cadastrada</span>
-        {/if}
-      </span>
-      <select
-        class="select select-bordered max-w-md"
-        value={portfolioId === '' ? '' : String(portfolioId)}
-        on:change={handlePortfolioChange}
-        disabled={portfolios.length === 0}
-        aria-label="Carteira de destino da importacao em lote"
-      >
-        <option value="" disabled>Selecione uma carteira</option>
-        {#each portfolios as portfolio (portfolio.id)}
-          <option value={String(portfolio.id)}>{portfolio.name}</option>
-        {/each}
-      </select>
-    </label>
 
     <label class="form-control">
       <span class="label"><span class="label-text">Conteúdo CSV</span></span>
@@ -325,17 +293,22 @@
     </div>
 
     <div class="flex flex-wrap gap-2">
-      <button class="btn btn-outline" type="button" on:click={parseInput}>Analisar conteúdo</button>
-      <button class="btn btn-primary" type="button" disabled={loadingPreview} on:click={fetchPreview}>
+      <button class="btn btn-outline gap-2" type="button" on:click={parseInput}>
+        <LucideIcon name="Search" size="sm" />
+        Analisar conteúdo
+      </button>
+      <button class="btn btn-primary gap-2" type="button" disabled={loadingPreview} on:click={fetchPreview}>
+        <LucideIcon name="Eye" size="sm" />
         {loadingPreview ? 'Validando…' : 'Pré-visualizar no servidor'}
       </button>
       {#if previewItems.length > 0}
         <button
-          class="btn btn-secondary"
+          class="btn btn-secondary gap-2"
           type="button"
           disabled={loadingSave || selected.size === 0}
           on:click={saveSelected}
         >
+          <LucideIcon name="Upload" size="sm" />
           {loadingSave ? 'Importando…' : `Importar selecionados (${selected.size})`}
         </button>
       {/if}
@@ -370,8 +343,12 @@
                     on:change={(event) => handleRowToggle(item.row_index, event)}
                   />
                 </td>
-                <td>{item.row_index}</td>
-                <td class="font-mono">{formatTickerForDisplay(item.symbol)}</td>
+                <td class="tabular-nums">{item.row_index}</td>
+                <td>
+                  <span class="inline-flex rounded-md bg-base-200 px-2 py-0.5 font-mono text-xs font-semibold">
+                    {formatTickerForDisplay(item.symbol)}
+                  </span>
+                </td>
                 <td>
                   {item.payload?.payment_date
                     ? formatIsoDateToBr(item.payload.payment_date)

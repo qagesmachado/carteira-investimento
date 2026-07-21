@@ -10,7 +10,9 @@
     type Portfolio
   } from '$lib/api/portfolios';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
+  import { NO_PORTFOLIO_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
   import AnalysisHubNavCards from '$lib/features/analise/AnalysisHubNavCards.svelte';
   import AnalysisOverviewSection from '$lib/features/analise/AnalysisOverviewSection.svelte';
   import AnalysisSummaryKpiCards from '$lib/features/analise/AnalysisSummaryKpiCards.svelte';
@@ -98,6 +100,12 @@
   <PageSection title="Visão geral" testId="analysis-summary-section">
     {#if loading}
       <p class="text-sm text-base-content/70">Carregando sumário…</p>
+    {:else if activeId == null}
+      <EmptyStateCallout
+        {...NO_PORTFOLIO_EMPTY_STATE}
+        card={false}
+        testId="analise-sumario-sem-carteira"
+      />
     {:else}
       <AnalysisSummaryKpiCards
         {classifiedCount}

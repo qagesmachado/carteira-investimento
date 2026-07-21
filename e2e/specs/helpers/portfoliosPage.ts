@@ -35,10 +35,22 @@ export async function gotoPortfolioPositions(
   portfolioId: number,
   options: { portfolioName?: string } = {}
 ): Promise<void> {
+  const methodologyResponse = page.waitForResponse(
+    (r) =>
+      r.url().includes('/profiles/stock-br/methodology') &&
+      r.request().method() === 'GET' &&
+      r.ok(),
+    { timeout: 20_000 }
+  );
+  const positionsResponse = page.waitForResponse(
+    (r) => isApiPositionsResponse(r, 'GET') && r.ok(),
+    { timeout: 20_000 }
+  );
   await page.goto(`/portfolios/${portfolioId}`);
-  await expect(page.getByTestId('page-hero')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId('portfolio-workspace-bar')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId('portfolio-detail-summary')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('page-hero')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('portfolio-workspace-bar')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId('portfolio-detail-summary')).toBeVisible({ timeout: 20_000 });
+  await Promise.all([methodologyResponse, positionsResponse]);
   if (options.portfolioName) {
     await expect(page.getByRole('heading', { name: options.portfolioName })).toBeVisible();
   }

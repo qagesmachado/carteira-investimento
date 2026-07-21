@@ -112,6 +112,8 @@
     }
   }
 
+  let draftDirty = false;
+
   function clearDraftState() {
     draftScores = {};
     draftScoreRefs = {};
@@ -120,6 +122,7 @@
     draftPending = false;
     baselinePending = false;
     loadedAssetKey = '';
+    draftDirty = false;
     draftSyncGeneration += 1;
   }
 
@@ -131,7 +134,12 @@
     baselinePending = isPending;
     draftPending = isPending;
     loadedAssetKey = currentAssetKey;
+    draftDirty = false;
     draftSyncGeneration += 1;
+  }
+
+  function markDraftDirty() {
+    draftDirty = true;
   }
 
   async function syncDraftFromProps() {
@@ -141,18 +149,23 @@
       draftScores = {};
       draftScoreRefs = {};
       loadedAssetKey = '';
+      draftDirty = false;
       draftSyncGeneration += 1;
     }
     await tick();
     if (!open || token !== syncToken || currentAssetKey !== assetKey) return;
+    // Não sobrescrever rascunho se o usuário já interagiu durante o tick.
+    if (draftDirty) return;
     captureBaselineAndDraft();
   }
 
   $: if (open && currentAssetKey) {
     if (!wasOpen || currentAssetKey !== loadedAssetKey) {
+      wasOpen = true;
+      // Captura síncrona imediata (props já vêm do pai ao abrir) + sync pós-tick.
+      captureBaselineAndDraft();
       void syncDraftFromProps();
     }
-    wasOpen = true;
   } else if (!open) {
     if (wasOpen) {
       syncToken += 1;
@@ -176,6 +189,7 @@
   }
 
   function setScore(code: string, raw: string) {
+    markDraftDirty();
     draftScores = {
       ...draftScores,
       [code]: raw === '' ? null : Number(raw)
@@ -183,6 +197,7 @@
   }
 
   function setSegment(slug: string) {
+    markDraftDirty();
     const segment = segments.find((s) => s.slug === slug);
     draftScoreRefs = { ...draftScoreRefs, [SEGMENTO_FII_CODE]: slug || null };
     draftScores = {
@@ -192,6 +207,7 @@
   }
 
   function togglePvpDescarte(checked: boolean) {
+    markDraftDirty();
     draftScores = {
       ...draftScores,
       [PVP_DESCARTE_CODE]: checked ? 1 : 0
@@ -207,6 +223,7 @@
   }
 
   function confirmReset() {
+    markDraftDirty();
     const empty = buildEmptyAnalysisDraft(
       allAnalysisCriterionCodes(criteria),
       segmentCriterionCodes(criteria)
@@ -218,6 +235,7 @@
   }
 
   function setPending(checked: boolean) {
+    markDraftDirty();
     draftPending = checked;
   }
 
@@ -394,7 +412,11 @@
       {/key}
 
       {#if hasUnsavedChanges}
-        <div class="alert alert-warning mt-4 justify-start py-2 text-left text-sm" role="alert">
+        <div
+          class="alert alert-warning mt-4 justify-start py-2 text-left text-sm"
+          role="alert"
+          data-testid="analysis-unsaved-changes-alert"
+        >
           <span>
             Há alterações não salvas. Clique em <strong>Salvar classificação</strong> para aplicar.
           </span>

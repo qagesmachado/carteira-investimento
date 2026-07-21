@@ -1,7 +1,7 @@
 import { expect, test } from '../fixtures/test';
 
 
-import { gotoProventosPage, paymentsTable } from '../helpers/proventosPage';
+import { gotoProventosListPage, paymentsTable } from '../helpers/proventosPage';
 import { seedProventosForLabels } from '../helpers/seedProventos';
 
 /**
@@ -14,7 +14,7 @@ test.describe('UI-PRV-013', () => {
   });
 
   test('exibe tipos traduzidos na tabela', async ({ page }) => {
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
 
     const table = paymentsTable(page);
     await expect(table).toContainText('Dividendo');

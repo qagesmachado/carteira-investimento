@@ -50,7 +50,7 @@ test.describe('UI-FIN-011', () => {
 
 
 
-    await expect(page.getByTestId('budget-expense-total')).toHaveText('Total de despesas: R$ 1.500,00');
+    await expect(page.getByTestId('budget-resumo-despesas')).toHaveText('R$ 1.500,00');
 
     await expect(page.getByTestId('budget-expense-list')).toContainText('Aluguel');
 

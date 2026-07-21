@@ -1,5 +1,11 @@
 <script lang="ts">
   import type { BudgetMonthIncomeItem } from '$lib/api/budget';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
+  import {
+    FINANCEIRO_INCOME_LUCIDE_ICON,
+    PROVENTOS_EDIT_LUCIDE_ICON,
+    PROVENTOS_REMOVE_LUCIDE_ICON
+  } from '$lib/icons/lucideIconCatalog';
   import { formatBrl } from '$lib/features/rebalance/allocationTargets';
 
   import { formatBudgetIncomeType } from './budgetIncomeRows';
@@ -11,7 +17,12 @@
 
 <section class="rounded-box bg-base-100 p-4 shadow" data-testid="budget-income-list">
   <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-    <h3 class="text-lg font-semibold">Rendas cadastradas</h3>
+    <div class="flex items-center gap-2">
+      <span class="text-primary" aria-hidden="true">
+        <LucideIcon name={FINANCEIRO_INCOME_LUCIDE_ICON} size="md" />
+      </span>
+      <h3 class="text-lg font-semibold">Rendas cadastradas</h3>
+    </div>
     {#if incomes.length > 0}
       <span class="badge badge-neutral">{incomes.length} {incomes.length === 1 ? 'item' : 'itens'}</span>
     {/if}
@@ -37,15 +48,17 @@
               <td class="text-end tabular-nums">{formatBrl(income.amount_brl)}</td>
               <td>{formatBudgetIncomeType(income.recurring ?? false)}</td>
               <td class="space-x-2 text-right">
-                <button type="button" class="btn btn-ghost btn-xs" on:click={() => onEdit(income)}>
+                <button type="button" class="btn btn-outline btn-xs gap-1" on:click={() => onEdit(income)}>
+                  <LucideIcon name={PROVENTOS_EDIT_LUCIDE_ICON} size="sm" aria-hidden="true" />
                   Editar
                 </button>
                 <button
                   type="button"
-                  class="btn btn-ghost btn-xs text-error"
+                  class="btn btn-outline btn-xs gap-1 text-error"
                   data-testid="budget-income-delete-{income.id}"
                   on:click={() => onDelete(income)}
                 >
+                  <LucideIcon name={PROVENTOS_REMOVE_LUCIDE_ICON} size="sm" aria-hidden="true" />
                   Excluir
                 </button>
               </td>

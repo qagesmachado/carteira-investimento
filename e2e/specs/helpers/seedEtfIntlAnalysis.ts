@@ -22,8 +22,8 @@ async function getAssetId(request: APIRequestContext, symbol: string): Promise<n
 }
 
 export async function seedEtfIntlAnalysis(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
 
   await createAssetViaApi(request, {
     symbol: 'VOO',

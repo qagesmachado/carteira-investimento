@@ -1,11 +1,11 @@
-# Importacao em lote com seletor de carteira
+# Importacao em lote usa a carteira ativa do topo
 
 ## Metadados
 
 - **ID:** `UI-PRV-017`
 - **Status:** aprovado
 - **Pagina:** `/proventos`
-- **Funcionalidade:** importacao em lote (CSV) aplica a carteira selecionada a todas as linhas
+- **Funcionalidade:** importacao em lote (CSV) aplica a carteira ativa (painel do topo) a todas as linhas
 - **Depende de:** ao menos duas carteiras criadas
 - **Arquivo de teste:** `e2e/specs/proventos/17-import-lote-seletor-carteira.spec.ts`
 - **Referencia:** [cadastro-proventos.md](../../../../docs/produto/desenvolvido/cadastro-proventos.md)
@@ -17,17 +17,17 @@
 - **Lookup:** nao se aplica
 - **URLs:** frontend `http://127.0.0.1:5174` · API `http://127.0.0.1:8001`
 
-## Cenario — Importacao em lote aplica a carteira escolhida
+## Cenario — Importacao em lote aplica a carteira ativa do topo
 
 **Como** investidor importando varios proventos por arquivo  
-**Quero** escolher uma carteira de destino para todo o lote  
-**Para** nao ter que repetir essa informacao em cada linha do arquivo
+**Quero** que o lote seja gravado na carteira que ja selecionei no painel do topo  
+**Para** nao ter que repetir essa informacao em cada linha nem em um seletor separado
 
 ### Passo a passo
 
 1. Existe ativo `BBSE3` na base.
-2. Em `/proventos`, abro a area de importacao em lote.
-3. Seleciono `Carteira B` no seletor de carteira do lote.
+2. Em `/proventos/adicionar`, seleciono `Carteira B` no painel de carteira do topo.
+3. Abro a area de importacao em lote (sem seletor proprio de carteira).
 4. Colo um CSV com duas linhas validas para BBSE3 (R$ 10,00 em datas diferentes) e clico em "Pre-visualizar".
 5. Confirmo a importacao das duas linhas selecionadas.
 6. Mudo a carteira ativa para `Carteira A`.

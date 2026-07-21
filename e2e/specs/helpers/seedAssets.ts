@@ -23,6 +23,7 @@ type AssetPayload = {
   currency: string;
   sector?: string | null;
   etf_subtype?: string | null;
+  current_quote?: number | null;
   fixed_income_indexer?: string | null;
   fixed_income_yield_description?: string | null;
   fixed_income_title_type?: string | null;
@@ -35,10 +36,17 @@ export async function createAssetViaApi(
   payload: AssetPayload
 ): Promise<{ id: number; symbol: string }> {
   await deleteAssetBySymbolIfExists(request, payload.symbol);
-  const response = await request.post(`${getWorkerApiBaseUrl()}/assets`, {
+  let response = await request.post(`${getWorkerApiBaseUrl()}/assets`, {
     data: payload,
     timeout: 30_000
   });
+  if (response.status() === 409) {
+    await deleteAssetBySymbolIfExists(request, payload.symbol);
+    response = await request.post(`${getWorkerApiBaseUrl()}/assets`, {
+      data: payload,
+      timeout: 30_000
+    });
+  }
   if (!response.ok()) {
     const body = await response.text();
     throw new Error(`POST /assets failed (${response.status()}): ${body}`);

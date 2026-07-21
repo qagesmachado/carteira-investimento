@@ -5,6 +5,7 @@ import { TICKER_BBSE3 } from '../helpers/e2eFixtures';
 import {
   expectPaymentRow,
   fillProventoForm,
+  goToProventosListTab,
   gotoProventosPage,
   pickAssetInProventoForm,
   submitProventoForm
@@ -32,6 +33,8 @@ test.describe('UI-PRV-002', () => {
     await submitProventoForm(page);
 
     await expect(page.getByRole('alert').filter({ hasText: 'Provento cadastrado.' })).toBeVisible();
+
+    await goToProventosListTab(page);
     await expectPaymentRow(page, TICKER_BBSE3, { typeLabel: 'Dividendo' });
   });
 });

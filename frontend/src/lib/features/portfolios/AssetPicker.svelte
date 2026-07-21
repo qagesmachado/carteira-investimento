@@ -35,7 +35,13 @@
       return;
     }
     const rect = triggerEl.getBoundingClientRect();
-    panelTop = rect.bottom + 4;
+    const gap = 4;
+    // Abre para cima quando não há espaço abaixo do gatilho (ex.: campo perto do rodapé),
+    // evitando que o painel fique fora da viewport e inclicável.
+    const panelHeight = panelEl?.offsetHeight ?? 288;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < panelHeight + gap && rect.top > spaceBelow;
+    panelTop = openUp ? Math.max(gap, rect.top - panelHeight - gap) : rect.bottom + gap;
     panelLeft = rect.left;
     panelWidth = rect.width;
   }

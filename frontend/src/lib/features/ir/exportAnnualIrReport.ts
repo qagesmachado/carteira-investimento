@@ -21,7 +21,7 @@ function buildDetailedSheet(report: AnnualIrReport): string[][] {
       'Ativo',
       'Nome',
       'Tipo do ativo',
-      'Mercado',
+      'Classe',
       'Tipo provento',
       'Data',
       'Valor',
@@ -54,6 +54,7 @@ function buildSummarySheet(report: AnnualIrReport): string[][] {
     'Ativo',
     'Nome',
     'Tipo do ativo',
+    'Classe',
     ...PAYMENT_TYPES.map((type) => formatPaymentTypeForDisplay(type)),
     'Total moeda',
     'Total'
@@ -67,6 +68,7 @@ function buildSummarySheet(report: AnnualIrReport): string[][] {
         formatTickerForDisplay(row.symbol),
         row.asset_name,
         formatAssetTypeForDisplay(row.asset_type),
+        formatMarketForDisplay(row.market),
         ...PAYMENT_TYPES.map((type) =>
           roundMoneyForExport(row.totals_by_type[type as DividendPaymentType] ?? 0)
         ),
@@ -80,13 +82,14 @@ function buildSummarySheet(report: AnnualIrReport): string[][] {
 
 function buildPositionsSheet(report: AnnualIrReport): string[][] {
   const rows: string[][] = [
-    ['Ativo', 'Nome', 'Tipo do ativo', 'Quantidade', 'Preço médio', 'Moeda', 'Valor aplicado']
+    ['Ativo', 'Nome', 'Tipo do ativo', 'Classe', 'Quantidade', 'Preço médio', 'Moeda', 'Valor aplicado']
   ];
   for (const position of report.positions) {
     rows.push([
       formatTickerForDisplay(position.symbol),
       position.asset_name,
       formatAssetTypeForDisplay(position.asset_type),
+      formatMarketForDisplay(position.market),
       position.quantity,
       roundMoneyForExport(position.average_price),
       position.currency,

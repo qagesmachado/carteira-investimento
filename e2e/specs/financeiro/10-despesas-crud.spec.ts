@@ -22,9 +22,10 @@ test.describe('UI-FIN-010', () => {
       amount: '250',
       categoryName: 'Custos fixos'
     });
-    await expect(page.getByTestId('budget-expense-total')).toHaveText('Total de despesas: R$ 250,00');
+    await expect(page.getByTestId('budget-resumo-despesas')).toHaveText('R$ 250,00');
     await expect(page.getByTestId('budget-expense-list')).toContainText('Supermercado');
 
+    await page.getByTestId('budget-expense-list').locator('summary').click();
     await page.getByRole('button', { name: 'Editar' }).click();
     await expect(page.getByTestId('budget-expense-edit-modal')).toBeVisible();
     await page.getByTestId('budget-expense-edit-description').fill('Supermercado semanal');

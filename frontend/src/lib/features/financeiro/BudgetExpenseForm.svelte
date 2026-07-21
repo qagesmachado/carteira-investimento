@@ -8,6 +8,12 @@
 
   import BrYearMonthInput from '$lib/components/BrYearMonthInput.svelte';
 
+  import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
+
+  import { FINANCEIRO_EXPENSES_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
+
   import { currentYearMonth } from '$lib/features/financeiro/budgetMonth';
 
 
@@ -269,15 +275,18 @@
 <div class="{embedded ? 'space-y-3' : 'card bg-base-100 shadow'}" data-testid="{testIdPrefix}form">
   <div class="{embedded ? '' : 'card-body gap-3'}">
     {#if !embedded}
-      <h3 class="card-title text-base">
-        {editingRecurring ? 'Editar despesa recorrente' : editing ? 'Editar despesa' : 'Nova despesa'}
-      </h3>
+      <div class="flex items-center gap-2">
+        <span class="text-primary" aria-hidden="true">
+          <LucideIcon name={FINANCEIRO_EXPENSES_LUCIDE_ICON} size="md" />
+        </span>
+        <h3 class="card-title text-base">
+          {editingRecurring ? 'Editar despesa recorrente' : editing ? 'Editar despesa' : 'Nova despesa'}
+        </h3>
+      </div>
     {/if}
 
     {#if formError}
-
-      <div class="alert alert-error text-sm">{formError}</div>
-
+      <DismissibleAlert text={formError} variant="error" on:dismiss={() => (formError = '')} />
     {/if}
 
     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -468,7 +477,7 @@
 
         type="button"
 
-        class="btn btn-primary"
+        class="btn btn-primary gap-2"
 
         data-testid="{testIdPrefix}save"
 
@@ -477,6 +486,8 @@
         on:click={handleSubmit}
 
       >
+
+        <LucideIcon name={editing || editingRecurring ? 'CircleCheck' : 'Plus'} size="sm" aria-hidden="true" />
 
         {saving ? 'Salvando…' : editing || editingRecurring ? 'Atualizar' : 'Adicionar'}
 

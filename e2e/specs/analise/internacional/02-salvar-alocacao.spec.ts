@@ -1,6 +1,5 @@
 import { expect, test } from '../../fixtures/test';
 
-
 import {
   etfIntlAnalysisRow,
   gotoInternacionalPage,
@@ -20,8 +19,10 @@ test.describe('UI-ANL-015', () => {
   test('define % e link e salva alocação com soma 100%', async ({ page }) => {
     await gotoInternacionalPage(page);
     const row = etfIntlAnalysisRow(page, 'VOO');
-    await row.locator('input[type="text"]').first().fill('100');
-    await row.locator('input[type="text"]').first().blur();
+    const percentInput = row.locator('input[type="text"]').first();
+    await expect(percentInput).toBeEnabled({ timeout: 15_000 });
+    await percentInput.fill('100');
+    await percentInput.blur();
     await row.locator('input[type="url"]').fill('https://example.com/voo');
     await saveEtfIntlAllocation(page);
     await expect(page.getByText('100,00%').first()).toBeVisible();

@@ -48,5 +48,14 @@ function translateDetail(detail: string): string {
   if (detail.includes('could not resolve unique portfolio name')) {
     return 'Não foi possível gerar um nome único para a carteira. Renomeie manualmente.';
   }
+  if (detail.includes('category has transactions')) {
+    return 'Não foi possível remover a meta: há despesas vinculadas neste mês.';
+  }
+  if (detail.includes('category has recurring expenses')) {
+    return 'Não foi possível remover a meta: há despesas recorrentes vinculadas.';
+  }
+  if (detail.includes('category name already exists')) {
+    return 'Já existe uma meta com este nome.';
+  }
   return detail;
 }

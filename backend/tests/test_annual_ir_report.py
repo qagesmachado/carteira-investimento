@@ -197,6 +197,7 @@ def test_export_annual_ir_report_csv_rounds_money_values():
                 asset_name="Bradesco",
                 asset_type=AssetType.STOCK,
                 display_class=DisplayClass.STOCKS,
+                market=AssetMarket.NATIONAL,
                 totals_by_type={
                     DividendPaymentType.DIVIDEND.value: 0.0,
                     DividendPaymentType.JCP.value: 38.17999999999999,
@@ -214,6 +215,7 @@ def test_export_annual_ir_report_csv_rounds_money_values():
                 asset_name="CSHG Logística",
                 asset_type=AssetType.FII,
                 display_class=DisplayClass.FUNDS,
+                market=AssetMarket.NATIONAL,
                 quantity=10,
                 average_price=52.800000000000004,
                 currency="BRL",
@@ -228,3 +230,81 @@ def test_export_annual_ir_report_csv_rounds_money_values():
     assert "38.18" in csv_content
     assert "999999" not in csv_content
     assert "52.8" in csv_content or "52.80" in csv_content
+
+
+def test_annual_ir_report_includes_market_on_summary_and_positions(db_session: Session):
+    portfolio = create_portfolio(db_session, PortfolioCreate(name="IR Intl", base_currency="BRL"))
+    national = create_asset(
+        db_session,
+        AssetCreate(
+            symbol="BBSE3",
+            name="BB Seguridade",
+            asset_type=AssetType.STOCK,
+            market=AssetMarket.NATIONAL,
+            country="BR",
+            currency="BRL",
+        ),
+    )
+    international = create_asset(
+        db_session,
+        AssetCreate(
+            symbol="VOO",
+            name="Vanguard S&P 500",
+            asset_type=AssetType.ETF,
+            market=AssetMarket.INTERNATIONAL,
+            country="US",
+            currency="USD",
+        ),
+    )
+    portfolio_id = portfolio.id  # type: ignore[assignment]
+    national_id = national.id  # type: ignore[assignment]
+    international_id = international.id  # type: ignore[assignment]
+
+    create_dividend_payment(
+        db_session,
+        DividendPaymentCreate(
+            asset_id=national_id,
+            portfolio_id=portfolio_id,
+            payment_type=DividendPaymentType.DIVIDEND,
+            payment_date=date(2024, 3, 10),
+            amount=100.0,
+            currency="BRL",
+        ),
+    )
+    create_dividend_payment(
+        db_session,
+        DividendPaymentCreate(
+            asset_id=international_id,
+            portfolio_id=portfolio_id,
+            payment_type=DividendPaymentType.DIVIDEND,
+            payment_date=date(2024, 4, 1),
+            amount=25.0,
+            currency="USD",
+        ),
+    )
+    create_position(
+        db_session,
+        portfolio_id,
+        PositionCreate(asset_id=national_id, quantity=10, average_price=30.0),
+    )
+    create_position(
+        db_session,
+        portfolio_id,
+        PositionCreate(asset_id=international_id, quantity=5, average_price=400.0),
+    )
+    create_year_snapshot(db_session, portfolio_id, YearSnapshotCreate(year=2024))
+
+    report = build_annual_ir_report(db_session, portfolio_id, 2024)
+
+    markets_by_symbol = {row.symbol: row.market for row in report.summary_by_asset}
+    assert markets_by_symbol["BBSE3"] == AssetMarket.NATIONAL
+    assert markets_by_symbol["VOO"] == AssetMarket.INTERNATIONAL
+
+    position_markets = {row.symbol: row.market for row in report.positions}
+    assert position_markets["BBSE3"] == AssetMarket.NATIONAL
+    assert position_markets["VOO"] == AssetMarket.INTERNATIONAL
+
+    csv_content = export_annual_ir_report_csv(report)
+    assert "international" in csv_content
+    assert "# RESUMO" in csv_content
+    assert "# POSICOES" in csv_content

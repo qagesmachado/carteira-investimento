@@ -23,7 +23,8 @@ test.describe('UI-FIN-002', () => {
     await gotoFinanceiroMetas(page);
     await expect(page.getByTestId('budget-planned-income')).toHaveText('R$ 10.000,00');
     await saveBudgetTargets(page);
-    await expect(page.getByText(/Alocado 100.*100%/)).toBeVisible();
+    await expect(page.getByTestId('budget-allocated-percent')).toContainText('100%');
+    await expect(page.getByTestId('budget-allocated-remaining')).toHaveCount(0);
     await expect(page.getByText('R$ 2.100,00').first()).toBeVisible();
   });
 });

@@ -23,5 +23,5 @@
 
 1. Abro `/dashboard`.
 2. Vejo título «Dashboard».
-3. Mensagem indica ausência de carteira.
-4. Link para «Carteiras» está visível.
+3. Onboarding «Nenhuma carteira ainda» indica ausência de carteira.
+4. Botão **Criar carteira** (link para `/portfolios`) está visível.

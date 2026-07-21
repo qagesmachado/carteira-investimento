@@ -7,7 +7,9 @@
   import { getPortfolioRebalance, type RebalanceSnapshot } from '$lib/api/rebalance';
   import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
+  import { NO_PORTFOLIO_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
   import {
     allocationTargetPercentFromRow,
     buildAllocationSavePayload,
@@ -253,7 +255,11 @@
   {#if loading}
     <p class="text-sm text-base-content/70">Carregando…</p>
   {:else if activeId == null}
-    <p class="text-sm text-base-content/70">Crie ou selecione uma carteira para continuar.</p>
+    <EmptyStateCallout
+      {...NO_PORTFOLIO_EMPTY_STATE}
+      card={false}
+      testId="analise-simples-sem-carteira"
+    />
   {:else if portfolioRows.length === 0}
     <p class="text-sm text-base-content/70">{emptyMessage}</p>
   {:else}

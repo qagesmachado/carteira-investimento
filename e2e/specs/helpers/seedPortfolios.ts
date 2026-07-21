@@ -18,6 +18,7 @@ import {
   seedAssetFromLookup,
   seedManualFixedIncome
 } from './seedAssets';
+import { setPortfolioMethodologyAuvp, expectPortfolioMethodology } from './seedAnalysis';
 import {
   clearAllPortfolios,
   createPortfolio,
@@ -45,10 +46,20 @@ export async function seedPortfoliosEmpty(request: APIRequestContext): Promise<v
 }
 
 export async function seedPortfoliosPrincipalWithBbse3(request: APIRequestContext): Promise<number> {
-  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
-  await seedAssetFromLookup(request, TICKER_BBSE3);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
+  await createAssetViaApi(request, {
+    symbol: TICKER_BBSE3,
+    name: 'BB Seguridade Participações S.A.',
+    asset_type: 'stock',
+    market: 'national',
+    country: 'BR',
+    currency: 'BRL',
+    current_quote: 32.5
+  });
   const portfolio = await createPortfolio(request, E2E_PORTFOLIO_PRINCIPAL);
+  await setPortfolioMethodologyAuvp(request, portfolio.id, 'stock-br');
+  await expectPortfolioMethodology(request, portfolio.id, 'stock-br', 'auvp');
   const bbse3Id = await getAssetIdBySymbol(request, TICKER_BBSE3);
   await createPosition(request, portfolio.id, bbse3Id, { quantity: 100, average_price: 32.5 });
   await setActivePortfolio(request, portfolio.id);

@@ -84,6 +84,7 @@ def build_annual_ir_report(session: Session, portfolio_id: int, year: int) -> An
                 asset_name=payment.asset_name,
                 asset_type=asset.asset_type,
                 display_class=payment.display_class,
+                market=payment.market,
                 totals_by_type={payment_type: 0.0 for payment_type in PAYMENT_TYPES},
                 total_by_currency={},
             )
@@ -136,6 +137,7 @@ def build_annual_ir_report(session: Session, portfolio_id: int, year: int) -> An
                     asset_name=position.asset_name,
                     asset_type=asset.asset_type,
                     display_class=position.display_class,
+                    market=asset.market,
                     quantity=position.quantity,
                     average_price=position.average_price,
                     currency=position.currency,
@@ -204,6 +206,7 @@ def export_annual_ir_report_csv(report: AnnualIrReportRead) -> str:
         "asset_name",
         "asset_type",
         "display_class",
+        "market",
         *PAYMENT_TYPES,
         "total_currency",
         "total_amount",
@@ -217,6 +220,7 @@ def export_annual_ir_report_csv(report: AnnualIrReportRead) -> str:
                     row.asset_name,
                     row.asset_type.value,
                     row.display_class.value,
+                    row.market.value,
                     *[
                         _round_money(row.totals_by_type.get(payment_type, 0.0))
                         for payment_type in PAYMENT_TYPES
@@ -233,6 +237,8 @@ def export_annual_ir_report_csv(report: AnnualIrReportRead) -> str:
             "symbol",
             "asset_name",
             "asset_type",
+            "display_class",
+            "market",
             "quantity",
             "average_price",
             "currency",
@@ -245,6 +251,8 @@ def export_annual_ir_report_csv(report: AnnualIrReportRead) -> str:
                 row.symbol,
                 row.asset_name,
                 row.asset_type.value,
+                row.display_class.value,
+                row.market.value,
                 row.quantity,
                 _round_money(row.average_price),
                 row.currency,

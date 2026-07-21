@@ -21,6 +21,9 @@ const ROUTES: SmokeRoute[] = [
   { route: '/consolidada', heading: 'Visão consolidada' },
   { route: '/assets', heading: 'Cadastro de ativos no banco de dados' },
   { route: '/proventos', heading: 'Proventos' },
+  { route: '/proventos/resumo', heading: 'Proventos' },
+  { route: '/proventos/adicionar', heading: 'Proventos' },
+  { route: '/proventos/lancamentos', heading: 'Proventos' },
   { route: '/dados', heading: 'Dados' },
   { route: '/rebalanceamento', heading: 'Rebalanceamento' },
   { route: '/rebalanceamento/configuracao', heading: 'Metas de rebalanceamento' },
@@ -38,7 +41,9 @@ const ROUTES: SmokeRoute[] = [
   { route: '/ferramentas/conferencia-ir', heading: 'Conferência anual de IR' },
   { route: '/ferramentas/controle-patrimonio', heading: 'Controle de patrimônio' },
   { route: '/financeiro', heading: 'Financeiro' },
+  { route: '/financeiro/controle', heading: 'Financeiro' },
   { route: '/financeiro/metas', heading: 'Financeiro' },
+  { route: '/financeiro/metas/historico', heading: 'Financeiro' },
   { route: '/financeiro/perfis', heading: 'Financeiro' },
   { route: '/info', heading: 'Informações do sistema' }
 ];

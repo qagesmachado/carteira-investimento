@@ -10,8 +10,16 @@
     type BudgetProfile
   } from '$lib/api/budget';
   import { parseApiError } from '$lib/api/parseApiError';
+  import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
+  import PageSection from '$lib/components/PageSection.svelte';
   import BudgetProfileFormModal from '$lib/features/financeiro/BudgetProfileFormModal.svelte';
   import { getBudgetLayoutContext } from '$lib/features/financeiro/budgetLayoutContext';
+  import {
+    FINANCEIRO_PROFILES_LUCIDE_ICON,
+    PROVENTOS_EDIT_LUCIDE_ICON,
+    PROVENTOS_REMOVE_LUCIDE_ICON
+  } from '$lib/icons/lucideIconCatalog';
 
   const ctx = getBudgetLayoutContext();
 
@@ -19,6 +27,7 @@
   let loading = true;
   let saving = false;
   let error = '';
+  let message = '';
   let modalError = '';
   let createName = '';
   let createDescription = '';
@@ -57,6 +66,7 @@
       createDescription = '';
       await ctx.reloadProfiles();
       await loadProfiles();
+      message = 'Perfil criado.';
     } catch (err) {
       error = parseApiError(err, 'Não foi possível criar o perfil.');
     } finally {
@@ -89,6 +99,7 @@
       closeEditModal();
       await ctx.reloadProfiles();
       await loadProfiles();
+      message = 'Perfil atualizado.';
     } catch (err) {
       modalError = parseApiError(err, 'Não foi possível salvar o perfil.');
     } finally {
@@ -101,6 +112,7 @@
       await deleteBudgetProfile(profile.id);
       await ctx.reloadProfiles();
       await loadProfiles();
+      message = 'Perfil excluído.';
     } catch (err) {
       error = parseApiError(err, 'Não foi possível excluir o perfil.');
     }
@@ -115,15 +127,24 @@
   <title>Perfis — Financeiro</title>
 </svelte:head>
 
-<h2 class="text-xl font-semibold" data-testid="financeiro-perfis-heading">Perfis de orçamento</h2>
-
+<div class="flex flex-col gap-3">
 {#if error}
-  <div class="alert alert-error">{error}</div>
+  <DismissibleAlert text={error} variant="error" on:dismiss={() => (error = '')} />
+{/if}
+{#if message}
+  <DismissibleAlert text={message} variant="success" on:dismiss={() => (message = '')} />
 {/if}
 
-<div class="card bg-base-100 shadow">
-  <div class="card-body gap-3">
-    <h3 class="card-title text-base">Novo perfil</h3>
+<PageSection testId="financeiro-perfis-heading">
+  <div class="flex items-center gap-2">
+    <span class="text-primary" aria-hidden="true">
+      <LucideIcon name={FINANCEIRO_PROFILES_LUCIDE_ICON} size="lg" />
+    </span>
+    <h2 class="card-title text-lg">Perfis de orçamento</h2>
+  </div>
+
+  <div class="flex flex-col gap-3">
+    <h3 class="text-base font-medium">Novo perfil</h3>
     <input
       class="input input-bordered"
       bind:value={createName}
@@ -140,58 +161,71 @@
     <div>
       <button
         type="button"
-        class="btn btn-primary"
+        class="btn btn-primary gap-2"
         data-testid="budget-profile-save"
         disabled={saving}
         on:click={createProfile}
       >
+        <LucideIcon name="Plus" size="sm" aria-hidden="true" />
         {saving ? 'Salvando…' : 'Criar perfil'}
       </button>
     </div>
   </div>
-</div>
+</PageSection>
 
-{#if loading}
-  <span class="loading loading-spinner loading-md"></span>
-{:else}
-  <div class="overflow-x-auto">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Nome</th>
-          <th>Descrição</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each profiles as profile (profile.id)}
-          <tr data-testid="budget-profile-row-{profile.id}">
-            <td>{profile.name}</td>
-            <td>{profile.description ?? '—'}</td>
-            <td class="space-x-2 text-right">
-              <button
-                type="button"
-                class="btn btn-ghost btn-xs"
-                data-testid="budget-profile-edit-{profile.id}"
-                on:click={() => openEditModal(profile)}
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                class="btn btn-ghost btn-xs text-error"
-                data-testid="budget-profile-delete-{profile.id}"
-                on:click={() => void removeProfile(profile)}
-              >
-                Excluir
-              </button>
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+<PageSection>
+  <div class="flex items-center gap-2">
+    <span class="text-primary" aria-hidden="true">
+      <LucideIcon name={FINANCEIRO_PROFILES_LUCIDE_ICON} size="lg" />
+    </span>
+    <h3 class="card-title text-lg">Perfis cadastrados</h3>
   </div>
-{/if}
+
+  {#if loading}
+    <span class="loading loading-spinner loading-md"></span>
+  {:else}
+    <div class="overflow-x-auto">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Descrição</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each profiles as profile (profile.id)}
+            <tr data-testid="budget-profile-row-{profile.id}">
+              <td>{profile.name}</td>
+              <td>{profile.description ?? '—'}</td>
+              <td class="space-x-2 text-right">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-xs gap-1"
+                  data-testid="budget-profile-edit-{profile.id}"
+                  on:click={() => openEditModal(profile)}
+                >
+                  <LucideIcon name={PROVENTOS_EDIT_LUCIDE_ICON} size="sm" aria-hidden="true" />
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-outline btn-xs gap-1 text-error"
+                  data-testid="budget-profile-delete-{profile.id}"
+                  on:click={() => void removeProfile(profile)}
+                >
+                  <LucideIcon name={PROVENTOS_REMOVE_LUCIDE_ICON} size="sm" aria-hidden="true" />
+                  Excluir
+                </button>
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  {/if}
+</PageSection>
+</div>
 
 <BudgetProfileFormModal
   open={editOpen}

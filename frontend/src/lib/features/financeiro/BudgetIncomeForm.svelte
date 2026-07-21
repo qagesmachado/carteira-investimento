@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { BudgetMonthIncomeItem } from '$lib/api/budget';
   import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
+  import { FINANCEIRO_INCOME_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
 
   export let editing: BudgetMonthIncomeItem | null = null;
   export let saving = false;
@@ -18,6 +20,7 @@
   let recurring12Months = false;
   let amountInput: BrDecimalInput;
   let loadedEditingId: number | null = null;
+  let formError = '';
 
   $: if (editing && editing.id !== loadedEditingId) {
     loadedEditingId = editing.id ?? null;
@@ -34,15 +37,19 @@
     label = '';
     amountBrl = 0;
     recurring12Months = false;
+    formError = '';
   }
 
   function handleSubmit() {
     if (!label.trim()) {
+      formError = 'Informe o nome da renda.';
       return;
     }
     if (!amountInput?.flush() || amountBrl <= 0) {
+      formError = 'Informe um valor maior que zero (use vírgula para centavos).';
       return;
     }
+    formError = '';
     onSubmit({
       label: label.trim(),
       amount_brl: amountBrl,
@@ -57,7 +64,12 @@
 <div class="{embedded ? 'space-y-3' : 'card bg-base-100 shadow'}" data-testid="{testIdPrefix}form">
   <div class="{embedded ? '' : 'card-body gap-3'}">
     {#if !embedded}
-      <h3 class="card-title text-base">Nova renda</h3>
+      <div class="flex items-center gap-2">
+        <span class="text-primary" aria-hidden="true">
+          <LucideIcon name={FINANCEIRO_INCOME_LUCIDE_ICON} size="md" />
+        </span>
+        <h3 class="card-title text-base">Nova renda</h3>
+      </div>
     {/if}
     {#if editing}
       <div class="grid gap-3 sm:grid-cols-2">
@@ -138,6 +150,9 @@
           {saving ? 'Salvando…' : 'Adicionar'}
         </button>
       </div>
+    {/if}
+    {#if formError}
+      <p class="text-sm text-error" data-testid="{testIdPrefix}form-error">{formError}</p>
     {/if}
     {#if editing?.recurring}
       <p class="text-sm text-base-content/60">

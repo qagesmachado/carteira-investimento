@@ -50,12 +50,6 @@ export function assetBulkSection(page: Page): Locator {
   });
 }
 
-export function dividendBulkSection(page: Page): Locator {
-  return dadosProventosSection(page).locator('section').filter({
-    has: page.getByRole('heading', { name: 'Proventos em lote' })
-  });
-}
-
 export async function expectDadosSectionsVisible(page: Page): Promise<void> {
   await expect(dadosBackupSection(page).getByRole('heading', { name: 'Backup completo' })).toBeVisible();
   await expect(
@@ -69,7 +63,7 @@ export async function expectDadosSectionsVisible(page: Page): Promise<void> {
   await expect(
     dadosAtivosSection(page).getByRole('button', { name: 'Exportar catálogo JSON' })
   ).toBeVisible();
-  await expect(dadosProventosSection(page).getByRole('heading', { name: 'Exportar e importar proventos' })).toBeVisible();
+  await expect(dadosProventosSection(page).getByRole('heading', { name: 'Exportar proventos' })).toBeVisible();
   await expect(
     dadosProventosSection(page).getByRole('button', { name: 'Exportar proventos CSV' })
   ).toBeVisible();
@@ -190,12 +184,6 @@ export async function expectAssetBulkPreviewStatus(
   const row = assetBulkSection(page).locator('table tbody tr').filter({ hasText: ticker });
   await expect(row).toHaveCount(1);
   await expect(row).toContainText(status);
-}
-
-export async function selectDividendImportPortfolio(page: Page, name: string): Promise<void> {
-  await dividendBulkSection(page)
-    .getByLabel('Carteira de destino da importacao em lote')
-    .selectOption({ label: name });
 }
 
 export async function readDownloadJson(download: Download): Promise<unknown> {

@@ -10,8 +10,11 @@ import {
   previewDividendBulkOnServer
 } from '../helpers/dividendBulkImport';
 import { TICKER_ITSA4 } from '../helpers/e2eFixtures';
-import { gotoDadosPage } from '../helpers/dataPage';
-import { expectPaymentRow, gotoProventosPage } from '../helpers/proventosPage';
+import {
+  expectPaymentRow,
+  goToProventosListTab,
+  gotoProventosPage
+} from '../helpers/proventosPage';
 import { seedProventosWithItsa4 } from '../helpers/seedProventos';
 
 /**
@@ -24,7 +27,7 @@ test.describe('UI-PRV-014', () => {
   });
 
   test('importa proventos via CSV template', async ({ page }) => {
-    await gotoDadosPage(page);
+    await gotoProventosPage(page);
 
     await pasteDividendCsvAndAnalyze(page, DIVIDEND_CSV_TEMPLATE);
     await expect(page.getByText(/linha\(s\) válida\(s\)/)).toBeVisible();
@@ -36,12 +39,12 @@ test.describe('UI-PRV-014', () => {
 
     await expect(page.getByText(/Importação em lote concluída|Importação concluída/)).toBeVisible();
 
-    await gotoProventosPage(page);
+    await goToProventosListTab(page);
     await expectPaymentRow(page, TICKER_ITSA4, { typeLabel: 'Dividendo' });
   });
 
   test('importa proventos via CSV legado', async ({ page }) => {
-    await gotoDadosPage(page);
+    await gotoProventosPage(page);
 
     await pasteDividendCsvAndAnalyze(page, DIVIDEND_CSV_LEGACY);
     await expect(page.getByText(/linha\(s\) válida\(s\) \(legacy\)/)).toBeVisible();
@@ -50,7 +53,7 @@ test.describe('UI-PRV-014', () => {
     await expectPreviewRowStatus(page, TICKER_ITSA4, 'Pronto');
     await importSelectedDividends(page);
 
-    await gotoProventosPage(page);
+    await goToProventosListTab(page);
     await expectPaymentRow(page, TICKER_ITSA4, { typeLabel: 'Dividendo' });
   });
 });

@@ -12,12 +12,17 @@ import {
   BookOpen,
   Building2,
   Calculator,
+  CalendarCheck,
+  CalendarDays,
   CandlestickChart,
   ChartLine,
   ChartNoAxesColumn,
   ChartPie,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleCheck,
+  Copy,
   CircleDollarSign,
   CircleEllipsis,
   CircleX,
@@ -28,10 +33,13 @@ import {
   Globe,
   GitBranch,
   HandCoins,
+  History,
   Info,
   Landmark,
   Layers,
   LayoutDashboard,
+  ListChecks,
+  Maximize2,
   Medal,
   Pencil,
   PiggyBank,
@@ -44,11 +52,15 @@ import {
   Settings,
   SlidersHorizontal,
   Tags,
+  Target,
   Trash2,
   TrendingDown,
   TrendingUp,
   TriangleAlert,
+  Trophy,
   Umbrella,
+  Upload,
+  Users,
   Wallet,
   WalletMinimal,
   X
@@ -65,6 +77,7 @@ export const LUCIDE_ICON_ENTRIES = [
   { name: 'ArrowRight', label: 'Seta para direita', component: ArrowRight },
   { name: 'ArrowUp', label: 'Seta para cima', component: ArrowUp },
   { name: 'HandCoins', label: 'Mão com moedas', component: HandCoins },
+  { name: 'History', label: 'Histórico', component: History },
   { name: 'CircleDollarSign', label: 'Círculo com cifrão', component: CircleDollarSign },
   { name: 'Coins', label: 'Moedas empilhadas', component: Coins },
   { name: 'BadgeDollarSign', label: 'Selo com cifrão', component: BadgeDollarSign },
@@ -78,12 +91,17 @@ export const LUCIDE_ICON_ENTRIES = [
   { name: 'BookOpen', label: 'Livro aberto', component: BookOpen },
   { name: 'Building2', label: 'Edifício', component: Building2 },
   { name: 'Calculator', label: 'Calculadora', component: Calculator },
+  { name: 'CalendarCheck', label: 'Calendário com check', component: CalendarCheck },
+  { name: 'CalendarDays', label: 'Calendário', component: CalendarDays },
   { name: 'CandlestickChart', label: 'Gráfico de candlestick', component: CandlestickChart },
   { name: 'ChartLine', label: 'Gráfico de linha', component: ChartLine },
   { name: 'ChartNoAxesColumn', label: 'Gráfico de colunas', component: ChartNoAxesColumn },
   { name: 'ChartPie', label: 'Gráfico pizza', component: ChartPie },
   { name: 'ChevronDown', label: 'Chevron para baixo', component: ChevronDown },
+  { name: 'ChevronLeft', label: 'Chevron para esquerda', component: ChevronLeft },
+  { name: 'ChevronRight', label: 'Chevron para direita', component: ChevronRight },
   { name: 'CircleCheck', label: 'Círculo com check', component: CircleCheck },
+  { name: 'Copy', label: 'Copiar', component: Copy },
   { name: 'CircleEllipsis', label: 'Círculo com reticências', component: CircleEllipsis },
   { name: 'CircleX', label: 'Círculo com X', component: CircleX },
   { name: 'Globe', label: 'Globo', component: Globe },
@@ -92,6 +110,8 @@ export const LUCIDE_ICON_ENTRIES = [
   { name: 'Landmark', label: 'Instituição', component: Landmark },
   { name: 'Layers', label: 'Camadas', component: Layers },
   { name: 'LayoutDashboard', label: 'Painel', component: LayoutDashboard },
+  { name: 'ListChecks', label: 'Lista com marcações', component: ListChecks },
+  { name: 'Maximize2', label: 'Ampliar', component: Maximize2 },
   { name: 'Medal', label: 'Medalha', component: Medal },
   { name: 'Pencil', label: 'Lápis', component: Pencil },
   { name: 'PiggyBank', label: 'Cofrinho', component: PiggyBank },
@@ -104,11 +124,15 @@ export const LUCIDE_ICON_ENTRIES = [
   { name: 'Settings', label: 'Configurações', component: Settings },
   { name: 'SlidersHorizontal', label: 'Controles deslizantes', component: SlidersHorizontal },
   { name: 'Tags', label: 'Etiquetas', component: Tags },
+  { name: 'Target', label: 'Alvo', component: Target },
   { name: 'Trash2', label: 'Lixeira', component: Trash2 },
   { name: 'TrendingDown', label: 'Tendência de baixa', component: TrendingDown },
   { name: 'TrendingUp', label: 'Tendência de alta', component: TrendingUp },
   { name: 'TriangleAlert', label: 'Alerta triangular', component: TriangleAlert },
+  { name: 'Trophy', label: 'Troféu', component: Trophy },
   { name: 'Umbrella', label: 'Guarda-chuva', component: Umbrella },
+  { name: 'Upload', label: 'Enviar arquivo', component: Upload },
+  { name: 'Users', label: 'Usuários', component: Users },
   { name: 'Wallet', label: 'Carteira', component: Wallet },
   { name: 'WalletMinimal', label: 'Carteira (minimal)', component: WalletMinimal },
   { name: 'X', label: 'Fechar', component: X },
@@ -233,6 +257,90 @@ export const ANALYSIS_PENDING_LUCIDE_ICON: LucideIconName = 'CircleEllipsis';
 
 /** Link externo de análise (ETF intl / cripto). */
 export const ANALYSIS_EXTERNAL_LINK_LUCIDE_ICON: LucideIconName = 'ExternalLink';
+
+/** Aba «Resumo» dos proventos — [ChartNoAxesColumn](https://lucide.dev/icons/chart-no-axes-column) */
+export const PROVENTOS_SUMMARY_TAB_LUCIDE_ICON: LucideIconName = 'ChartNoAxesColumn';
+
+/** Aba «Adicionar» dos proventos — [Plus](https://lucide.dev/icons/plus) */
+export const PROVENTOS_ADD_TAB_LUCIDE_ICON: LucideIconName = 'Plus';
+
+/** Aba «Lançamentos» dos proventos — [ScrollText](https://lucide.dev/icons/scroll-text) */
+export const PROVENTOS_LIST_TAB_LUCIDE_ICON: LucideIconName = 'ScrollText';
+
+/** Cabeçalho da seção «Importação em lote» na aba Adicionar — [Upload](https://lucide.dev/icons/upload) */
+export const PROVENTOS_BULK_IMPORT_LUCIDE_ICON: LucideIconName = 'Upload';
+
+/** Cabeçalho da seção «Novo provento» na aba Adicionar — [HandCoins](https://lucide.dev/icons/hand-coins) */
+export const PROVENTOS_NEW_PAYMENT_LUCIDE_ICON: LucideIconName = 'HandCoins';
+
+/** KPI «Total no ano» no resumo de proventos — [Coins](https://lucide.dev/icons/coins) */
+export const PROVENTOS_KPI_YEAR_LUCIDE_ICON: LucideIconName = 'Coins';
+
+/** KPI «Este mês» no resumo de proventos — [CalendarDays](https://lucide.dev/icons/calendar-days) */
+export const PROVENTOS_KPI_MONTH_LUCIDE_ICON: LucideIconName = 'CalendarDays';
+
+/** KPI «Lançamentos» no resumo de proventos — [ListChecks](https://lucide.dev/icons/list-checks) */
+export const PROVENTOS_KPI_COUNT_LUCIDE_ICON: LucideIconName = 'ListChecks';
+
+/** KPI «Maior pagador» no resumo de proventos — [Trophy](https://lucide.dev/icons/trophy) */
+export const PROVENTOS_KPI_TOP_PAYER_LUCIDE_ICON: LucideIconName = 'Trophy';
+
+/** Painel «Top ativos por proventos» no resumo — [Medal](https://lucide.dev/icons/medal) */
+export const PROVENTOS_TOP_ASSETS_LUCIDE_ICON: LucideIconName = 'Medal';
+
+/** Painel «Proventos por ano» no resumo — [ChartNoAxesColumn](https://lucide.dev/icons/chart-no-axes-column) */
+export const PROVENTOS_TIMELINE_ANNUAL_LUCIDE_ICON: LucideIconName = 'ChartNoAxesColumn';
+
+/** Painel «Proventos por mês» no resumo — [CalendarDays](https://lucide.dev/icons/calendar-days) */
+export const PROVENTOS_TIMELINE_MONTHLY_LUCIDE_ICON: LucideIconName = 'CalendarDays';
+
+/** Ação «Editar» na tabela de lançamentos — [Pencil](https://lucide.dev/icons/pencil) */
+export const PROVENTOS_EDIT_LUCIDE_ICON: LucideIconName = 'Pencil';
+
+/** Ação «Remover» na tabela de lançamentos — [Trash2](https://lucide.dev/icons/trash-2) */
+export const PROVENTOS_REMOVE_LUCIDE_ICON: LucideIconName = 'Trash2';
+
+/** Aba «Painel» do Financeiro — [LayoutDashboard](https://lucide.dev/icons/layout-dashboard) */
+export const FINANCEIRO_PANEL_LUCIDE_ICON: LucideIconName = 'LayoutDashboard';
+
+/** Aba «Orçamento» do Financeiro — [PiggyBank](https://lucide.dev/icons/piggy-bank) */
+export const FINANCEIRO_BUDGET_LUCIDE_ICON: LucideIconName = 'PiggyBank';
+
+/** Aba «Despesas» do Financeiro — [Receipt](https://lucide.dev/icons/receipt) */
+export const FINANCEIRO_EXPENSES_LUCIDE_ICON: LucideIconName = 'Receipt';
+
+/** Aba «Controle» do Financeiro — [ListChecks](https://lucide.dev/icons/list-checks) */
+export const FINANCEIRO_CONTROLE_LUCIDE_ICON: LucideIconName = 'ListChecks';
+
+/** Aba «Metas» do Financeiro — [Target](https://lucide.dev/icons/target) */
+export const FINANCEIRO_GOALS_LUCIDE_ICON: LucideIconName = 'Target';
+
+/** Botão «Adicionar meta» na aba Metas — [Plus](https://lucide.dev/icons/plus) */
+export const FINANCEIRO_GOAL_ADD_LUCIDE_ICON: LucideIconName = 'Plus';
+
+/** Aba «Renda» do Financeiro — [Banknote](https://lucide.dev/icons/banknote) */
+export const FINANCEIRO_INCOME_LUCIDE_ICON: LucideIconName = 'Banknote';
+
+/** Aba «Perfis» do Financeiro — [Users](https://lucide.dev/icons/users) */
+export const FINANCEIRO_PROFILES_LUCIDE_ICON: LucideIconName = 'Users';
+
+/** Sub-aba «Tags» de Metas — [Tags](https://lucide.dev/icons/tags) */
+export const FINANCEIRO_TAGS_LUCIDE_ICON: LucideIconName = 'Tags';
+
+/** Sub-aba «Histórico» de Metas — [History](https://lucide.dev/icons/history) */
+export const FINANCEIRO_GOALS_HISTORY_LUCIDE_ICON: LucideIconName = 'History';
+
+/** Navegar para o mês anterior — [ChevronLeft](https://lucide.dev/icons/chevron-left) */
+export const FINANCEIRO_MONTH_PREV_LUCIDE_ICON: LucideIconName = 'ChevronLeft';
+
+/** Navegar para o próximo mês — [ChevronRight](https://lucide.dev/icons/chevron-right) */
+export const FINANCEIRO_MONTH_NEXT_LUCIDE_ICON: LucideIconName = 'ChevronRight';
+
+/** Voltar para o mês atual — [CalendarCheck](https://lucide.dev/icons/calendar-check) */
+export const FINANCEIRO_MONTH_TODAY_LUCIDE_ICON: LucideIconName = 'CalendarCheck';
+
+/** Escolher um mês qualquer — [CalendarDays](https://lucide.dev/icons/calendar-days) */
+export const FINANCEIRO_MONTH_PICKER_LUCIDE_ICON: LucideIconName = 'CalendarDays';
 
 export function getLucideIconComponent(name: LucideIconName): ComponentType {
   const row = LUCIDE_ICON_ENTRIES.find((entry) => entry.name === name);

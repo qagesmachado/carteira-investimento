@@ -120,7 +120,7 @@ Sem endpoints novos para KPIs e gráficos. Consumo paralelo:
 
 ## Estados vazios
 
-- Sem carteira → mensagem + link «Carteiras»
+- Sem carteira → onboarding padronizado (`EmptyStateCallout`) com título «Nenhuma carteira ainda» e botão **Criar carteira** (link para `/portfolios`)
 - Sem posições → orientação cadastrar ativos/posições
 - Sem proventos → R$ 0,00 nos cards + link «Proventos»
 - Sem metas de rebalanceamento → card de aderência com botão para configuração

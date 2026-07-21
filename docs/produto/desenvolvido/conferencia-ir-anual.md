@@ -44,9 +44,11 @@ Filtra proventos com `payment_date` entre `01/01/{ano}` e `31/12/{ano}` da carte
 
 | Aba | Conteúdo |
 |-----|----------|
-| Detalhado | Cada lançamento: ativo (sem `.SA`), tipo do ativo, classe (nacional/internacional), tipo de provento, data, valor, CNPJs; filtros (incl. classe), ordenação e paginação |
-| Resumo | Linhas = ativos; colunas = tipos de provento + total; filtro por tipo de ativo, ordenação e paginação |
-| Posições | Qty e preço médio do snapshot de 31/12; **sem renda fixa nem previdência**; coluna **Tipo do ativo** (não classe); ordenação e paginação |
+| Detalhado | Cada lançamento: ativo (sem `.SA`), tipo do ativo, **classe** (nacional/internacional), tipo de provento, data, valor, CNPJs; filtros (tipo de ativo, classe, tipo de provento), ordenação por coluna e paginação |
+| Resumo | Linhas = ativos; colunas = classe, tipos de provento + total; filtros por tipo de ativo e classe; ordenação e paginação |
+| Posições | Qty e preço médio do snapshot de 31/12; **sem renda fixa nem previdência**; colunas tipo do ativo e **classe** (nacional/internacional); filtros por tipo de ativo e classe; ordenação e paginação |
+
+**Classe** = mercado do ativo (`national` / `international`), exibido como Nacional ou Internacional — permite separar rendimentos e bens no exterior na conferência do IR.
 
 ## API
 
@@ -58,6 +60,10 @@ Filtra proventos com `payment_date` entre `01/01/{ano}` e `31/12/{ano}` da carte
 | DELETE | `/portfolios/{id}/year-snapshots/{year}` | Remove snapshot |
 | GET | `/portfolios/{id}/annual-ir-report?year=` | Relatório JSON completo |
 | GET | `/portfolios/{id}/annual-ir-report/export?year=&format=csv` | Export CSV (3 seções) |
+
+## Estados vazios
+
+- **Sem carteira ativa:** exibe o onboarding padronizado (`EmptyStateCallout` «Nenhuma carteira ainda» + botão **Criar carteira** → `/portfolios`). Congelar snapshot e exportar ficam desabilitados.
 
 ## Exportação
 

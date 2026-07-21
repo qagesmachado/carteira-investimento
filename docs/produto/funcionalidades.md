@@ -13,7 +13,7 @@ A barra de navegação organiza as áreas implementadas nesta ordem e hierarquia
 | 3 | Carteira | Carteiras · Rebalanceamento · Análise de ativos · Proventos | `/portfolios` · `/rebalanceamento` · `/analise` · `/proventos` |
 | 4 | Banco de dados | Ativos · Dados | `/assets` · `/dados` |
 | 5 | Ferramentas | Gerenciamento de objetivos · Taxas cripto · Financiamento imóvel · Cálculo de preço médio · Conferência anual de IR · Controle de patrimônio | `/ferramentas/objetivos` · `/ferramentas/criptomoedas` · `/ferramentas/financiamento-imovel` · `/ferramentas/calculo-preco-medio` · `/ferramentas/conferencia-ir` · `/ferramentas/controle-patrimonio` |
-| 6 | **Financeiro** | Painel · Orçamento · Metas (+ Tags) · Renda · Perfis | `/financeiro` · `/financeiro/orcamento` · `/financeiro/metas` · `/financeiro/renda` · `/financeiro/perfis` |
+| 6 | **Financeiro** | Painel · Orçamento · Despesas · Controle · Metas (+ Tags) · Renda · Perfis | `/financeiro` · `/financeiro/orcamento` · `/financeiro/despesas` · `/financeiro/controle` · `/financeiro/metas` · `/financeiro/renda` · `/financeiro/perfis` |
 
 As seções numeradas a seguir descrevem os módulos por domínio (origem na planilha) e podem ser lidas independentemente da posição no menu.
 

@@ -31,6 +31,7 @@ function sampleReport(): AnnualIrReport {
         asset_name: 'BB Seguridade',
         asset_type: 'stock',
         display_class: 'stocks',
+        market: 'national',
         totals_by_type: { dividend: 100, jcp: 0, credit: 0, fraction: 0, redemption: 0, other: 0 },
         total_by_currency: { BRL: 100 }
       }
@@ -41,6 +42,7 @@ function sampleReport(): AnnualIrReport {
         asset_name: 'BB Seguridade',
         asset_type: 'stock',
         display_class: 'stocks',
+        market: 'national',
         quantity: 80,
         average_price: 28,
         currency: 'BRL'
@@ -63,12 +65,14 @@ describe('exportAnnualIrReport', () => {
     expect(buffer).not.toContain('.SA');
     expect(buffer).toContain('Dividendo');
     expect(buffer).toContain('Ação');
+    expect(buffer).toContain('Nacional');
   });
 
   it('aba Posições contém quantidade do snapshot', () => {
     const workbook = buildAnnualIrWorkbook(sampleReport());
     const csv = utils.sheet_to_csv(workbook.Sheets['Posições']);
     expect(csv).toContain('80');
+    expect(csv).toContain('Nacional');
   });
 
   it('aba Posições exporta valor aplicado como quantidade × preço médio', () => {
@@ -87,6 +91,7 @@ describe('exportAnnualIrReport', () => {
           asset_name: 'Bradesco',
           asset_type: 'stock',
           display_class: 'stocks',
+          market: 'national',
           totals_by_type: {
             dividend: 0,
             jcp: 38.17999999999999,
@@ -102,5 +107,6 @@ describe('exportAnnualIrReport', () => {
     const csv = utils.sheet_to_csv(workbook.Sheets.Resumo);
     expect(csv).toContain('38.18');
     expect(csv).not.toContain('999999');
+    expect(csv).toContain('Nacional');
   });
 });

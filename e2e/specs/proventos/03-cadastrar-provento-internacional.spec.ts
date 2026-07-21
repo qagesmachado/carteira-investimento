@@ -5,6 +5,7 @@ import { TICKER_VOO } from '../helpers/e2eFixtures';
 import {
   expectPaymentRow,
   fillProventoForm,
+  goToProventosListTab,
   gotoProventosPage,
   paymentsListSection,
   pickAssetInProventoForm,
@@ -32,6 +33,7 @@ test.describe('UI-PRV-003', () => {
     });
     await submitProventoForm(page);
 
+    await goToProventosListTab(page);
     await expectPaymentRow(page, TICKER_VOO, { typeLabel: 'Dividendo' });
     await expect(paymentsListSection(page).locator('tr').filter({ hasText: TICKER_VOO })).toContainText('USD');
   });

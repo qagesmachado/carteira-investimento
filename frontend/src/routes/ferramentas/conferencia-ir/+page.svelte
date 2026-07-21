@@ -15,8 +15,10 @@
   import { formatAssetTypeForDisplay } from '$lib/assetLabels';
   import { formatMoneyAmount } from '$lib/assetLabels';
   import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
+  import EmptyStateCallout from '$lib/components/EmptyStateCallout.svelte';
   import PageHeader from '$lib/components/PageHeader.svelte';
   import PageSection from '$lib/components/PageSection.svelte';
+  import { NO_PORTFOLIO_EMPTY_STATE } from '$lib/features/onboarding/emptyStateCopy';
   import { PORTFOLIO_SELECT_HEADER_TEST_ID } from '$lib/features/ferramentas/headerPortfolioSelect';
   import { resolveActivePortfolioId } from '$lib/features/portfolios/resolveActivePortfolioId';
   import { buildAnnualIrYearOptions } from '$lib/features/ir/annualIrYears';
@@ -24,6 +26,7 @@
     annualIrPositionInvestedAmount,
     excludeFixedIncomePositions,
     filterAnnualIrPayments,
+    filterAnnualIrPositions,
     filterAnnualIrSummary,
     flattenAnnualIrSummary,
     sortAnnualIrPayments,
@@ -113,7 +116,12 @@
   $: paymentPagination = paginateList(sortedPayments, { page: currentPage, pageSize });
 
   $: filteredSummary =
-    report == null ? [] : filterAnnualIrSummary(report.summary_by_asset, filterAssetType);
+    report == null
+      ? []
+      : filterAnnualIrSummary(report.summary_by_asset, {
+          assetType: filterAssetType,
+          market: filterMarket
+        });
   $: flattenedSummary = flattenAnnualIrSummary(filteredSummary);
   $: sortedSummary = sortAnnualIrSummaryRows(
     flattenedSummary,
@@ -122,10 +130,14 @@
   );
   $: summaryPagination = paginateList(sortedSummary, { page: currentPage, pageSize });
 
-  $: visiblePositions =
+  $: eligiblePositions =
     report == null ? [] : excludeFixedIncomePositions(report.positions);
+  $: filteredPositions = filterAnnualIrPositions(eligiblePositions, {
+    assetType: filterAssetType,
+    market: filterMarket
+  });
   $: sortedPositions = sortAnnualIrPositions(
-    visiblePositions,
+    filteredPositions,
     positionSortKey,
     positionSortDirection
   );
@@ -420,61 +432,61 @@
     <div class="flex justify-center py-12">
       <span class="loading loading-spinner loading-lg"></span>
     </div>
+  {:else if activePortfolioId == null}
+    <EmptyStateCallout {...NO_PORTFOLIO_EMPTY_STATE} testId="conferencia-ir-sem-carteira" />
   {:else if !report}
     <p class="text-base-content/70">Selecione uma carteira para carregar o relatório.</p>
   {:else}
-    {#if activeTab !== 'posicoes'}
-      <div
-        class="flex flex-wrap items-end gap-3 rounded-box border border-base-300 bg-base-100 p-4"
-        data-testid="ir-filters"
-      >
+    <div
+      class="flex flex-wrap items-end gap-3 rounded-box border border-base-300 bg-base-100 p-4"
+      data-testid="ir-filters"
+    >
+      <label class="form-control w-full max-w-xs">
+        <span class="label-text">Tipo de ativo</span>
+        <select
+          class="select select-bordered select-sm w-full"
+          data-testid="ir-filter-asset-type"
+          value={filterAssetType}
+          on:change={handleFilterAssetTypeChange}
+        >
+          <option value="">Todos os tipos</option>
+          {#each assetTypeOptions as option (option.value)}
+            <option value={option.value}>{option.label}</option>
+          {/each}
+        </select>
+      </label>
+
+      <label class="form-control w-full max-w-xs">
+        <span class="label-text">Classe</span>
+        <select
+          class="select select-bordered select-sm w-full"
+          data-testid="ir-filter-market"
+          value={filterMarket}
+          on:change={handleFilterMarketChange}
+        >
+          <option value="">Todas as classes</option>
+          <option value="national">Nacional</option>
+          <option value="international">Internacional</option>
+        </select>
+      </label>
+
+      {#if activeTab === 'detalhado'}
         <label class="form-control w-full max-w-xs">
-          <span class="label-text">Tipo de ativo</span>
+          <span class="label-text">Tipo de provento</span>
           <select
             class="select select-bordered select-sm w-full"
-            data-testid="ir-filter-asset-type"
-            value={filterAssetType}
-            on:change={handleFilterAssetTypeChange}
+            data-testid="ir-filter-payment-type"
+            value={filterPaymentType}
+            on:change={handleFilterPaymentTypeChange}
           >
-            <option value="">Todos os tipos</option>
-            {#each assetTypeOptions as option (option.value)}
-              <option value={option.value}>{option.label}</option>
+            <option value="">Todos os proventos</option>
+            {#each paymentTypes as paymentType (paymentType)}
+              <option value={paymentType}>{formatPaymentTypeForDisplay(paymentType)}</option>
             {/each}
           </select>
         </label>
-
-        {#if activeTab === 'detalhado'}
-          <label class="form-control w-full max-w-xs">
-            <span class="label-text">Classe</span>
-            <select
-              class="select select-bordered select-sm w-full"
-              data-testid="ir-filter-market"
-              value={filterMarket}
-              on:change={handleFilterMarketChange}
-            >
-              <option value="">Todas as classes</option>
-              <option value="national">Nacional</option>
-              <option value="international">Internacional</option>
-            </select>
-          </label>
-
-          <label class="form-control w-full max-w-xs">
-            <span class="label-text">Tipo de provento</span>
-            <select
-              class="select select-bordered select-sm w-full"
-              data-testid="ir-filter-payment-type"
-              value={filterPaymentType}
-              on:change={handleFilterPaymentTypeChange}
-            >
-              <option value="">Todos os proventos</option>
-              {#each paymentTypes as paymentType (paymentType)}
-                <option value={paymentType}>{formatPaymentTypeForDisplay(paymentType)}</option>
-              {/each}
-            </select>
-          </label>
-        {/if}
-      </div>
-    {/if}
+      {/if}
+    </div>
 
     {#if activeTab === 'detalhado'}
       <DividendTablePagination
@@ -586,6 +598,11 @@
                   Tipo do ativo{sortIndicator(summarySortKey, 'asset_type', summarySortDirection)}
                 </button>
               </th>
+              <th>
+                <button type="button" class="btn btn-ghost btn-xs" on:click={() => handleSummarySort('market')}>
+                  Classe{sortIndicator(summarySortKey, 'market', summarySortDirection)}
+                </button>
+              </th>
               {#each paymentTypes as paymentType (paymentType)}
                 <th class="text-right">{formatPaymentTypeForDisplay(paymentType)}</th>
               {/each}
@@ -599,7 +616,7 @@
           <tbody>
             {#if summaryPagination.totalItems === 0}
               <tr>
-                <td colspan={paymentTypes.length + 3} class="text-center text-base-content/60">
+                <td colspan={paymentTypes.length + 4} class="text-center text-base-content/60">
                   Nenhum provento em {selectedYear} com os filtros atuais.
                 </td>
               </tr>
@@ -608,6 +625,7 @@
                 <tr>
                   <td>{formatTickerForDisplay(row.symbol)}</td>
                   <td>{formatAssetTypeForDisplay(row.asset_type)}</td>
+                  <td>{formatMarketForDisplay(row.market)}</td>
                   {#each paymentTypes as paymentType (paymentType)}
                     <td class="text-right">
                       {formatMoneyAmount(row.totals_by_type[paymentType] ?? 0, row.currency)}
@@ -660,6 +678,11 @@
                   Tipo do ativo{sortIndicator(positionSortKey, 'asset_type', positionSortDirection)}
                 </button>
               </th>
+              <th>
+                <button type="button" class="btn btn-ghost btn-xs" on:click={() => handlePositionSort('market')}>
+                  Classe{sortIndicator(positionSortKey, 'market', positionSortDirection)}
+                </button>
+              </th>
               <th class="text-right">
                 <button type="button" class="btn btn-ghost btn-xs" on:click={() => handlePositionSort('quantity')}>
                   Quantidade{sortIndicator(positionSortKey, 'quantity', positionSortDirection)}
@@ -684,8 +707,8 @@
           <tbody>
             {#if positionPagination.totalItems === 0}
               <tr>
-                <td colspan="5" class="text-center text-base-content/60">
-                  Nenhuma posição elegível no snapshot (ações, FIIs, ETFs, cripto, etc.).
+                <td colspan="6" class="text-center text-base-content/60">
+                  Nenhuma posição em {selectedYear} com os filtros atuais.
                 </td>
               </tr>
             {:else}
@@ -693,6 +716,7 @@
                 <tr>
                   <td>{formatTickerForDisplay(position.symbol)}</td>
                   <td>{formatAssetTypeForDisplay(position.asset_type)}</td>
+                  <td>{formatMarketForDisplay(position.market)}</td>
                   <td class="text-right">{formatQuantityForDisplay(position.quantity)}</td>
                   <td class="text-right">
                     {formatMoneyAmount(position.average_price, position.currency)}

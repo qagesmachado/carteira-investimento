@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
 
   import type { BudgetProfile } from '$lib/api/budget';
+  import DismissibleAlert from '$lib/components/DismissibleAlert.svelte';
 
   export let open = false;
   export let initial: BudgetProfile | null = null;
@@ -45,7 +46,7 @@
     <div class="modal-box max-w-lg">
       <h3 id="budget-profile-modal-title" class="text-lg font-bold">Editar perfil</h3>
       {#if error}
-        <div class="alert alert-error mt-3 text-sm">{error}</div>
+        <DismissibleAlert text={error} variant="error" />
       {/if}
       <form class="mt-4 space-y-3" on:submit|preventDefault={handleSave}>
         <label class="form-control w-full">

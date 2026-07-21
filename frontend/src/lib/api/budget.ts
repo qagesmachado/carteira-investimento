@@ -24,6 +24,36 @@ export type BudgetTag = {
   usage_count: number;
 };
 
+export type BudgetCategory = {
+  id: number;
+  profile_id: number;
+  name: string;
+  sort_order: number;
+  color: string;
+};
+
+export type BudgetCategoryUsageSummary = BudgetCategory & {
+  transaction_count: number;
+  recurring_count: number;
+  can_delete: boolean;
+};
+
+export type BudgetCategoryUsageTransaction = {
+  id: number;
+  event_date: string;
+  year_month: string;
+  description: string;
+  amount_brl: number;
+  recurring: boolean;
+};
+
+export type BudgetCategoryUsageDetail = BudgetCategoryUsageSummary & {
+  transactions: BudgetCategoryUsageTransaction[];
+  recurring_expenses: BudgetRecurringExpense[];
+};
+
+export type BudgetCategoryScope = 'all' | 'from_month';
+
 export type BudgetIncomeSource = {
   id: number;
   profile_id: number;
@@ -39,6 +69,7 @@ export type BudgetMonthIncomeItem = {
   label: string;
   amount_brl: number;
   recurring?: boolean;
+  received?: boolean;
 };
 
 export type BudgetCategoryKpi = {
@@ -71,6 +102,7 @@ export type BudgetTransaction = {
   notes: string | null;
   recurring?: boolean;
   recurring_expense_id?: number | null;
+  settled?: boolean;
 };
 
 export type BudgetRecurringExpense = {
@@ -100,6 +132,7 @@ export type BudgetMonthSnapshot = {
   categories: BudgetCategoryKpi[];
   incomes: BudgetMonthIncomeItem[];
   transactions: BudgetTransaction[];
+  targets_inherited: boolean;
 };
 
 export type DashboardSlice = {
@@ -181,7 +214,7 @@ export async function setActiveBudgetProfileId(
   return body.profile_id;
 }
 
-export type BudgetSnapshotView = 'full' | 'targets' | 'incomes' | 'expenses';
+export type BudgetSnapshotView = 'full' | 'targets' | 'incomes' | 'expenses' | 'settlement';
 
 export async function getMonthSnapshot(
   profileId: number,
@@ -201,7 +234,11 @@ export async function updateMonthTargets(
   yearMonth: string,
   payload: {
     planned_income_brl?: number | null;
-    targets: { category_id: number; percent: number }[];
+    targets: { category_id: number; percent: number; name?: string; color?: string }[];
+    /** Inclui estas categorias (0%) nos meses seguintes que já tiverem metas próprias. */
+    propagate_category_ids?: number[];
+    /** Copia o conjunto completo (categorias + %) para os meses seguintes customizados. */
+    apply_to_following_months?: boolean;
   },
   fetcher: typeof fetch = fetch
 ): Promise<BudgetMonthSnapshot> {
@@ -210,6 +247,27 @@ export async function updateMonthTargets(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
+  return parseResponse<BudgetMonthSnapshot>(response);
+}
+
+export async function removeTargetCategories(
+  profileId: number,
+  yearMonth: string,
+  payload: {
+    category_ids: number[];
+    apply_to_current?: boolean;
+    apply_to_following_months?: boolean;
+  },
+  fetcher: typeof fetch = fetch
+): Promise<BudgetMonthSnapshot> {
+  const response = await fetcher(
+    `${API_BASE_URL}/budget/profiles/${profileId}/months/${yearMonth}/targets/remove-categories`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }
+  );
   return parseResponse<BudgetMonthSnapshot>(response);
 }
 
@@ -259,7 +317,7 @@ export async function updateMonthIncome(
   profileId: number,
   yearMonth: string,
   incomeId: number,
-  payload: { label?: string; amount_brl?: number },
+  payload: { label?: string; amount_brl?: number; received?: boolean },
   fetcher: typeof fetch = fetch
 ): Promise<BudgetMonthSnapshot> {
   const response = await fetcher(
@@ -335,6 +393,7 @@ export async function updateTransaction(
     tag_id?: number | null;
     income_source_id?: number | null;
     notes?: string | null;
+    settled?: boolean;
   },
   fetcher: typeof fetch = fetch
 ): Promise<BudgetTransaction> {
@@ -401,6 +460,92 @@ export async function deleteTag(
   const response = await fetcher(`${API_BASE_URL}/budget/profiles/${profileId}/tags/${tagId}`, {
     method: 'DELETE'
   });
+  await parseResponse<void>(response);
+}
+
+export async function listCategories(
+  profileId: number,
+  fetcher: typeof fetch = fetch
+): Promise<BudgetCategory[]> {
+  const response = await fetcher(`${API_BASE_URL}/budget/profiles/${profileId}/categories`);
+  return parseResponse<BudgetCategory[]>(response);
+}
+
+export async function listCategoriesUsage(
+  profileId: number,
+  fetcher: typeof fetch = fetch
+): Promise<BudgetCategoryUsageSummary[]> {
+  const response = await fetcher(`${API_BASE_URL}/budget/profiles/${profileId}/categories/usage`);
+  return parseResponse<BudgetCategoryUsageSummary[]>(response);
+}
+
+export async function getCategoryUsage(
+  profileId: number,
+  categoryId: number,
+  fetcher: typeof fetch = fetch
+): Promise<BudgetCategoryUsageDetail> {
+  const response = await fetcher(
+    `${API_BASE_URL}/budget/profiles/${profileId}/categories/${categoryId}/usage`
+  );
+  return parseResponse<BudgetCategoryUsageDetail>(response);
+}
+
+export async function deleteCategoryExpenses(
+  profileId: number,
+  categoryId: number,
+  fetcher: typeof fetch = fetch
+): Promise<BudgetCategoryUsageDetail> {
+  const response = await fetcher(
+    `${API_BASE_URL}/budget/profiles/${profileId}/categories/${categoryId}/expenses`,
+    { method: 'DELETE' }
+  );
+  return parseResponse<BudgetCategoryUsageDetail>(response);
+}
+
+export async function createCategory(
+  profileId: number,
+  payload: { name: string; color?: string },
+  fetcher: typeof fetch = fetch
+): Promise<BudgetCategory> {
+  const response = await fetcher(`${API_BASE_URL}/budget/profiles/${profileId}/categories`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return parseResponse<BudgetCategory>(response);
+}
+
+export async function updateCategory(
+  profileId: number,
+  categoryId: number,
+  payload: {
+    name?: string;
+    color?: string;
+    scope?: BudgetCategoryScope;
+    year_month?: string;
+  },
+  fetcher: typeof fetch = fetch
+): Promise<BudgetCategory> {
+  const response = await fetcher(
+    `${API_BASE_URL}/budget/profiles/${profileId}/categories/${categoryId}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }
+  );
+  return parseResponse<BudgetCategory>(response);
+}
+
+export async function deleteCategory(
+  profileId: number,
+  categoryId: number,
+  fetcher: typeof fetch = fetch
+): Promise<void> {
+  const response = await fetcher(
+    `${API_BASE_URL}/budget/profiles/${profileId}/categories/${categoryId}`,
+    { method: 'DELETE' }
+  );
   await parseResponse<void>(response);
 }
 

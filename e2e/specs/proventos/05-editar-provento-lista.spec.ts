@@ -7,7 +7,7 @@ import {
   editProventoModal,
   expectPaymentRow,
   fillEditProventoModal,
-  gotoProventosPage,
+  gotoProventosListPage,
   paymentsTable,
   saveEditProventoModal
 } from '../helpers/proventosPage';
@@ -26,7 +26,7 @@ test.describe('UI-PRV-005', () => {
   });
 
   test('altera valor e data do lançamento', async ({ page }) => {
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
 
     await clickEditOnRow(page, TICKER_BBSE3);
     await expect(editProventoModal(page)).toBeVisible();

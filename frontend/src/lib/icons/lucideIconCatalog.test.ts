@@ -12,6 +12,8 @@ import {
   DASHBOARD_QUOTES_LUCIDE_ICON,
   DASHBOARD_QUOTES_REFRESH_LUCIDE_ICON,
   FEATURED_CLASS_LUCIDE_ICON,
+  FINANCEIRO_MONTH_PICKER_LUCIDE_ICON,
+  FINANCEIRO_MONTH_TODAY_LUCIDE_ICON,
   TOP_ASSET_DIVIDENDS_TAB_LUCIDE_ICON,
   TOP_ASSET_GROSS_PROFIT_TAB_LUCIDE_ICON,
   TOP_ASSET_POSITION_VALUE_TAB_LUCIDE_ICON,
@@ -125,6 +127,13 @@ describe('lucideIconCatalog', () => {
     expect(getLucideIconComponent('GitBranch')).toBeTruthy();
     expect(getLucideIconComponent('Scale')).toBeTruthy();
     expect(getLucideIconComponent('ExternalLink')).toBeTruthy();
+  });
+
+  it('usa CalendarCheck/CalendarDays nos atalhos de mês do Financeiro', () => {
+    expect(FINANCEIRO_MONTH_TODAY_LUCIDE_ICON).toBe('CalendarCheck');
+    expect(FINANCEIRO_MONTH_PICKER_LUCIDE_ICON).toBe('CalendarDays');
+    expect(getLucideIconComponent(FINANCEIRO_MONTH_TODAY_LUCIDE_ICON)).toBeTruthy();
+    expect(getLucideIconComponent(FINANCEIRO_MONTH_PICKER_LUCIDE_ICON)).toBeTruthy();
   });
 
   it('falha para nome desconhecido', () => {

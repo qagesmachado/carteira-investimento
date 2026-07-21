@@ -94,6 +94,33 @@ export async function getMonthSnapshotViaApi(
   return response.json();
 }
 
+export async function getMonthTargetsViaApi(
+  request: APIRequestContext,
+  profileId: number,
+  yearMonth: string
+) {
+  const apiBaseUrl = getWorkerApiBaseUrl();
+  const response = await request.get(
+    `${apiBaseUrl}/budget/profiles/${profileId}/months/${yearMonth}?view=targets`
+  );
+  if (!response.ok()) {
+    throw new Error(await response.text());
+  }
+  return response.json();
+}
+
+export async function listBudgetCategoriesViaApi(
+  request: APIRequestContext,
+  profileId: number
+): Promise<{ id: number; name: string; color: string; sort_order: number }[]> {
+  const apiBaseUrl = getWorkerApiBaseUrl();
+  const response = await request.get(`${apiBaseUrl}/budget/profiles/${profileId}/categories`);
+  if (!response.ok()) {
+    throw new Error(await response.text());
+  }
+  return response.json();
+}
+
 export async function createBudgetTagViaApi(
   request: APIRequestContext,
   profileId: number,
@@ -156,12 +183,21 @@ export async function updateBudgetTargetsViaApi(
   profileId: number,
   yearMonth: string,
   plannedIncome: number,
-  targets: { category_id: number; percent: number }[]
+  targets: { category_id: number; percent: number }[],
+  options?: { propagate_category_ids?: number[] }
 ) {
   const apiBaseUrl = getWorkerApiBaseUrl();
   const response = await request.put(
     `${apiBaseUrl}/budget/profiles/${profileId}/months/${yearMonth}/targets`,
-    { data: { planned_income_brl: plannedIncome, targets } }
+    {
+      data: {
+        planned_income_brl: plannedIncome,
+        targets,
+        ...(options?.propagate_category_ids
+          ? { propagate_category_ids: options.propagate_category_ids }
+          : {})
+      }
+    }
   );
   if (!response.ok()) {
     throw new Error(await response.text());
@@ -179,6 +215,58 @@ export async function updateBudgetIncomesViaApi(
   const response = await request.put(
     `${apiBaseUrl}/budget/profiles/${profileId}/months/${yearMonth}/incomes`,
     { data: { items } }
+  );
+  if (!response.ok()) {
+    throw new Error(await response.text());
+  }
+  return response.json();
+}
+
+export async function createBudgetIncomeViaApi(
+  request: APIRequestContext,
+  profileId: number,
+  yearMonth: string,
+  payload: { label: string; amount_brl: number; recurring_12_months?: boolean }
+) {
+  const apiBaseUrl = getWorkerApiBaseUrl();
+  const response = await request.post(
+    `${apiBaseUrl}/budget/profiles/${profileId}/months/${yearMonth}/incomes`,
+    { data: payload }
+  );
+  if (!response.ok()) {
+    throw new Error(await response.text());
+  }
+  return response.json();
+}
+
+export async function createBudgetMonthExpenseViaApi(
+  request: APIRequestContext,
+  profileId: number,
+  yearMonth: string,
+  payload: {
+    description: string;
+    amount_brl: number;
+    category_id: number;
+    event_date?: string;
+    recurring?: boolean;
+    indefinite?: boolean;
+    end_year_month?: string | null;
+  }
+) {
+  const apiBaseUrl = getWorkerApiBaseUrl();
+  const response = await request.post(
+    `${apiBaseUrl}/budget/profiles/${profileId}/months/${yearMonth}/expenses`,
+    {
+      data: {
+        description: payload.description,
+        event_date: payload.event_date ?? `${yearMonth}-10`,
+        amount_brl: payload.amount_brl,
+        category_id: payload.category_id,
+        recurring: payload.recurring ?? false,
+        indefinite: payload.indefinite ?? false,
+        end_year_month: payload.end_year_month ?? null
+      }
+    }
   );
   if (!response.ok()) {
     throw new Error(await response.text());

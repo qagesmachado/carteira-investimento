@@ -17,6 +17,9 @@ class BudgetMonthTarget(SQLModel, table=True):
     month_id: int = Field(foreign_key="budgetmonth.id", index=True)
     category_id: int = Field(foreign_key="budgetcategory.id", index=True)
     percent: float
+    # Nome/cor por mês (usado por renome "a partir deste mês"); None = usa o catálogo.
+    name_override: str | None = None
+    color_override: str | None = None
 
 
 class BudgetMonthIncome(SQLModel, table=True):
@@ -25,3 +28,5 @@ class BudgetMonthIncome(SQLModel, table=True):
     source_id: int | None = Field(default=None, foreign_key="budgetincomesource.id", index=True)
     label: str
     amount_brl: float
+    # Conferência visual (aba Controle); não altera totais do orçamento.
+    received: bool = Field(default=False)

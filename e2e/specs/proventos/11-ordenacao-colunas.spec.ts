@@ -4,7 +4,7 @@ import { expect, test } from '../fixtures/test';
 import { TICKER_BBSE3, TICKER_VOO } from '../helpers/e2eFixtures';
 import {
   clickSortColumn,
-  gotoProventosPage,
+  gotoProventosListPage,
   paymentsTable
 } from '../helpers/proventosPage';
 import { seedProventosForSort } from '../helpers/seedProventos';
@@ -19,7 +19,7 @@ test.describe('UI-PRV-011', () => {
   });
 
   test('alterna ordem ao clicar nos cabeçalhos', async ({ page }) => {
-    await gotoProventosPage(page);
+    await gotoProventosListPage(page);
 
     await clickSortColumn(page, 'Data');
     const datesAsc = await paymentsTable(page).locator('tr td').first().allTextContents();

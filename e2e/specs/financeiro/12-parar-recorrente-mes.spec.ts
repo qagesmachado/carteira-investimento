@@ -25,11 +25,20 @@ test.describe('UI-FIN-012', () => {
     await page.getByTestId('budget-expense-save').click();
 
     await gotoFinanceiroDespesas(page, stopMonth);
+    await page.getByTestId('budget-expense-list').locator('summary').click();
     await page.getByTestId('budget-expense-list').getByRole('button', { name: 'Excluir' }).click();
     await expect(page.getByTestId('budget-expense-delete-confirm-modal')).toBeVisible();
     await page.getByTestId('budget-expense-stop-from-month').click();
     await expect(page.getByTestId('budget-expense-delete-confirm-modal')).toHaveCount(0);
-    await expect(page.getByTestId('budget-expense-total')).toHaveText('Total de despesas: R$ 0,00');
+    await expect(page.getByTestId('budget-resumo-despesas')).toHaveText('R$ 0,00');
+
+    // Regra parada deixa de ser recorrência vigente: some da aba "Despesas recorrentes"
+    await expect(page.getByTestId('budget-expense-list-recurring')).not.toContainText('Internet');
+
+    // Mas segue aparecendo nos meses realmente cobrados (transação + recorrente no último mês)
+    await gotoFinanceiroDespesas(page, previousMonth);
+    await expect(page.getByTestId('budget-expense-list')).toContainText('Internet');
+    await expect(page.getByTestId('budget-expense-list-recurring')).toContainText('Internet');
 
     const profileId = Number(await page.getByTestId('budget-profile-select').inputValue());
     const startSnapshot = await getMonthSnapshotViaApi(request, profileId, startMonth);

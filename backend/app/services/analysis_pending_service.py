@@ -73,3 +73,21 @@ def set_asset_pending(
         row.updated_at = datetime.utcnow()
         session.commit()
     return False
+
+
+def delete_portfolio_analysis_status_and_allocations(
+    session: Session, portfolio_id: int
+) -> None:
+    """Remove status pendente e alocações manuais da carteira (FK portfolio)."""
+    for row in session.exec(
+        select(PortfolioAssetAnalysisStatus).where(
+            PortfolioAssetAnalysisStatus.portfolio_id == portfolio_id
+        )
+    ).all():
+        session.delete(row)
+    for row in session.exec(
+        select(PortfolioAssetAllocation).where(
+            PortfolioAssetAllocation.portfolio_id == portfolio_id
+        )
+    ).all():
+        session.delete(row)

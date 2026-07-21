@@ -7,7 +7,6 @@ import {
   formatYearMonthChartLabel,
   formatYearMonthLabel,
   normalizeTargetPercent,
-  percentFromTargetAmount,
   shiftYearMonth,
   sumTargetPercents,
   targetAmountFromPercent
@@ -41,10 +40,6 @@ describe('budgetMonth', () => {
     expect(normalizeTargetPercent(33.8)).toBe(34);
     expect(normalizeTargetPercent(-5)).toBe(0);
     expect(normalizeTargetPercent(150)).toBe(100);
-  });
-
-  it('calcula percentual a partir de valor', () => {
-    expect(percentFromTargetAmount(10000, 2500)).toBe(25);
   });
 
   it('valida soma de metas', () => {

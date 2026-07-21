@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Literal
 
@@ -12,7 +13,13 @@ from app.models.budget.recurring_expense import BudgetRecurringExpense
 from app.models.budget.tag import BudgetTag
 from app.models.budget.transaction import BudgetTransaction, BudgetTransactionType
 from app.schemas.budget import (
+    BudgetCategoryCreate,
     BudgetCategoryKpiRead,
+    BudgetCategoryRead,
+    BudgetCategoryUpdate,
+    BudgetCategoryUsageDetail,
+    BudgetCategoryUsageSummary,
+    BudgetCategoryUsageTransaction,
     BudgetDashboardRead,
     BudgetIncomeEntryCreate,
     BudgetIncomeEntryUpdate,
@@ -28,6 +35,7 @@ from app.schemas.budget import (
     BudgetProfileCreate,
     BudgetProfileRead,
     BudgetProfileUpdate,
+    BudgetRemoveTargetCategories,
     BudgetTagCreate,
     BudgetTagRead,
     BudgetTagUpdate,
@@ -50,13 +58,14 @@ from app.services.budget.budget_engine import (
     DASHBOARD_FORWARD_MONTHS,
     round_money,
     shift_year_month,
-    target_amount_brl,
     year_month_index,
 )
 from app.services.budget.profile_service import get_budget_profile
 
-SnapshotView = Literal["full", "targets", "incomes", "expenses", "dashboard"]
-VALID_SNAPSHOT_VIEWS = frozenset({"full", "targets", "incomes", "expenses", "dashboard"})
+SnapshotView = Literal["full", "targets", "incomes", "expenses", "dashboard", "settlement"]
+VALID_SNAPSHOT_VIEWS = frozenset(
+    {"full", "targets", "incomes", "expenses", "dashboard", "settlement"}
+)
 
 
 def _profile_to_read(profile: BudgetProfile) -> BudgetProfileRead:
@@ -164,18 +173,9 @@ def ensure_budget_month(session: Session, profile_id: int, year_month: str) -> B
     ).first()
     if month:
         return month
-    categories = _get_categories(session, profile_id)
+    # Não semeia metas: um mês sem linhas próprias herda do mês anterior (ver _effective_targets).
     month = BudgetMonth(profile_id=profile_id, year_month=year_month)
     session.add(month)
-    session.flush()
-    for category, default_percent in zip(categories, DEFAULT_TARGET_PERCENTS, strict=False):
-        session.add(
-            BudgetMonthTarget(
-                month_id=month.id,
-                category_id=category.id,
-                percent=default_percent,
-            )
-        )
     session.commit()
     session.refresh(month)
     return month
@@ -220,6 +220,7 @@ def _transaction_to_read(
         notes=tx.notes,
         recurring=tx.recurring_expense_id is not None,
         recurring_expense_id=tx.recurring_expense_id,
+        settled=bool(tx.settled),
     )
 
 
@@ -251,14 +252,100 @@ def _income_to_read(
         label=income.label,
         amount_brl=income.amount_brl,
         recurring=_income_is_recurring_from_source(source),
+        received=bool(income.received),
     )
 
 
-def _month_targets_map(session: Session, month_id: int) -> dict[int, float]:
-    return {
-        t.category_id: t.percent
-        for t in session.exec(select(BudgetMonthTarget).where(BudgetMonthTarget.month_id == month_id)).all()
-    }
+@dataclass(frozen=True)
+class EffectiveTarget:
+    category_id: int
+    percent: float
+    name: str
+    color: str
+
+
+def _month_has_targets(session: Session, month_id: int) -> bool:
+    row = session.exec(
+        select(BudgetMonthTarget.id).where(BudgetMonthTarget.month_id == month_id)
+    ).first()
+    return row is not None
+
+
+def _find_targets_source_month(
+    session: Session, profile_id: int, year_month: str
+) -> BudgetMonth | None:
+    """Mês mais recente (<= year_month) que possui linhas próprias de metas."""
+    return session.exec(
+        select(BudgetMonth)
+        .join(BudgetMonthTarget, BudgetMonthTarget.month_id == BudgetMonth.id)
+        .where(
+            BudgetMonth.profile_id == profile_id,
+            BudgetMonth.year_month <= year_month,
+        )
+        .order_by(BudgetMonth.year_month.desc())
+    ).first()
+
+
+def _effective_targets(
+    session: Session, profile_id: int, month: BudgetMonth
+) -> tuple[list[EffectiveTarget], bool]:
+    """Conjunto efetivo de metas do mês: próprio > herdado do anterior > padrões.
+
+    Retorna (metas, inherited) onde `inherited` indica que o conjunto veio de um
+    mês anterior (não do próprio mês nem dos padrões).
+    """
+    categories = _get_categories(session, profile_id)
+    cat_by_id = {c.id: c for c in categories if c.id is not None}
+    order_index = {c.id: index for index, c in enumerate(categories)}
+
+    own = _month_has_targets(session, month.id)
+    source_month = month if own else _find_targets_source_month(session, profile_id, month.year_month)
+    inherited = (not own) and source_month is not None
+
+    if source_month is not None:
+        rows = session.exec(
+            select(BudgetMonthTarget).where(BudgetMonthTarget.month_id == source_month.id)
+        ).all()
+        result: list[EffectiveTarget] = []
+        for row in rows:
+            cat = cat_by_id.get(row.category_id)
+            if cat is None:
+                continue
+            result.append(
+                EffectiveTarget(
+                    category_id=row.category_id,
+                    percent=row.percent,
+                    name=row.name_override or cat.name,
+                    color=row.color_override or cat.color,
+                )
+            )
+        result.sort(key=lambda t: order_index.get(t.category_id, len(categories)))
+        return result, inherited
+
+    defaults = [
+        EffectiveTarget(category_id=cat.id, percent=percent, name=cat.name, color=cat.color)
+        for cat, percent in zip(categories, DEFAULT_TARGET_PERCENTS, strict=False)
+    ]
+    return defaults, False
+
+
+def _effective_planned_income(
+    session: Session, profile_id: int, month: BudgetMonth, income_total: float
+) -> float:
+    if month.planned_income_brl is not None:
+        return month.planned_income_brl
+    prev = session.exec(
+        select(BudgetMonth)
+        .where(
+            BudgetMonth.profile_id == profile_id,
+            BudgetMonth.year_month < month.year_month,
+            BudgetMonth.planned_income_brl.is_not(None),
+        )
+        .order_by(BudgetMonth.year_month.desc())
+    ).first()
+    if prev is not None and prev.planned_income_brl is not None:
+        return prev.planned_income_brl
+    return income_total
 
 
 def _categories_by_id(session: Session, profile_id: int) -> dict[int, BudgetCategory]:
@@ -313,67 +400,81 @@ def _expense_stats_by_category(
     return spent_by_category, count_by_category
 
 
-def _build_category_kpis(
-    categories: list[BudgetCategory],
-    targets: dict[int, float],
+def _kpi_from_effective(
+    target: EffectiveTarget,
+    planned: float,
+    spent: float,
+    count: int,
+) -> BudgetCategoryKpiRead:
+    kpi = build_category_kpi(
+        category_id=target.category_id,
+        category_name=target.name,
+        color=target.color,
+        percent=target.percent,
+        planned_income_brl=planned,
+        spent_brl=round_money(spent),
+        transaction_count=count,
+    )
+    return BudgetCategoryKpiRead(
+        category_id=kpi.category_id,
+        category_name=kpi.category_name,
+        color=kpi.color,
+        percent=kpi.percent,
+        target_brl=kpi.target_brl,
+        spent_brl=kpi.spent_brl,
+        remaining_brl=kpi.remaining_brl,
+        usage_percent=kpi.usage_percent,
+        exceeded=kpi.exceeded,
+        transaction_count=kpi.transaction_count,
+    )
+
+
+def _build_effective_category_kpis(
+    session: Session,
+    profile_id: int,
+    effective: list[EffectiveTarget],
     planned: float,
     spent_by_category: dict[int, float],
     count_by_category: dict[int, int],
 ) -> list[BudgetCategoryKpiRead]:
+    """KPIs das metas do mês + categorias com gasto fora do conjunto de metas."""
     category_kpis: list[BudgetCategoryKpiRead] = []
-    for cat in categories:
-        spent = round_money(spent_by_category.get(cat.id, 0.0))
-        count = count_by_category.get(cat.id, 0)
-        kpi = build_category_kpi(
-            category_id=cat.id,
-            category_name=cat.name,
-            color=cat.color,
-            percent=targets.get(cat.id, 0.0),
-            planned_income_brl=planned,
-            spent_brl=spent,
-            transaction_count=count,
-        )
+    seen: set[int] = set()
+    for target in effective:
+        seen.add(target.category_id)
         category_kpis.append(
-            BudgetCategoryKpiRead(
-                category_id=kpi.category_id,
-                category_name=kpi.category_name,
-                color=kpi.color,
-                percent=kpi.percent,
-                target_brl=kpi.target_brl,
-                spent_brl=kpi.spent_brl,
-                remaining_brl=kpi.remaining_brl,
-                usage_percent=kpi.usage_percent,
-                exceeded=kpi.exceeded,
-                transaction_count=kpi.transaction_count,
+            _kpi_from_effective(
+                target,
+                planned,
+                spent_by_category.get(target.category_id, 0.0),
+                count_by_category.get(target.category_id, 0),
             )
         )
+    extras = {cid for cid in spent_by_category if cid not in seen}
+    if extras:
+        categories = _get_categories(session, profile_id)
+        order_index = {c.id: index for index, c in enumerate(categories)}
+        cat_by_id = {c.id: c for c in categories if c.id is not None}
+        for cid in sorted(extras, key=lambda c: order_index.get(c, len(categories))):
+            cat = cat_by_id.get(cid)
+            if cat is None:
+                continue
+            category_kpis.append(
+                _kpi_from_effective(
+                    EffectiveTarget(category_id=cid, percent=0.0, name=cat.name, color=cat.color),
+                    planned,
+                    spent_by_category.get(cid, 0.0),
+                    count_by_category.get(cid, 0),
+                )
+            )
     return category_kpis
 
 
 def _build_target_only_category_kpis(
-    categories: list[BudgetCategory],
-    targets: dict[int, float],
+    effective: list[EffectiveTarget],
     planned: float,
 ) -> list[BudgetCategoryKpiRead]:
-    category_kpis: list[BudgetCategoryKpiRead] = []
-    for cat in categories:
-        percent = targets.get(cat.id, 0.0)
-        target_brl = target_amount_brl(planned, percent)
-        category_kpis.append(
-            BudgetCategoryKpiRead(
-                category_id=cat.id,
-                category_name=cat.name,
-                color=cat.color,
-                percent=percent,
-                target_brl=target_brl,
-                spent_brl=0.0,
-                remaining_brl=target_brl,
-                usage_percent=0.0,
-                exceeded=False,
-                transaction_count=0,
-            )
-        )
-    return category_kpis
+    return [_kpi_from_effective(target, planned, 0.0, 0) for target in effective]
 
 
 def _snapshot_response(
@@ -386,6 +487,7 @@ def _snapshot_response(
     categories: list[BudgetCategoryKpiRead],
     incomes: list[BudgetMonthIncomeItem],
     transactions: list[BudgetTransactionRead],
+    targets_inherited: bool = False,
 ) -> BudgetMonthSnapshotRead:
     income_usage = round_money(expense_total / income_total * 100.0) if income_total > 0 else 0.0
     return BudgetMonthSnapshotRead(
@@ -399,6 +501,7 @@ def _snapshot_response(
         categories=categories,
         incomes=incomes,
         transactions=transactions,
+        targets_inherited=targets_inherited,
     )
 
 
@@ -460,21 +563,21 @@ def build_month_snapshot(
         sync_recurring_expenses_for_month(session, profile_id, year_month)
 
     month = ensure_budget_month(session, profile_id, year_month)
-    categories = _get_categories(session, profile_id)
-    targets = _month_targets_map(session, month.id)
+    effective_targets, targets_inherited = _effective_targets(session, profile_id, month)
 
     if view == "targets":
         income_total = _month_income_total(session, month.id)
-        planned = month.planned_income_brl if month.planned_income_brl is not None else income_total
+        planned = _effective_planned_income(session, profile_id, month, income_total)
         return _snapshot_response(
             profile_id=profile_id,
             year_month=year_month,
             month=month,
             income_total=income_total,
             expense_total=0.0,
-            categories=_build_target_only_category_kpis(categories, targets, planned),
+            categories=_build_target_only_category_kpis(effective_targets, planned),
             incomes=[],
             transactions=[],
+            targets_inherited=targets_inherited,
         )
 
     if view == "incomes":
@@ -493,14 +596,50 @@ def build_month_snapshot(
             transactions=[],
         )
 
+    if view == "settlement":
+        incomes = list(
+            session.exec(select(BudgetMonthIncome).where(BudgetMonthIncome.month_id == month.id)).all()
+        )
+        sources_by_id = {
+            s.id: s
+            for s in session.exec(
+                select(BudgetIncomeSource).where(BudgetIncomeSource.profile_id == profile_id)
+            ).all()
+            if s.id is not None
+        }
+        recurring_incomes = [
+            income
+            for income in incomes
+            if _income_is_recurring_from_source(
+                sources_by_id.get(income.source_id) if income.source_id is not None else None
+            )
+        ]
+        transactions = [
+            tx
+            for tx in _load_expense_transactions(session, month.id)
+            if tx.recurring_expense_id is not None
+        ]
+        income_total = round_money(sum(i.amount_brl for i in recurring_incomes))
+        expense_total = round_money(sum(t.amount_brl for t in transactions))
+        return _snapshot_response(
+            profile_id=profile_id,
+            year_month=year_month,
+            month=month,
+            income_total=income_total,
+            expense_total=expense_total,
+            categories=[],
+            incomes=_incomes_to_read(session, recurring_incomes),
+            transactions=_transactions_to_read(session, profile_id, transactions),
+        )
+
     if view in ("expenses", "dashboard"):
         transactions = _load_expense_transactions(session, month.id)
         income_total = _month_income_total(session, month.id)
         expense_total = round_money(sum(t.amount_brl for t in transactions))
-        planned = month.planned_income_brl if month.planned_income_brl is not None else income_total
+        planned = _effective_planned_income(session, profile_id, month, income_total)
         spent_by_category, count_by_category = _expense_stats_by_category(transactions)
-        category_kpis = _build_category_kpis(
-            categories, targets, planned, spent_by_category, count_by_category
+        category_kpis = _build_effective_category_kpis(
+            session, profile_id, effective_targets, planned, spent_by_category, count_by_category
         )
         tx_reads = _transactions_to_read(session, profile_id, transactions)
         return _snapshot_response(
@@ -509,9 +648,10 @@ def build_month_snapshot(
             month=month,
             income_total=income_total,
             expense_total=expense_total,
-            categories=category_kpis if view == "expenses" else category_kpis,
-            incomes=[] if view == "dashboard" else [],
+            categories=category_kpis,
+            incomes=[],
             transactions=tx_reads,
+            targets_inherited=targets_inherited,
         )
 
     transactions = _load_all_transactions(session, month.id)
@@ -522,7 +662,7 @@ def build_month_snapshot(
     expense_total = round_money(
         sum(t.amount_brl for t in transactions if t.transaction_type == BudgetTransactionType.EXPENSE)
     )
-    planned = month.planned_income_brl if month.planned_income_brl is not None else income_total
+    planned = _effective_planned_income(session, profile_id, month, income_total)
     spent_by_category, count_by_category = _expense_stats_by_category(transactions)
     return _snapshot_response(
         profile_id=profile_id,
@@ -530,11 +670,12 @@ def build_month_snapshot(
         month=month,
         income_total=income_total,
         expense_total=expense_total,
-        categories=_build_category_kpis(
-            categories, targets, planned, spent_by_category, count_by_category
+        categories=_build_effective_category_kpis(
+            session, profile_id, effective_targets, planned, spent_by_category, count_by_category
         ),
         incomes=_incomes_to_read(session, incomes),
         transactions=_transactions_to_read(session, profile_id, transactions),
+        targets_inherited=targets_inherited,
     )
 
 
@@ -549,45 +690,584 @@ def patch_budget_month(
     return build_month_snapshot(session, profile_id, year_month)
 
 
+def _propagate_categories_to_following_months(
+    session: Session,
+    profile_id: int,
+    year_month: str,
+    category_ids: list[int],
+) -> None:
+    """Inclui categorias (0%) nos meses > year_month que já têm metas próprias.
+
+    Meses sem linhas próprias continuam herdando e não são materializados aqui.
+    """
+    if not category_ids:
+        return
+    valid_ids = {c.id for c in _get_categories(session, profile_id)}
+    to_add = [cid for cid in dict.fromkeys(category_ids) if cid in valid_ids]
+    if not to_add:
+        return
+    following = session.exec(
+        select(BudgetMonth).where(
+            BudgetMonth.profile_id == profile_id,
+            BudgetMonth.year_month > year_month,
+        )
+    ).all()
+    for following_month in following:
+        if following_month.id is None or not _month_has_targets(session, following_month.id):
+            continue
+        existing_ids = {
+            row.category_id
+            for row in session.exec(
+                select(BudgetMonthTarget).where(BudgetMonthTarget.month_id == following_month.id)
+            ).all()
+        }
+        for category_id in to_add:
+            if category_id in existing_ids:
+                continue
+            session.add(
+                BudgetMonthTarget(
+                    month_id=following_month.id,
+                    category_id=category_id,
+                    percent=0.0,
+                )
+            )
+
+
+def _copy_targets_to_following_months(
+    session: Session,
+    profile_id: int,
+    year_month: str,
+    targets: list,
+) -> None:
+    """Substitui o conjunto de metas dos meses seguintes customizados pelo conjunto atual."""
+    new_ids = {item.category_id for item in targets}
+    following = session.exec(
+        select(BudgetMonth).where(
+            BudgetMonth.profile_id == profile_id,
+            BudgetMonth.year_month > year_month,
+        )
+    ).all()
+    for following_month in following:
+        if following_month.id is None or not _month_has_targets(session, following_month.id):
+            continue
+        existing = {
+            row.category_id: row
+            for row in session.exec(
+                select(BudgetMonthTarget).where(BudgetMonthTarget.month_id == following_month.id)
+            ).all()
+        }
+        for category_id in set(existing.keys()) - new_ids:
+            _assert_category_removable_from_month(
+                session,
+                profile_id,
+                following_month.year_month,
+                following_month.id,
+                category_id,
+            )
+        session.exec(delete(BudgetMonthTarget).where(BudgetMonthTarget.month_id == following_month.id))
+        session.flush()
+        for item in targets:
+            prev = existing.get(item.category_id)
+            session.add(
+                BudgetMonthTarget(
+                    month_id=following_month.id,
+                    category_id=item.category_id,
+                    percent=item.percent,
+                    name_override=prev.name_override if prev else None,
+                    color_override=prev.color_override if prev else None,
+                )
+            )
+
+
+def _category_has_month_expenses(
+    session: Session, profile_id: int, month_id: int, category_id: int
+) -> bool:
+    tx = session.exec(
+        select(BudgetTransaction.id).where(
+            BudgetTransaction.profile_id == profile_id,
+            BudgetTransaction.month_id == month_id,
+            BudgetTransaction.category_id == category_id,
+            BudgetTransaction.transaction_type == BudgetTransactionType.EXPENSE,
+        )
+    ).first()
+    return tx is not None
+
+
+def _category_has_active_recurring_covering(
+    session: Session, profile_id: int, year_month: str, category_id: int
+) -> bool:
+    """Recorrência ativa que cobre o mês (start <= ym e sem fim ou fim >= ym)."""
+    rules = session.exec(
+        select(BudgetRecurringExpense).where(
+            BudgetRecurringExpense.profile_id == profile_id,
+            BudgetRecurringExpense.category_id == category_id,
+            BudgetRecurringExpense.is_active == True,  # noqa: E712
+            BudgetRecurringExpense.start_year_month <= year_month,
+        )
+    ).all()
+    for rule in rules:
+        if rule.end_year_month is None or compare_year_months(rule.end_year_month, year_month) >= 0:
+            return True
+    return False
+
+
+def _assert_category_removable_from_month(
+    session: Session, profile_id: int, year_month: str, month_id: int, category_id: int
+) -> None:
+    if _category_has_month_expenses(session, profile_id, month_id, category_id):
+        raise HTTPException(status_code=409, detail="category has transactions")
+    if _category_has_active_recurring_covering(session, profile_id, year_month, category_id):
+        raise HTTPException(status_code=409, detail="category has recurring expenses")
+
+
+def _remove_categories_from_month_targets(
+    session: Session,
+    month_id: int,
+    category_ids: list[int],
+) -> None:
+    if not category_ids:
+        return
+    session.exec(
+        delete(BudgetMonthTarget).where(
+            BudgetMonthTarget.month_id == month_id,
+            BudgetMonthTarget.category_id.in_(category_ids),
+        )
+    )
+
+
+def remove_target_categories(
+    session: Session,
+    profile_id: int,
+    year_month: str,
+    payload: BudgetRemoveTargetCategories,
+) -> BudgetMonthSnapshotRead:
+    """Remove categorias dos conjuntos de metas do mês e/ou dos meses seguintes."""
+    _validate_year_month(year_month)
+    get_budget_profile(session, profile_id)
+    valid_ids = {c.id for c in _get_categories(session, profile_id)}
+    category_ids = [cid for cid in dict.fromkeys(payload.category_ids) if cid in valid_ids]
+    if not category_ids:
+        raise HTTPException(status_code=422, detail="no valid category_ids")
+
+    month = ensure_budget_month(session, profile_id, year_month)
+    if payload.apply_to_current:
+        for category_id in category_ids:
+            _assert_category_removable_from_month(
+                session, profile_id, year_month, month.id, category_id
+            )
+        if _month_has_targets(session, month.id):
+            remaining = session.exec(
+                select(BudgetMonthTarget).where(BudgetMonthTarget.month_id == month.id)
+            ).all()
+            remaining_ids = {row.category_id for row in remaining} - set(category_ids)
+            if not remaining_ids:
+                raise HTTPException(
+                    status_code=422,
+                    detail="at least one target required",
+                )
+            _remove_categories_from_month_targets(session, month.id, category_ids)
+        else:
+            # Mês herdado: materializa o conjunto efetivo sem as categorias removidas.
+            effective, _ = _effective_targets(session, profile_id, month)
+            kept = [t for t in effective if t.category_id not in set(category_ids)]
+            if not kept:
+                raise HTTPException(status_code=422, detail="at least one target required")
+            for target in kept:
+                session.add(
+                    BudgetMonthTarget(
+                        month_id=month.id,
+                        category_id=target.category_id,
+                        percent=target.percent,
+                    )
+                )
+
+    if payload.apply_to_following_months:
+        following = session.exec(
+            select(BudgetMonth).where(
+                BudgetMonth.profile_id == profile_id,
+                BudgetMonth.year_month > year_month,
+            )
+        ).all()
+        for following_month in following:
+            if following_month.id is None or not _month_has_targets(session, following_month.id):
+                continue
+            remaining = session.exec(
+                select(BudgetMonthTarget).where(BudgetMonthTarget.month_id == following_month.id)
+            ).all()
+            present = {row.category_id for row in remaining}
+            to_remove = [cid for cid in category_ids if cid in present]
+            if not to_remove:
+                continue
+            remaining_ids = present - set(to_remove)
+            if not remaining_ids:
+                continue
+            for category_id in to_remove:
+                _assert_category_removable_from_month(
+                    session,
+                    profile_id,
+                    following_month.year_month,
+                    following_month.id,
+                    category_id,
+                )
+            _remove_categories_from_month_targets(session, following_month.id, to_remove)
+
+    session.commit()
+    return build_month_snapshot(session, profile_id, year_month)
+
+
 def update_month_targets(
     session: Session, profile_id: int, year_month: str, payload: BudgetMonthTargetsUpdate
 ) -> BudgetMonthSnapshotRead:
     month = ensure_budget_month(session, profile_id, year_month)
     if payload.planned_income_brl is not None:
         month.planned_income_brl = payload.planned_income_brl
-    category_list = _get_categories(session, profile_id)
-    categories = {c.id for c in category_list}
+    valid_ids = {c.id for c in _get_categories(session, profile_id)}
+    if not payload.targets:
+        raise HTTPException(status_code=422, detail="at least one target required")
     total_percent = round_money(sum(t.percent for t in payload.targets))
-    if len(payload.targets) != len(category_list) or abs(total_percent - 100.0) > 0.01:
+    if abs(total_percent - 100.0) > 0.01:
         raise HTTPException(
             status_code=422,
-            detail=f"all categories required and percents must sum to 100, got {total_percent}",
+            detail=f"percents must sum to 100, got {total_percent}",
         )
+    seen: set[int] = set()
     for item in payload.targets:
-        if item.category_id not in categories:
+        if item.category_id not in valid_ids:
             raise HTTPException(status_code=422, detail=f"invalid category_id: {item.category_id}")
-    existing = {
+        if item.category_id in seen:
+            raise HTTPException(status_code=422, detail=f"duplicate category_id: {item.category_id}")
+        seen.add(item.category_id)
+    # Categorias que saem do conjunto: bloqueia se houver despesa/recorrência no mês.
+    existing_rows = {
         t.category_id: t
         for t in session.exec(
             select(BudgetMonthTarget).where(BudgetMonthTarget.month_id == month.id)
         ).all()
     }
+    if existing_rows:
+        previous_ids = set(existing_rows.keys())
+    else:
+        effective, _ = _effective_targets(session, profile_id, month)
+        previous_ids = {t.category_id for t in effective}
+    removed_ids = previous_ids - seen
+    for category_id in removed_ids:
+        _assert_category_removable_from_month(
+            session, profile_id, year_month, month.id, category_id
+        )
+    session.exec(delete(BudgetMonthTarget).where(BudgetMonthTarget.month_id == month.id))
+    session.flush()
     for item in payload.targets:
-        row = existing.get(item.category_id)
-        if row:
-            row.percent = item.percent
-            session.add(row)
-        else:
-            session.add(
-                BudgetMonthTarget(
-                    month_id=month.id,
-                    category_id=item.category_id,
-                    percent=item.percent,
-                )
+        prev = existing_rows.get(item.category_id)
+        name_override = item.name if item.name else (prev.name_override if prev else None)
+        color_override = item.color if item.color else (prev.color_override if prev else None)
+        session.add(
+            BudgetMonthTarget(
+                month_id=month.id,
+                category_id=item.category_id,
+                percent=item.percent,
+                name_override=name_override,
+                color_override=color_override,
             )
+        )
+    if payload.apply_to_following_months:
+        _copy_targets_to_following_months(session, profile_id, year_month, payload.targets)
+    else:
+        _propagate_categories_to_following_months(
+            session, profile_id, year_month, payload.propagate_category_ids
+        )
     session.add(month)
     session.commit()
     return build_month_snapshot(session, profile_id, year_month)
+
+
+def _category_to_read(category: BudgetCategory) -> BudgetCategoryRead:
+    return BudgetCategoryRead(
+        id=category.id,
+        profile_id=category.profile_id,
+        name=category.name,
+        sort_order=category.sort_order,
+        color=category.color,
+    )
+
+
+def list_categories(session: Session, profile_id: int) -> list[BudgetCategoryRead]:
+    get_budget_profile(session, profile_id)
+    return [_category_to_read(c) for c in _get_categories(session, profile_id)]
+
+
+def _category_usage_counts(
+    session: Session, profile_id: int, category_id: int
+) -> tuple[int, int]:
+    tx_count = session.exec(
+        select(func.count())
+        .select_from(BudgetTransaction)
+        .where(
+            BudgetTransaction.profile_id == profile_id,
+            BudgetTransaction.category_id == category_id,
+        )
+    ).one()
+    rec_count = session.exec(
+        select(func.count())
+        .select_from(BudgetRecurringExpense)
+        .where(
+            BudgetRecurringExpense.profile_id == profile_id,
+            BudgetRecurringExpense.category_id == category_id,
+        )
+    ).one()
+    return int(tx_count), int(rec_count)
+
+
+def _category_usage_summary(
+    session: Session, category: BudgetCategory
+) -> BudgetCategoryUsageSummary:
+    assert category.id is not None
+    tx_count, rec_count = _category_usage_counts(session, category.profile_id, category.id)
+    return BudgetCategoryUsageSummary(
+        id=category.id,
+        profile_id=category.profile_id,
+        name=category.name,
+        sort_order=category.sort_order,
+        color=category.color,
+        transaction_count=tx_count,
+        recurring_count=rec_count,
+        can_delete=tx_count == 0 and rec_count == 0,
+    )
+
+
+def list_categories_usage(session: Session, profile_id: int) -> list[BudgetCategoryUsageSummary]:
+    get_budget_profile(session, profile_id)
+    return [_category_usage_summary(session, c) for c in _get_categories(session, profile_id)]
+
+
+def get_category_usage(
+    session: Session, profile_id: int, category_id: int
+) -> BudgetCategoryUsageDetail:
+    from app.services.budget.recurring_expense import recurring_expense_to_read
+
+    category = _get_category(session, profile_id, category_id)
+    summary = _category_usage_summary(session, category)
+    tx_rows = session.exec(
+        select(BudgetTransaction, BudgetMonth.year_month)
+        .join(BudgetMonth, BudgetTransaction.month_id == BudgetMonth.id)
+        .where(
+            BudgetTransaction.profile_id == profile_id,
+            BudgetTransaction.category_id == category_id,
+        )
+        .order_by(BudgetTransaction.event_date.desc(), BudgetTransaction.id.desc())
+    ).all()
+    transactions = [
+        BudgetCategoryUsageTransaction(
+            id=tx.id,
+            event_date=tx.event_date.isoformat(),
+            year_month=year_month,
+            description=tx.description,
+            amount_brl=tx.amount_brl,
+            recurring=tx.recurring_expense_id is not None,
+        )
+        for tx, year_month in tx_rows
+        if tx.id is not None
+    ]
+    rules = session.exec(
+        select(BudgetRecurringExpense)
+        .where(
+            BudgetRecurringExpense.profile_id == profile_id,
+            BudgetRecurringExpense.category_id == category_id,
+        )
+        .order_by(BudgetRecurringExpense.description)
+    ).all()
+    return BudgetCategoryUsageDetail(
+        **summary.model_dump(),
+        transactions=transactions,
+        recurring_expenses=[recurring_expense_to_read(session, rule) for rule in rules],
+    )
+
+
+def delete_category_expenses(
+    session: Session, profile_id: int, category_id: int
+) -> BudgetCategoryUsageDetail:
+    """Remove todas as despesas (pontuais e recorrentes) vinculadas à meta."""
+    from app.services.budget.recurring_expense import _delete_rule_transactions
+
+    _get_category(session, profile_id, category_id)
+    rules = session.exec(
+        select(BudgetRecurringExpense).where(
+            BudgetRecurringExpense.profile_id == profile_id,
+            BudgetRecurringExpense.category_id == category_id,
+        )
+    ).all()
+    for rule in rules:
+        if rule.id is not None:
+            _delete_rule_transactions(session, rule.id)
+        session.delete(rule)
+    session.flush()
+    txs = session.exec(
+        select(BudgetTransaction).where(
+            BudgetTransaction.profile_id == profile_id,
+            BudgetTransaction.category_id == category_id,
+        )
+    ).all()
+    for tx in txs:
+        session.delete(tx)
+    session.commit()
+    return get_category_usage(session, profile_id, category_id)
+
+
+def create_category(
+    session: Session, profile_id: int, payload: BudgetCategoryCreate
+) -> BudgetCategoryRead:
+    get_budget_profile(session, profile_id)
+    name = payload.name.strip()
+    clash = session.exec(
+        select(BudgetCategory).where(
+            BudgetCategory.profile_id == profile_id, BudgetCategory.name == name
+        )
+    ).first()
+    if clash:
+        raise HTTPException(status_code=409, detail="category name already exists")
+    existing = _get_categories(session, profile_id)
+    next_order = max((c.sort_order for c in existing), default=-1) + 1
+    category = BudgetCategory(
+        profile_id=profile_id,
+        name=name,
+        sort_order=next_order,
+        color=payload.color,
+    )
+    session.add(category)
+    session.commit()
+    session.refresh(category)
+    return _category_to_read(category)
+
+
+def _get_category(session: Session, profile_id: int, category_id: int) -> BudgetCategory:
+    category = session.get(BudgetCategory, category_id)
+    if category is None or category.profile_id != profile_id:
+        raise HTTPException(status_code=404, detail="category not found")
+    return category
+
+
+def _profile_month_ids(session: Session, profile_id: int) -> list[int]:
+    return [
+        m.id
+        for m in session.exec(
+            select(BudgetMonth).where(BudgetMonth.profile_id == profile_id)
+        ).all()
+        if m.id is not None
+    ]
+
+
+def update_category(
+    session: Session, profile_id: int, category_id: int, payload: BudgetCategoryUpdate
+) -> BudgetCategoryRead:
+    category = _get_category(session, profile_id, category_id)
+    scope = payload.scope or "all"
+    if scope not in ("all", "from_month"):
+        raise HTTPException(status_code=422, detail="invalid scope")
+
+    if scope == "all":
+        if payload.name is not None:
+            name = payload.name.strip()
+            clash = session.exec(
+                select(BudgetCategory).where(
+                    BudgetCategory.profile_id == profile_id,
+                    BudgetCategory.name == name,
+                    BudgetCategory.id != category_id,
+                )
+            ).first()
+            if clash:
+                raise HTTPException(status_code=409, detail="category name already exists")
+            category.name = name
+        if payload.color is not None:
+            category.color = payload.color
+        session.add(category)
+        # Limpa overrides por mês: todos os meses passam a exibir o catálogo.
+        month_ids = _profile_month_ids(session, profile_id)
+        if month_ids:
+            rows = session.exec(
+                select(BudgetMonthTarget).where(
+                    BudgetMonthTarget.month_id.in_(month_ids),
+                    BudgetMonthTarget.category_id == category_id,
+                )
+            ).all()
+            for row in rows:
+                row.name_override = None
+                row.color_override = None
+                session.add(row)
+        session.commit()
+        session.refresh(category)
+        return _category_to_read(category)
+
+    # scope == "from_month": aplica override do mês informado em diante; catálogo intacto.
+    if payload.year_month is None:
+        raise HTTPException(status_code=422, detail="year_month required for from_month scope")
+    _validate_year_month(payload.year_month)
+    month = ensure_budget_month(session, profile_id, payload.year_month)
+    if not _month_has_targets(session, month.id):
+        effective, _ = _effective_targets(session, profile_id, month)
+        for target in effective:
+            session.add(
+                BudgetMonthTarget(
+                    month_id=month.id,
+                    category_id=target.category_id,
+                    percent=target.percent,
+                )
+            )
+        session.flush()
+    target_months = session.exec(
+        select(BudgetMonth).where(
+            BudgetMonth.profile_id == profile_id,
+            BudgetMonth.year_month >= payload.year_month,
+        )
+    ).all()
+    new_name = payload.name.strip() if payload.name is not None else None
+    for target_month in target_months:
+        row = session.exec(
+            select(BudgetMonthTarget).where(
+                BudgetMonthTarget.month_id == target_month.id,
+                BudgetMonthTarget.category_id == category_id,
+            )
+        ).first()
+        if row is None:
+            continue
+        if new_name is not None:
+            row.name_override = new_name
+        if payload.color is not None:
+            row.color_override = payload.color
+        session.add(row)
+    session.commit()
+    session.refresh(category)
+    return _category_to_read(category)
+
+
+def delete_category(session: Session, profile_id: int, category_id: int) -> None:
+    _get_category(session, profile_id, category_id)
+    tx = session.exec(
+        select(BudgetTransaction.id).where(
+            BudgetTransaction.profile_id == profile_id,
+            BudgetTransaction.category_id == category_id,
+        )
+    ).first()
+    if tx is not None:
+        raise HTTPException(status_code=409, detail="category has transactions")
+    rec = session.exec(
+        select(BudgetRecurringExpense.id).where(
+            BudgetRecurringExpense.profile_id == profile_id,
+            BudgetRecurringExpense.category_id == category_id,
+        )
+    ).first()
+    if rec is not None:
+        raise HTTPException(status_code=409, detail="category has recurring expenses")
+    month_ids = _profile_month_ids(session, profile_id)
+    if month_ids:
+        session.exec(
+            delete(BudgetMonthTarget).where(
+                BudgetMonthTarget.month_id.in_(month_ids),
+                BudgetMonthTarget.category_id == category_id,
+            )
+        )
+    category = session.get(BudgetCategory, category_id)
+    if category is not None:
+        session.delete(category)
+    session.commit()
 
 
 def update_month_incomes(
@@ -713,6 +1393,22 @@ def update_month_income_entry(
     payload: BudgetIncomeEntryUpdate,
 ) -> BudgetMonthSnapshotRead:
     income = _get_month_income(session, profile_id, year_month, income_id)
+    only_received = (
+        payload.received is not None
+        and payload.label is None
+        and payload.amount_brl is None
+    )
+    if payload.received is not None:
+        if not _income_is_recurring(session, income):
+            raise HTTPException(
+                status_code=422, detail="received flag only allowed for recurring incomes"
+            )
+        income.received = payload.received
+        session.add(income)
+        if only_received:
+            session.commit()
+            return build_month_snapshot(session, profile_id, year_month, view="settlement")
+
     label = payload.label.strip() if payload.label is not None else income.label
     amount_brl = payload.amount_brl if payload.amount_brl is not None else income.amount_brl
     if amount_brl <= 0:
@@ -825,6 +1521,12 @@ def update_transaction(
     tx = session.get(BudgetTransaction, transaction_id)
     if tx is None or tx.profile_id != profile_id:
         raise HTTPException(status_code=404, detail="transaction not found")
+    if payload.settled is not None:
+        if tx.recurring_expense_id is None:
+            raise HTTPException(
+                status_code=422, detail="settled flag only allowed for recurring expenses"
+            )
+        tx.settled = payload.settled
     if payload.event_date is not None:
         tx.event_date = _parse_date(payload.event_date)
     if payload.description is not None:

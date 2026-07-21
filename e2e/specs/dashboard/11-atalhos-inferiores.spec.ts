@@ -1,7 +1,7 @@
 import { expect, test } from '../fixtures/test';
 
 import { dashboardShortcutBar, gotoDashboardPage } from '../helpers/dashboardPage';
-import { seedConsolidadaPrincipal } from '../helpers/seedConsolidada';
+import { seedDashboardActivePortfolioOnly } from '../helpers/seedDashboard';
 
 /**
  * UI-DASH-011 — Atalhos inferiores
@@ -9,7 +9,7 @@ import { seedConsolidadaPrincipal } from '../helpers/seedConsolidada';
  */
 test.describe('UI-DASH-011', () => {
   test.beforeEach(async ({ request }) => {
-    await seedConsolidadaPrincipal(request);
+    await seedDashboardActivePortfolioOnly(request);
   });
 
   test('exibe quatro atalhos para consolidada, rebalanceamento, proventos e objetivos', async ({

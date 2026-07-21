@@ -6,12 +6,14 @@
   } from '$lib/api/dividendPayments';
   import type { Portfolio } from '$lib/api/portfolios';
   import BrDecimalInput from '$lib/components/BrDecimalInput.svelte';
+  import LucideIcon from '$lib/components/LucideIcon.svelte';
   import {
     formatIsoDateToBr,
     parseBrDateToIso,
     sanitizeBrDateTyping
   } from '$lib/brDate';
   import AssetPicker from '$lib/features/portfolios/AssetPicker.svelte';
+  import { PROVENTOS_NEW_PAYMENT_LUCIDE_ICON } from '$lib/icons/lucideIconCatalog';
   import {
     computeNetAmount,
     normalizeProventoAmounts,
@@ -47,7 +49,6 @@
   let formError = '';
 
   let loadedEditingId: number | null = null;
-  let portfolioDefaultApplied = false;
   let grossAmountInput: BrDecimalInput;
   let taxWithheldInput: BrDecimalInput;
 
@@ -75,23 +76,21 @@
     payerCnpj = editing.payer_cnpj ?? '';
     payerName = editing.payer_name ?? '';
     formError = '';
-    portfolioDefaultApplied = true;
   }
 
   $: if (!editing) {
     loadedEditingId = null;
   }
 
-  $: if (
-    !editing &&
-    !portfolioDefaultApplied &&
-    portfolioId === '' &&
-    activePortfolioId != null &&
-    portfolios.some((p) => p.id === activePortfolioId)
-  ) {
+  // Cadastro: a carteira vem sempre do painel do topo (não há seletor no formulário).
+  $: if (!editing && activePortfolioId != null) {
     portfolioId = activePortfolioId;
-    portfolioDefaultApplied = true;
   }
+
+  // Edição: carteira do lançamento é exibida como texto fixo (não editável).
+  $: editingPortfolioName = editing
+    ? (portfolios.find((p) => p.id === editing?.portfolio_id)?.name ?? '—')
+    : '';
 
   $: selectedAsset =
     assetId !== '' ? (assets.find((a) => a.id === Number(assetId)) ?? null) : null;
@@ -187,7 +186,6 @@
     portfolioId = activePortfolioId != null && portfolios.some((p) => p.id === activePortfolioId)
       ? activePortfolioId
       : '';
-    portfolioDefaultApplied = portfolioId !== '';
     paymentType = 'dividend';
     paymentDateBr = '';
     grossAmountValue = 0;
@@ -206,33 +204,18 @@
 </script>
 
 <form class="space-y-4" on:submit={handleSubmit}>
-  {#if !editing}
-    <p class="text-sm font-semibold uppercase tracking-wide text-primary">Novo provento</p>
-  {/if}
-
   {#if formError}
     <p class="text-sm text-error" role="alert">{formError}</p>
   {/if}
 
-  <label class="form-control">
-    <span class="label">
-      <span class="label-text">Carteira</span>
-      {#if portfolios.length === 0}
-        <span class="label-text-alt">Nenhuma carteira cadastrada</span>
-      {/if}
-    </span>
-    <select
-      class="select select-bordered"
-      bind:value={portfolioId}
-      disabled={loading || portfolios.length === 0}
-      aria-label="Carteira"
-    >
-      <option value="" disabled>Selecione uma carteira</option>
-      {#each portfolios as portfolio (portfolio.id)}
-        <option value={portfolio.id}>{portfolio.name}</option>
-      {/each}
-    </select>
-  </label>
+  {#if editing}
+    <div class="form-control">
+      <span class="label"><span class="label-text">Carteira</span></span>
+      <p class="input input-bordered flex items-center bg-base-200 text-base-content/80" data-testid="provento-form-carteira">
+        {editingPortfolioName}
+      </p>
+    </div>
+  {/if}
 
   <label class="form-control">
     <span class="label">
@@ -322,7 +305,10 @@
   </label>
 
   <details class="collapse collapse-arrow bg-base-200">
-    <summary class="collapse-title text-sm font-medium">Dados fiscais (opcional)</summary>
+    <summary class="collapse-title flex items-center gap-2 text-sm font-medium">
+      <LucideIcon name="Receipt" size="sm" class="text-base-content/70" />
+      Dados fiscais (opcional)
+    </summary>
     <div class="collapse-content grid gap-4 md:grid-cols-2">
       <label class="form-control">
         <span class="label"><span class="label-text">CNPJ da empresa</span></span>
@@ -346,7 +332,8 @@
   {/if}
 
   <div class="flex flex-wrap gap-2">
-    <button class="btn btn-primary" type="submit" disabled={loading}>
+    <button class="btn btn-primary gap-2" type="submit" disabled={loading}>
+      <LucideIcon name={editing ? 'CircleCheck' : PROVENTOS_NEW_PAYMENT_LUCIDE_ICON} size="sm" />
       {editing ? 'Salvar alterações' : 'Cadastrar provento'}
     </button>
     {#if editing}

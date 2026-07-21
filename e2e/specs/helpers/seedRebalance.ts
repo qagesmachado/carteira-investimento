@@ -194,8 +194,8 @@ export async function seedRebalanceTwoStocksScored(
 export async function seedRebalanceTwoFiisScored(
   request: APIRequestContext
 ): Promise<{ portfolioId: number; hglgId: number; xplgId: number }> {
-  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await clearAllPortfolios(request);
+  await clearAllTestAssets(request, getWorkerApiBaseUrl());
   await resetAnalysisConfig(request);
   await resetFiiAnalysisConfig(request);
 
@@ -229,5 +229,20 @@ export async function seedRebalanceTwoFiisScored(
   await createPosition(request, portfolio.id, hglgId, { quantity: 20, average_price: 140 });
   await createPosition(request, portfolio.id, xplgId, { quantity: 10, average_price: 90 });
   await setActivePortfolio(request, portfolio.id);
+
+  const rebalanceCheck = await request.get(
+    `${getWorkerApiBaseUrl()}/portfolios/${portfolio.id}/rebalance`
+  );
+  expect(rebalanceCheck.ok()).toBeTruthy();
+  const rebalanceBody = (await rebalanceCheck.json()) as {
+    fund_assets: { symbol: string; sum_score: number | null; target_percent: number | null }[];
+  };
+  const hglg = rebalanceBody.fund_assets.find((a) => a.symbol === 'HGLG11');
+  const xplg = rebalanceBody.fund_assets.find((a) => a.symbol === 'XPLG11');
+  expect(hglg?.sum_score ?? 0).toBeGreaterThan(0);
+  expect(xplg?.sum_score ?? 0).toBeGreaterThan(0);
+  expect(hglg?.target_percent ?? null).not.toBeNull();
+  expect(xplg?.target_percent ?? null).not.toBeNull();
+
   return { portfolioId: portfolio.id, hglgId, xplgId };
 }

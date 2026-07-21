@@ -176,6 +176,60 @@ export async function seedProventosForLabels(request: APIRequestContext): Promis
 }
 
 /**
+ * Cenario UI-PRV-019: carteira ativa com dois ativos que pagaram proventos, mas apenas
+ * um deles ainda tem posicao aberta. O ativo "vendido" (ITSA4) paga MAIS, para provar que:
+ *  - totais/graficos usam o historico completo (inclui ITSA4);
+ *  - "Maior pagador" e "Top ativos" usam apenas ativos em carteira (mostram BBSE3).
+ */
+export async function seedProventosHeldVsSold(request: APIRequestContext): Promise<number> {
+  await resetProventosData(request);
+  await createAssetViaApi(request, {
+    symbol: TICKER_BBSE3,
+    name: 'BB Seguridade Participações S.A.',
+    asset_type: 'stock',
+    market: 'national',
+    country: 'BR',
+    currency: 'BRL'
+  });
+  await createAssetViaApi(request, {
+    symbol: TICKER_ITSA4,
+    name: 'Itaúsa S.A.',
+    asset_type: 'stock',
+    market: 'national',
+    country: 'BR',
+    currency: 'BRL'
+  });
+
+  const portfolioId = await ensureDefaultPortfolio(request);
+  const bbse3Id = await getAssetIdBySymbol(request, TICKER_BBSE3);
+  const itsa4Id = await getAssetIdBySymbol(request, TICKER_ITSA4);
+
+  // Apenas BBSE3 permanece em carteira (posicao aberta). ITSA4 foi "vendido" (sem posicao).
+  await request.post(`${getWorkerApiBaseUrl()}/portfolios/${portfolioId}/positions`, {
+    data: { asset_id: bbse3Id, quantity: 10, average_price: 30 }
+  });
+
+  await createDividendPaymentViaApi(request, {
+    asset_id: bbse3Id,
+    portfolio_id: portfolioId,
+    payment_type: 'dividend',
+    payment_date: '2024-03-10',
+    amount: 100,
+    currency: 'BRL'
+  });
+  await createDividendPaymentViaApi(request, {
+    asset_id: itsa4Id,
+    portfolio_id: portfolioId,
+    payment_type: 'dividend',
+    payment_date: '2024-04-10',
+    amount: 500,
+    currency: 'BRL'
+  });
+
+  return portfolioId;
+}
+
+/**
  * Cenario UI-PRV-015/016/017: duas carteiras compartilhando o mesmo ticker BBSE3,
  * com proventos distintos em cada uma e posicoes para aparecer na visao consolidada.
  */

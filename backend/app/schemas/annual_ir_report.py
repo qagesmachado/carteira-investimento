@@ -27,6 +27,7 @@ class AnnualIrSummaryByAsset(SQLModel):
     asset_name: str
     asset_type: AssetType
     display_class: DisplayClass
+    market: AssetMarket
     totals_by_type: dict[str, float]
     total_by_currency: dict[str, float]
 
@@ -36,6 +37,7 @@ class AnnualIrPositionRow(SQLModel):
     asset_name: str
     asset_type: AssetType
     display_class: DisplayClass
+    market: AssetMarket
     quantity: float
     average_price: float
     currency: str

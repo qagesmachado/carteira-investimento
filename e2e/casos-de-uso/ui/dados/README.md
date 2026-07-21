@@ -15,11 +15,11 @@
 | `UI-DAD-004` | [04-exportar-catalogo-ativos.md](04-exportar-catalogo-ativos.md) | implementado | [04-exportar-catalogo-ativos.spec.ts](../../../specs/dados/04-exportar-catalogo-ativos.spec.ts) |
 | `UI-DAD-005` | [05-importar-ativos-lote.md](05-importar-ativos-lote.md) | implementado | [05-importar-ativos-lote.spec.ts](../../../specs/dados/05-importar-ativos-lote.spec.ts) |
 | `UI-DAD-006` | [06-exportar-proventos-csv.md](06-exportar-proventos-csv.md) | implementado | [06-exportar-proventos-csv.spec.ts](../../../specs/dados/06-exportar-proventos-csv.spec.ts) |
-| `UI-DAD-007` | [07-importar-proventos-lote.md](07-importar-proventos-lote.md) | implementado | [07-importar-proventos-lote.spec.ts](../../../specs/dados/07-importar-proventos-lote.spec.ts) |
+| `UI-DAD-007` | _movido_ | movido | importação em lote passou para [UI-PRV-014](../proventos/14-importacao-lote.md) (Proventos → Adicionar) |
 | `UI-DAD-008` | [08-remover-posicao-proventos-persistem.md](08-remover-posicao-proventos-persistem.md) | implementado | [08-remover-posicao-proventos-persistem.spec.ts](../../../specs/dados/08-remover-posicao-proventos-persistem.spec.ts) |
 | `UI-DAD-009` | [09-migracao-legado-smoke.md](09-migracao-legado-smoke.md) | aprovado | [09-migracao-legado-smoke.spec.ts](../../../specs/dados/09-migracao-legado-smoke.spec.ts) |
 
-**Total:** 9 casos · **8 specs** implementados (`UI-DAD-001`–`008`); `UI-DAD-009` (migração legado) pendente
+**Total:** 8 casos ativos · **7 specs** implementados (`UI-DAD-001`–`006`, `008`); `UI-DAD-007` movido para Proventos; `UI-DAD-009` (migração legado) pendente
 
 **Doc produto:** [`../../../../docs/produto/desenvolvido/pagina-dados.md`](../../../../docs/produto/desenvolvido/pagina-dados.md) · [`../../../../docs/produto/desenvolvido/persistencia-banco-unico.md`](../../../../docs/produto/desenvolvido/persistencia-banco-unico.md)
 

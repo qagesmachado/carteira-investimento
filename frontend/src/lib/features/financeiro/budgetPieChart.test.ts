@@ -31,7 +31,7 @@ describe('formatBudgetPieSliceTooltip', () => {
 });
 
 describe('BUDGET_PIE_CHART_SIZE_CLASS', () => {
-  it('é 15% maior que h-44', () => {
-    expect(BUDGET_PIE_CHART_SIZE_CLASS).toBe('h-[12.65rem] w-[12.65rem]');
+  it('é 25% maior que 12,65rem', () => {
+    expect(BUDGET_PIE_CHART_SIZE_CLASS).toBe('h-[15.81rem] w-[15.81rem]');
   });
 });

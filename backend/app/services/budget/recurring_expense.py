@@ -290,10 +290,18 @@ def update_recurring_expense(
     _validate_recurring_end(rule.start_year_month, rule.end_year_month, rule.end_year_month is None)
 
     session.add(rule)
-    _delete_rule_transactions(session, rule.id)
     through = rule.end_year_month or shift_year_month(
         rule.start_year_month, RECURRING_EXPENSE_HORIZON - 1
     )
+    # Upsert preserva settled; remove só meses fora da nova vigência.
+    existing_txs = session.exec(
+        select(BudgetTransaction).where(BudgetTransaction.recurring_expense_id == rule.id)
+    ).all()
+    valid_months = set(_iter_year_months(rule.start_year_month, through))
+    for tx in existing_txs:
+        month = session.get(BudgetMonth, tx.month_id)
+        if month is None or month.year_month not in valid_months:
+            session.delete(tx)
     materialize_recurring_expense(session, profile_id, rule, through)
     session.commit()
     session.refresh(rule)

@@ -7,6 +7,25 @@ def _create_profile(client: TestClient, name: str = "Casa") -> int:
     return response.json()["id"]
 
 
+def test_set_and_clear_active_profile(client: TestClient):
+    profile_id = _create_profile(client)
+
+    set_response = client.put("/budget/active", json={"profile_id": profile_id})
+    assert set_response.status_code == 200
+    assert set_response.json()["profile_id"] == profile_id
+    assert client.get("/budget/active").json()["profile_id"] == profile_id
+
+    clear_response = client.put("/budget/active", json={"profile_id": None})
+    assert clear_response.status_code == 200
+    assert clear_response.json()["profile_id"] is None
+    assert client.get("/budget/active").json()["profile_id"] is None
+
+
+def test_set_active_profile_rejects_unknown(client: TestClient):
+    response = client.put("/budget/active", json={"profile_id": 9999})
+    assert response.status_code == 404
+
+
 def test_create_profile_seeds_categories(client: TestClient):
     profile_id = _create_profile(client)
     snapshot = client.get(f"/budget/profiles/{profile_id}/months/2026-07")
@@ -19,12 +38,26 @@ def test_create_profile_seeds_categories(client: TestClient):
 def test_update_targets_requires_100_percent(client: TestClient):
     profile_id = _create_profile(client)
     snapshot = client.get(f"/budget/profiles/{profile_id}/months/2026-07").json()
-    targets = [{"category_id": c["category_id"], "percent": 50} for c in snapshot["categories"][:2]]
+    targets = [{"category_id": c["category_id"], "percent": 40} for c in snapshot["categories"][:2]]
     response = client.put(
         f"/budget/profiles/{profile_id}/months/2026-07/targets",
         json={"planned_income_brl": 10000, "targets": targets},
     )
     assert response.status_code == 422
+
+
+def test_update_targets_accepts_subset_summing_100(client: TestClient):
+    profile_id = _create_profile(client)
+    snapshot = client.get(f"/budget/profiles/{profile_id}/months/2026-07").json()
+    targets = [{"category_id": c["category_id"], "percent": 50} for c in snapshot["categories"][:2]]
+    response = client.put(
+        f"/budget/profiles/{profile_id}/months/2026-07/targets",
+        json={"planned_income_brl": 10000, "targets": targets},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["categories"]) == 2
+    assert body["targets_inherited"] is False
 
 
 def test_month_flow_income_expense_snapshot(client: TestClient):
@@ -389,3 +422,190 @@ def test_delete_recurring_income_removes_all_months(client: TestClient):
     assert deleted.status_code == 204
     june = client.get(f"/budget/profiles/{profile_id}/months/2026-06").json()
     assert june["income_total_brl"] == 0
+
+
+def test_settlement_view_lists_only_recurring_items(client: TestClient):
+    profile_id = _create_profile(client)
+    snapshot = client.get(f"/budget/profiles/{profile_id}/months/2026-07").json()
+    category_id = snapshot["categories"][0]["category_id"]
+
+    client.post(
+        f"/budget/profiles/{profile_id}/months/2026-07/incomes",
+        json={"label": "Salário", "amount_brl": 5000, "recurring_12_months": True},
+    )
+    client.post(
+        f"/budget/profiles/{profile_id}/months/2026-07/incomes",
+        json={"label": "Bônus", "amount_brl": 800, "recurring_12_months": False},
+    )
+    client.post(
+        f"/budget/profiles/{profile_id}/months/2026-07/expenses",
+        json={
+            "description": "Aluguel",
+            "event_date": "2026-07-05",
+            "amount_brl": 1200,
+            "category_id": category_id,
+            "recurring": True,
+            "indefinite": True,
+        },
+    )
+    client.post(
+        f"/budget/profiles/{profile_id}/months/2026-07/expenses",
+        json={
+            "description": "Farmácia",
+            "event_date": "2026-07-10",
+            "amount_brl": 50,
+            "category_id": category_id,
+            "recurring": False,
+        },
+    )
+
+    settlement = client.get(f"/budget/profiles/{profile_id}/months/2026-07?view=settlement").json()
+    assert len(settlement["incomes"]) == 1
+    assert settlement["incomes"][0]["label"] == "Salário"
+    assert settlement["incomes"][0]["received"] is False
+    assert settlement["income_total_brl"] == 5000
+    assert len(settlement["transactions"]) == 1
+    assert settlement["transactions"][0]["description"] == "Aluguel"
+    assert settlement["transactions"][0]["settled"] is False
+    assert settlement["expense_total_brl"] == 1200
+
+    full = client.get(f"/budget/profiles/{profile_id}/months/2026-07").json()
+    assert full["income_total_brl"] == 5800
+    assert full["expense_total_brl"] == 1250
+
+
+def test_mark_income_received_and_expense_settled(client: TestClient):
+    profile_id = _create_profile(client)
+    snapshot = client.get(f"/budget/profiles/{profile_id}/months/2026-07").json()
+    category_id = snapshot["categories"][0]["category_id"]
+
+    income = client.post(
+        f"/budget/profiles/{profile_id}/months/2026-07/incomes",
+        json={"label": "Salário", "amount_brl": 5000, "recurring_12_months": True},
+    ).json()["incomes"][0]
+    expense = client.post(
+        f"/budget/profiles/{profile_id}/months/2026-07/expenses",
+        json={
+            "description": "Aluguel",
+            "event_date": "2026-07-05",
+            "amount_brl": 1200,
+            "category_id": category_id,
+            "recurring": True,
+            "indefinite": True,
+        },
+    ).json()["transactions"][0]
+
+    marked_income = client.patch(
+        f"/budget/profiles/{profile_id}/months/2026-07/incomes/{income['id']}",
+        json={"received": True},
+    )
+    assert marked_income.status_code == 200
+    assert marked_income.json()["incomes"][0]["received"] is True
+    assert marked_income.json()["income_total_brl"] == 5000
+
+    marked_expense = client.patch(
+        f"/budget/profiles/{profile_id}/transactions/{expense['id']}",
+        json={"settled": True},
+    )
+    assert marked_expense.status_code == 200
+    assert marked_expense.json()["settled"] is True
+    assert marked_expense.json()["amount_brl"] == 1200
+
+    settlement = client.get(f"/budget/profiles/{profile_id}/months/2026-07?view=settlement").json()
+    assert settlement["incomes"][0]["received"] is True
+    assert settlement["transactions"][0]["settled"] is True
+
+    full = client.get(f"/budget/profiles/{profile_id}/months/2026-07").json()
+    assert full["income_total_brl"] == 5000
+    assert full["expense_total_brl"] == 1200
+
+
+def test_received_and_settled_rejected_for_pontual(client: TestClient):
+    profile_id = _create_profile(client)
+    snapshot = client.get(f"/budget/profiles/{profile_id}/months/2026-07").json()
+    category_id = snapshot["categories"][0]["category_id"]
+
+    income_id = client.post(
+        f"/budget/profiles/{profile_id}/months/2026-07/incomes",
+        json={"label": "Bônus", "amount_brl": 800, "recurring_12_months": False},
+    ).json()["incomes"][0]["id"]
+    expense_id = client.post(
+        f"/budget/profiles/{profile_id}/months/2026-07/expenses",
+        json={
+            "description": "Farmácia",
+            "event_date": "2026-07-10",
+            "amount_brl": 50,
+            "category_id": category_id,
+            "recurring": False,
+        },
+    ).json()["transactions"][0]["id"]
+
+    assert (
+        client.patch(
+            f"/budget/profiles/{profile_id}/months/2026-07/incomes/{income_id}",
+            json={"received": True},
+        ).status_code
+        == 422
+    )
+    assert (
+        client.patch(
+            f"/budget/profiles/{profile_id}/transactions/{expense_id}",
+            json={"settled": True},
+        ).status_code
+        == 422
+    )
+
+
+def test_settled_preserved_after_recurring_expense_rematerialize(client: TestClient):
+    profile_id = _create_profile(client)
+    snapshot = client.get(f"/budget/profiles/{profile_id}/months/2026-07").json()
+    category_id = snapshot["categories"][0]["category_id"]
+
+    created = client.post(
+        f"/budget/profiles/{profile_id}/months/2026-07/expenses",
+        json={
+            "description": "Aluguel",
+            "event_date": "2026-07-05",
+            "amount_brl": 1200,
+            "category_id": category_id,
+            "recurring": True,
+            "indefinite": True,
+        },
+    ).json()
+    tx_id = created["transactions"][0]["id"]
+    rule_id = created["transactions"][0]["recurring_expense_id"]
+
+    client.patch(
+        f"/budget/profiles/{profile_id}/transactions/{tx_id}",
+        json={"settled": True},
+    )
+    # Sync ao abrir o mês rematerializa sem apagar settled.
+    again = client.get(f"/budget/profiles/{profile_id}/months/2026-07?view=settlement").json()
+    assert again["transactions"][0]["id"] == tx_id
+    assert again["transactions"][0]["settled"] is True
+
+    client.patch(
+        f"/budget/profiles/{profile_id}/recurring-expenses/{rule_id}",
+        json={"amount_brl": 1300},
+    )
+    after_update = client.get(f"/budget/profiles/{profile_id}/months/2026-07?view=settlement").json()
+    assert after_update["transactions"][0]["amount_brl"] == 1300
+    assert after_update["transactions"][0]["settled"] is True
+
+
+def test_copy_previous_incomes_resets_received_flag(client: TestClient):
+    profile_id = _create_profile(client)
+    june = client.post(
+        f"/budget/profiles/{profile_id}/months/2026-06/incomes",
+        json={"label": "Salário", "amount_brl": 5000, "recurring_12_months": True},
+    ).json()["incomes"][0]
+    client.patch(
+        f"/budget/profiles/{profile_id}/months/2026-06/incomes/{june['id']}",
+        json={"received": True},
+    )
+
+    client.post(f"/budget/profiles/{profile_id}/months/2026-07/copy-previous-incomes")
+    july = client.get(f"/budget/profiles/{profile_id}/months/2026-07?view=settlement").json()
+    assert len(july["incomes"]) == 1
+    assert july["incomes"][0]["label"] == "Salário"
+    assert july["incomes"][0]["received"] is False
